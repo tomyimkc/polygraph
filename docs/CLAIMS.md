@@ -226,6 +226,18 @@ this file are **not** separately registered below (out of this update's stated s
 `results/scale/scale-experiment.json` and passes the checker's Tier 2 JSON-backing fallback on its
 own merits.
 
+## New in this update: Arm64 production-readiness evidence (2026-08-09)
+
+`results/production-readiness/arm64-31294460364/` preserves a complete synthetic
+`llama-server` capacity/soak/restart campaign from GitHub's hosted Arm64 runner. The uploaded
+artifact's own checksum manifest was verified before it was copied into the repository. Its
+headline request count, sustained throughput, p99 latency, restart-readiness, and maximum RSS
+figures are registered below against exact paths in `summary.json`; they do not rely only on the
+Tier 2 "some JSON leaf has this value" fallback.
+
+The artifact is deliberately not registered as proof of production readiness. Its source JSON
+retains `actualProductionTraffic:false`, `productionReady:false`, and `candidateOnly:true`.
+
 ## The registry
 
 <!-- CLAIMS-REGISTRY:BEGIN -->
@@ -1267,6 +1279,57 @@ own merits.
         "numerator": 18.45,
         "denominator": 11.17
       }
+    },
+    {
+      "id": "arm64-readiness-measured-requests",
+      "value_text": "1543",
+      "source_file": "results/production-readiness/arm64-31294460364/summary.json",
+      "source_json_path": "totals.measuredRequests",
+      "aliases": [
+        "1,543"
+      ],
+      "note": "Total measured requests across the Arm64 capacity and soak phases"
+    },
+    {
+      "id": "arm64-readiness-soak-output-tps",
+      "value_text": "55.45",
+      "source_file": "results/production-readiness/arm64-31294460364/summary.json",
+      "source_json_path": "results[3].outputTokensPerSecond",
+      "note": "Arm64 concurrency-4 10-minute soak output-token throughput"
+    },
+    {
+      "id": "arm64-readiness-soak-ttft-p99",
+      "value_text": "748.46",
+      "source_file": "results/production-readiness/arm64-31294460364/summary.json",
+      "source_json_path": "results[3].ttftP99Ms",
+      "note": "Arm64 concurrency-4 soak time-to-first-token p99 in milliseconds"
+    },
+    {
+      "id": "arm64-readiness-soak-e2e-p99",
+      "value_text": "1924.57",
+      "source_file": "results/production-readiness/arm64-31294460364/summary.json",
+      "source_json_path": "results[3].e2eP99Ms",
+      "aliases": [
+        "1,924.57"
+      ],
+      "note": "Arm64 concurrency-4 soak end-to-end latency p99 in milliseconds"
+    },
+    {
+      "id": "arm64-readiness-max-rss",
+      "value_text": "1869.69",
+      "source_file": "results/production-readiness/arm64-31294460364/summary.json",
+      "source_json_path": "gate.checks[9].observed",
+      "aliases": [
+        "1,869.69"
+      ],
+      "note": "Maximum observed Arm64 llama-server RSS in MiB"
+    },
+    {
+      "id": "arm64-readiness-max-restart-seconds",
+      "value_text": "1.5123",
+      "source_file": "results/production-readiness/arm64-31294460364/summary.json",
+      "source_json_path": "gate.checks[8].observed",
+      "note": "Slower of the two controlled Arm64 restart-readiness measurements in seconds"
     }
   ]
 }

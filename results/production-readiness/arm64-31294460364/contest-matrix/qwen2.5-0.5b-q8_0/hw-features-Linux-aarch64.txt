@@ -1,0 +1,64 @@
+# Hardware feature capture
+captured_at_utc: 2026-08-09T04:24:28Z
+uname -a: Linux runnervma9114 6.17.0-1020-azure #20~24.04.1-Ubuntu SMP Fri Jun 19 20:26:28 UTC 2026 aarch64 aarch64 aarch64 GNU/Linux
+nproc: 4
+
+## /proc/cpuinfo Features line (first core)
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm uscat ilrcpc flagm sb paca pacg dcpodp sve2 sveaes svebitperm svesha3 svesm4 flagm2 frint svei8mm svebf16 i8mm bf16
+
+## /proc/cpuinfo model name / CPU part (first core)
+CPU implementer	: 0x41
+
+## lscpu
+Architecture:                            aarch64
+CPU op-mode(s):                          32-bit, 64-bit
+Byte Order:                              Little Endian
+CPU(s):                                  4
+On-line CPU(s) list:                     0-3
+Vendor ID:                               ARM
+Model name:                              Neoverse-N2
+Model:                                   0
+Thread(s) per core:                      1
+Core(s) per socket:                      4
+Socket(s):                               1
+Stepping:                                r0p0
+BogoMIPS:                                2000.00
+Flags:                                   fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm uscat ilrcpc flagm sb paca pacg dcpodp sve2 sveaes svebitperm svesha3 svesm4 flagm2 frint svei8mm svebf16 i8mm bf16
+L1d cache:                               256 KiB (4 instances)
+L1i cache:                               256 KiB (4 instances)
+L2 cache:                                4 MiB (4 instances)
+L3 cache:                                128 MiB (1 instance)
+NUMA node(s):                            1
+NUMA node0 CPU(s):                       0-3
+Vulnerability Gather data sampling:      Not affected
+Vulnerability Ghostwrite:                Not affected
+Vulnerability Indirect target selection: Not affected
+Vulnerability Itlb multihit:             Not affected
+Vulnerability L1tf:                      Not affected
+Vulnerability Mds:                       Not affected
+Vulnerability Meltdown:                  Not affected
+Vulnerability Mmio stale data:           Not affected
+Vulnerability Old microcode:             Not affected
+Vulnerability Reg file data sampling:    Not affected
+Vulnerability Retbleed:                  Not affected
+Vulnerability Spec rstack overflow:      Not affected
+Vulnerability Spec store bypass:         Mitigation; Speculative Store Bypass disabled via prctl
+Vulnerability Spectre v1:                Mitigation; __user pointer sanitization
+Vulnerability Spectre v2:                Mitigation; CSV2, BHB
+Vulnerability Srbds:                     Not affected
+Vulnerability Tsa:                       Not affected
+Vulnerability Tsx async abort:           Not affected
+Vulnerability Vmscape:                   Not affected
+
+## llama-cli backend-selection banner
+0.00.002.786 I cmn  common_param: system_info: n_threads = 1 (n_threads_batch = 1) / 4 | CPU : NEON = 1 | ARM_FMA = 1 | FP16_VA = 1 | MATMUL_INT8 = 1 | SVE = 1 | DOTPROD = 1 | SVE_CNT = 16 | OPENMP = 1 | KLEIDIAI = 1 | REPACK = 1 | 
+0.00.226.819 I kleidiai: primary q4 kernel feature I8MM
+0.00.226.819 I kleidiai: primary q8 kernel feature I8MM
+0.00.226.819 I kleidiai: no compatible f32 kernels found for CPU features mask 3
+0.00.226.820 I kleidiai: SME disabled
+0.00.229.403 D done_getting_tensors: tensor 'token_embd.weight' (q8_0) (and 121 others) cannot be used with preferred buffer type CPU_KLEIDIAI, using CPU instead
+0.00.229.469 I load_tensors: CPU_KLEIDIAI model buffer size =     0.00 MiB
+0.00.234.255 I common_memory_breakdown_print: |   - CPU_KLEIDIAI       |                  500 =   500 +       0 +       0                |
+0.00.478.517 D done_getting_tensors: tensor 'token_embd.weight' (q8_0) (and 121 others) cannot be used with preferred buffer type CPU_KLEIDIAI, using CPU instead
+0.00.497.877 I load_tensors: CPU_KLEIDIAI model buffer size =   500.52 MiB
+0.02.732.398 I common_memory_breakdown_print: |   - CPU_KLEIDIAI       |                  500 =   500 +       0 +       0                |

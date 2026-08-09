@@ -2,8 +2,9 @@
 
 Paste-ready copy only. Every number below is sourced from `docs/CLAIMS.md`'s registry (which in
 turn cites `results/REMEASURE-2026-08-04-QUIET.md`, `results/AUTODEFAULTS.md`,
-`results/scale/scale-experiment.json`, `results/server/`, `docs/PRODUCT.md`, `README.md`, and
-`docs/RELATED-WORK.md`) in this repository. Run `python3 tools/check_claims.py` before pasting —
+`results/scale/scale-experiment.json`, `results/server/`, `results/production-readiness/`,
+`docs/PRODUCT.md`, `README.md`, and `docs/RELATED-WORK.md`) in this repository. Run
+`python3 tools/check_claims.py` before pasting —
 it fails the build on any number here that drifts from that registry.
 
 > **Renamed 2026-08-04.** This project shipped the challenge as `arm-dispatch-ledger`; the repo has
@@ -110,6 +111,17 @@ first run: the claims gate's ratio extractor was silently skipping the unicode `
 `N.NN×` figure in this repo's own prose was going unpoliced — and an artifact-lookup helper was
 not honoring its documented preference for unversioned library names. Both fixed in the same
 commit (`CHANGELOG.md`). A verification tool should be the most verified thing in the room.
+
+The free Arm64 lane now also includes a manual, explicit server-readiness campaign rather than
+ending at microbenchmarks. `tools/server_readiness.py` starts the pinned `llama-server`, drives
+mixed short-chat/RAG/summary traffic through concurrency 1/2/4 capacity points and a 10-minute
+concurrency-4 soak, records streamed TTFT and end-to-end latency plus token usage for every request,
+samples server RSS/load/thermal telemetry once per second, and performs two controlled restart
+cycles with canary requests. Run `31294460364` completed 1,543 measured requests with 0 failures;
+soak TTFT p99 was 748.46 ms, E2E p99 was 1,924.57 ms, and maximum RSS was 1,869.69 MiB. All 10
+configured checks passed. The complete artifact and workflow receipt are committed under
+`results/production-readiness/arm64-31294460364/`, while the summary still says
+`actualProductionTraffic:false` and `productionReady:false`.
 
 ### A claims registry that fails CI on drift, not just on invention
 
@@ -379,6 +391,11 @@ the benchmark sweep, and publishes `results/LEDGER.md` as the job summary plus a
 `results/` artifact. (Finding 2 is expected — and marked `continue-on-error` — on this runner:
 Neoverse-N2's SVE2 is also below the 256-bit gate the finding describes.)
 
+A manual workflow dispatch also runs the longer `server-readiness` job: pinned 1.5B Q4_0 model,
+capacity sweep, 10-minute sustained load, full request/telemetry retention, explicit SLO checks,
+and two restart cycles. The exact successful receipt and raw output are in
+`results/production-readiness/arm64-31294460364/`.
+
 To run the identical pipeline locally on any `aarch64` Linux box:
 
 ```bash
@@ -448,6 +465,11 @@ against.
 - **The `0001` phase-aware dispatch patch is a measured regression, not a win** (~12% slower at
   default thread count) — reported honestly as a negative result, not offered as a performance
   improvement. Only `0002` (the auto-defaults patch) is claimed as a genuine speedup.
+- **The Arm64 readiness PASS is not a production-ready claim.** It is a synthetic single-host run
+  on a free four-core Arm64 runner with a 1.5B model. It covers sustained mixed traffic, request
+  accounting, latency/RSS limits, and controlled process recovery, but not live customer traffic,
+  multi-day availability, host/network failover, multi-tenant isolation, or application-specific
+  output correctness. The artifact itself keeps `productionReady:false`.
 - **Most of the headline 3.43x decode number is not an SME2 discovery.** A decomposition sweep
   shows 3.95x of it is thread-oversubscription avoidance alone (SME2 forced off), a well-documented
   Apple Silicon effect this project did not discover; SME2's own contribution at the tuned thread

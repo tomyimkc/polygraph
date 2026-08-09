@@ -1,0 +1,110 @@
+{
+  "actualProductionTraffic": false,
+  "candidateOnly": true,
+  "checks": {
+    "allMeasuredOutputsNonEmpty": true,
+    "allMeasuredUsagePresent": true,
+    "allRestartsSuccessful": true,
+    "allWorkflowJobsSuccessful": true,
+    "measuredFailureRows": 0,
+    "measuredRows": 1543,
+    "measuredRowsMatchSummary": true,
+    "measuredSuccessRows": 1543,
+    "originalArtifactChecksums": true,
+    "originalArtifactFilesChecked": 5,
+    "restartCycles": 2,
+    "summaryActualProductionTraffic": false,
+    "summaryContestEvidenceCandidate": true,
+    "summaryGateVerdict": "PASS",
+    "summaryProductionReady": false,
+    "telemetryMaxRssMatchesGate": true,
+    "telemetryMaxRssMiB": 1869.6875,
+    "telemetryRows": 699,
+    "warmupRows": 11,
+    "warmupRowsMatchSummary": true,
+    "workflowConclusion": "success"
+  },
+  "contestMatrix": {
+    "qwen2.5-0.5b-q4_0": {
+      "allL3Available": true,
+      "allL3Completed": true,
+      "cloudBudgetHit": false,
+      "cloudPartialCells": [],
+      "cloudRepsRequested": 5,
+      "cloudRows": 6,
+      "cloudSkippedCells": [],
+      "dispatchConfigs": 6,
+      "dispatchVerdicts": [
+        "I8MM_HYBRID_DISPATCH"
+      ],
+      "modelBytes": 428730208,
+      "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed"
+    },
+    "qwen2.5-0.5b-q8_0": {
+      "allL3Available": true,
+      "allL3Completed": true,
+      "cloudBudgetHit": false,
+      "cloudPartialCells": [],
+      "cloudRepsRequested": 5,
+      "cloudRows": 6,
+      "cloudSkippedCells": [],
+      "dispatchConfigs": 6,
+      "dispatchVerdicts": [
+        "I8MM_HYBRID_DISPATCH"
+      ],
+      "modelBytes": 675710816,
+      "modelSha256": "ca59ca7f13d0e15a8cfa77bd17e65d24f6844b554a7b6c12e07a5f89ff76844e"
+    },
+    "qwen2.5-1.5b-q4_0": {
+      "allL3Available": true,
+      "allL3Completed": true,
+      "cloudBudgetHit": false,
+      "cloudPartialCells": [],
+      "cloudRepsRequested": 5,
+      "cloudRows": 6,
+      "cloudSkippedCells": [],
+      "dispatchConfigs": 6,
+      "dispatchVerdicts": [
+        "I8MM_HYBRID_DISPATCH"
+      ],
+      "modelBytes": 1066227232,
+      "modelSha256": "dcd819ff094852c38faba6873d8ff0c9d51eadb2844539e52042ae5d647bbfdb"
+    }
+  },
+  "headSha": "97f1c210dc0e3435d04f8082a362e291d409a261",
+  "originalArtifactManifest": [
+    {
+      "actual": "e184d886cc6e18bd4765abb9ed21bea65ff5decd042557d7b0483bb01c215132",
+      "expected": "e184d886cc6e18bd4765abb9ed21bea65ff5decd042557d7b0483bb01c215132",
+      "passed": true,
+      "path": "llama-server.log"
+    },
+    {
+      "actual": "07231461030f55343c72b5caffb925827f4cd9a5bce7f52c8728f7bd5d01e14d",
+      "expected": "07231461030f55343c72b5caffb925827f4cd9a5bce7f52c8728f7bd5d01e14d",
+      "passed": true,
+      "path": "measured-requests.jsonl"
+    },
+    {
+      "actual": "5c7ce13c8e8ed936a260174c89c31bc708cb8985c22f66ab45c7c1a94a9c9920",
+      "expected": "5c7ce13c8e8ed936a260174c89c31bc708cb8985c22f66ab45c7c1a94a9c9920",
+      "passed": true,
+      "path": "summary.json"
+    },
+    {
+      "actual": "8a96aa468af34aa2263abe4e292a8dabb75bb468100fffa8850f229223a886b7",
+      "expected": "8a96aa468af34aa2263abe4e292a8dabb75bb468100fffa8850f229223a886b7",
+      "passed": true,
+      "path": "telemetry.csv"
+    },
+    {
+      "actual": "f655c9ba98345e290b72ecda413979e6d723763a88e929b4c7b94423dd8a7e98",
+      "expected": "f655c9ba98345e290b72ecda413979e6d723763a88e929b4c7b94423dd8a7e98",
+      "passed": true,
+      "path": "warmup-requests.jsonl"
+    }
+  ],
+  "productionReady": false,
+  "runId": 31294460364,
+  "schema": "polygraph.arm64-evidence-validation.v1"
+}

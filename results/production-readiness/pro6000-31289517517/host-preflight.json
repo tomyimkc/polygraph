@@ -1,0 +1,57 @@
+{
+  "status": "completed",
+  "startedAt": "2026-08-09T02:03:23.236161Z",
+  "completedAt": "2026-08-09T02:03:26.186291Z",
+  "arch": "x86_64",
+  "gpu": {
+    "index": 0,
+    "name": "NVIDIA RTX PRO 6000 Blackwell Workstation Edition",
+    "totalVramMiB": 97887,
+    "freeVramMiB": 96615,
+    "totalVramGiB": 95.59,
+    "freeVramGiB": 94.35
+  },
+  "cudaRuntime": {
+    "torchVersion": "2.11.0+cu130",
+    "cudaVersion": "13.0",
+    "deviceName": "NVIDIA RTX PRO 6000 Blackwell Workstation Edition",
+    "capability": [
+      12,
+      0
+    ]
+  },
+  "disk": {
+    "path": "/workspace/hf",
+    "totalGiB": 2603.0,
+    "freeGiB": 959.89
+  },
+  "docker": {
+    "serverVersion": "29.6.1",
+    "image": "python:3.12-slim",
+    "containerRun": "ok"
+  },
+  "model": {
+    "modelId": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+    "modelType": "qwen3_moe",
+    "architectures": [
+      "Qwen3MoeForCausalLM"
+    ],
+    "parameterCount": 30532122624,
+    "minimumParameterCount": 30000000000,
+    "toolTemplateRendered": true,
+    "toolParser": "hermes",
+    "resolvedRevision": "0d7cf23991f47feeb3a57ecb4c9cee8ea4a17bfe",
+    "reviewedPublicModel": true,
+    "publicNoTokenLoad": true
+  },
+  "capacity": {
+    "estimatedWeightGiB": 56.87,
+    "requiredFreeVramGiB": 73.4,
+    "requiredFreeDiskGiB": 115.31,
+    "gpuMemoryUtilization": 0.9,
+    "configuredVllmBudgetGiB": 86.03,
+    "effectiveAvailableVramGiB": 86.03
+  },
+  "candidateOnly": true,
+  "canClaimAGI": false
+}

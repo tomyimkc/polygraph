@@ -1,0 +1,73 @@
+{
+  "schema": "polygraph.production-shaped-serving.v1",
+  "generatedAtUtc": "2026-08-09T02:34:34.083157Z",
+  "dataClass": "self-run-production-shaped-synthetic-traffic",
+  "actualProductionTraffic": false,
+  "armContestEvidence": false,
+  "claimBoundary": "Production-shaped serving control on the owned x86_64/CUDA Pro 6000. This is not real customer traffic and cannot validate Arm/KleidiAI dispatch.",
+  "model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "modelRevision": "0d7cf23991f47feeb3a57ecb4c9cee8ea4a17bfe",
+  "baseUrl": "http://127.0.0.1:8110/v1",
+  "seed": 20260810,
+  "concurrencies": [
+    8
+  ],
+  "durationSecondsPerConcurrency": 900.0,
+  "warmupSecondsPerConcurrency": 60.0,
+  "timeoutSeconds": 900.0,
+  "traffic": [
+    {
+      "name": "short-chat",
+      "weightPercent": 50,
+      "approximateInputWords": 110,
+      "maxOutputTokens": 64,
+      "instruction": "Answer as a concise technical assistant. Identify the most likely cause, give three diagnostic steps, and finish with one verification command."
+    },
+    {
+      "name": "rag-question",
+      "weightPercent": 35,
+      "approximateInputWords": 760,
+      "maxOutputTokens": 128,
+      "instruction": "Use the supplied operational notes to write an evidence-grounded incident summary. Separate observations, inference, and recommended next actions."
+    },
+    {
+      "name": "long-summary",
+      "weightPercent": 15,
+      "approximateInputWords": 3000,
+      "maxOutputTokens": 256,
+      "instruction": "Summarize the supplied engineering record for a release review. Preserve limitations, provenance, failed attempts, and concrete follow-up actions."
+    }
+  ],
+  "corpusSha256": "e88028c78ee3247b5bada8b95cb1883101f55c4dcbf3c2699f7afbfd4b6da9a0",
+  "host": {
+    "hostname": "user-System-Product-Name",
+    "platform": "Linux-7.0.0-28-generic-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "kernel": "7.0.0-28-generic",
+    "python": "3.12.3",
+    "cpuModel": "AMD Ryzen 9 9950X 16-Core Processor",
+    "gpu": {
+      "name": "NVIDIA RTX PRO 6000 Blackwell Workstation Edition",
+      "uuid": "GPU-8cfe9244-1717-6a32-51e7-29fa37aa16b7",
+      "driver_version": "595.84",
+      "utilization_gpu": 100.0,
+      "utilization_memory": 81.0,
+      "memory_used": 89444.0,
+      "memory_total": 97887.0,
+      "power_draw": 453.9,
+      "temperature_gpu": 81.0,
+      "clocks_sm": 2827.0
+    },
+    "serverPid": 3764055
+  },
+  "github": {
+    "repository": "tomyimkc/sophia-agi",
+    "runId": "31289517517",
+    "runAttempt": "1",
+    "ref": "feat/polygraph-pro6000-production",
+    "sha": "79bf3d1019b38806e22fb6f4940749e9441a555b"
+  },
+  "candidateOnly": true,
+  "registeredResult": false,
+  "canClaimAGI": false
+}

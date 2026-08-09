@@ -1,0 +1,156 @@
+{
+  "meta": {
+    "platform": "aarch64",
+    "lane": "verify-free-arm64 (GitHub-hosted ubuntu-24.04-arm, Neoverse-N2 class)",
+    "model_id": "qwen2.5-0.5b-instruct-q8_0.gguf",
+    "model_path": "/home/runner/work/_temp/adl-cache/models/qwen2.5-0.5b-instruct-q8_0.gguf",
+    "llama_bench": "/home/runner/work/_temp/adl-cache/llama.cpp/build/bin/llama-bench",
+    "threads_swept": [
+      1,
+      2,
+      4
+    ],
+    "phases_swept": {
+      "decode": [
+        0,
+        32
+      ],
+      "prefill": [
+        128,
+        0
+      ]
+    },
+    "reps_requested": 5,
+    "generated_at": "2026-08-09T04:29:03Z",
+    "sweep_wall_seconds": 83.0,
+    "budget_secs": 240,
+    "budget_hit": false,
+    "skipped_cells": [],
+    "partial_cells": [],
+    "protocol": "Round-robin interleaved across (phase, threads): one pass over every cell per round, one llama-bench call per cell per round (-r 1, warmup enabled and discarded), never all reps of one cell before another. Median/stddev/min/max computed across rounds -- never a bare mean. This is a NEON/i8mm-only platform (Neoverse-N2's SVE2 is 128-bit, below KleidiAI's 256-bit SVE dispatch gate, and it has no SME2 at all -- see results/GROUND-TRUTH-DISPATCH.md, Finding 2), so these are cloud-class Arm64 baseline throughput and thread-scaling numbers, never framed as an SME2 result.",
+    "candidateOnly": true,
+    "canClaimAGI": false
+  },
+  "rows": [
+    {
+      "phase": "decode",
+      "n_prompt": 0,
+      "n_gen": 32,
+      "threads": 1,
+      "agg": {
+        "n": 5,
+        "median_ts": 40.9799,
+        "stddev_ts": 0.5330542871040437,
+        "min_ts": 40.0996,
+        "max_ts": 41.5414,
+        "samples_ts": [
+          40.8987,
+          40.9799,
+          41.5414,
+          41.1957,
+          40.0996
+        ]
+      }
+    },
+    {
+      "phase": "decode",
+      "n_prompt": 0,
+      "n_gen": 32,
+      "threads": 2,
+      "agg": {
+        "n": 5,
+        "median_ts": 73.3571,
+        "stddev_ts": 1.1267090028041855,
+        "min_ts": 72.7048,
+        "max_ts": 75.4753,
+        "samples_ts": [
+          73.8606,
+          72.7996,
+          75.4753,
+          73.3571,
+          72.7048
+        ]
+      }
+    },
+    {
+      "phase": "decode",
+      "n_prompt": 0,
+      "n_gen": 32,
+      "threads": 4,
+      "agg": {
+        "n": 5,
+        "median_ts": 126.679,
+        "stddev_ts": 21.528433162494665,
+        "min_ts": 79.6429,
+        "max_ts": 130.204,
+        "samples_ts": [
+          124.086,
+          129.016,
+          79.6429,
+          130.204,
+          126.679
+        ]
+      }
+    },
+    {
+      "phase": "prefill",
+      "n_prompt": 128,
+      "n_gen": 0,
+      "threads": 1,
+      "agg": {
+        "n": 5,
+        "median_ts": 228.573,
+        "stddev_ts": 0.1701640385040248,
+        "min_ts": 228.451,
+        "max_ts": 228.815,
+        "samples_ts": [
+          228.466,
+          228.451,
+          228.573,
+          228.815,
+          228.773
+        ]
+      }
+    },
+    {
+      "phase": "prefill",
+      "n_prompt": 128,
+      "n_gen": 0,
+      "threads": 2,
+      "agg": {
+        "n": 5,
+        "median_ts": 410.719,
+        "stddev_ts": 0.536311756350725,
+        "min_ts": 409.81,
+        "max_ts": 410.962,
+        "samples_ts": [
+          409.81,
+          410.719,
+          410.773,
+          409.899,
+          410.962
+        ]
+      }
+    },
+    {
+      "phase": "prefill",
+      "n_prompt": 128,
+      "n_gen": 0,
+      "threads": 4,
+      "agg": {
+        "n": 5,
+        "median_ts": 684.272,
+        "stddev_ts": 0.3866044490173509,
+        "min_ts": 683.542,
+        "max_ts": 684.446,
+        "samples_ts": [
+          684.272,
+          684.388,
+          683.867,
+          684.446,
+          683.542
+        ]
+      }
+    }
+  ]
+}

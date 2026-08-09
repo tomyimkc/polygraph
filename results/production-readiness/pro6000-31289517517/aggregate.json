@@ -1,0 +1,133 @@
+{
+  "schema": "polygraph.production-shaped-serving.aggregate.v1",
+  "runId": "31289517517",
+  "runAttempt": 1,
+  "artifactId": 9031433314,
+  "artifactName": "skill-lift-pro6000-polygraph-production-31289517517-1",
+  "gitSha": "79bf3d1019b38806e22fb6f4940749e9441a555b",
+  "workflowStartedAtUtc": "2026-08-09T02:03:05Z",
+  "workflowCompletedAtUtc": "2026-08-09T02:50:57Z",
+  "model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "modelRevision": "0d7cf23991f47feeb3a57ecb4c9cee8ea4a17bfe",
+  "runtime": {
+    "vllm": "0.25.1",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0",
+    "gpu": "NVIDIA RTX PRO 6000 Blackwell Workstation Edition",
+    "totalVramGiB": 95.59,
+    "vllmGpuMemoryUtilization": 0.9
+  },
+  "workload": {
+    "trafficMixPercent": {
+      "short-chat": 50,
+      "rag-question": 35,
+      "long-summary": 15
+    },
+    "capacityConcurrencies": [
+      1,
+      4,
+      8,
+      16
+    ],
+    "capacityWarmupSecondsPerPoint": 60,
+    "capacityMeasuredSecondsPerPoint": 300,
+    "soakConcurrency": 8,
+    "soakWarmupSeconds": 60,
+    "soakMeasuredSeconds": 900
+  },
+  "totals": {
+    "measuredRequests": 7573,
+    "measuredSuccesses": 7573,
+    "measuredFailures": 0,
+    "warmupRequests": 1071,
+    "warmupFailures": 0,
+    "promptTokens": 7633442,
+    "completionTokens": 866560,
+    "usageMissingRequests": 0
+  },
+  "results": [
+    {
+      "phase": "capacity",
+      "concurrency": 1,
+      "requests": 391,
+      "errorRate": 0.0,
+      "requestsPerSecond": 1.3019,
+      "outputTokensPerSecond": 150.87,
+      "ttftP95Ms": 118.64,
+      "e2eP95Ms": 1736.21,
+      "gpuTemperatureMeanC": 69.97,
+      "gpuTemperatureMaxC": 79.0,
+      "gpuPowerMeanW": 398.18,
+      "gpuPowerMaxW": 429.24
+    },
+    {
+      "phase": "capacity",
+      "concurrency": 4,
+      "requests": 822,
+      "errorRate": 0.0,
+      "requestsPerSecond": 2.7214,
+      "outputTokensPerSecond": 309.14,
+      "ttftP95Ms": 137.87,
+      "e2eP95Ms": 3368.91,
+      "gpuTemperatureMeanC": 76.8,
+      "gpuTemperatureMaxC": 83.0,
+      "gpuPowerMeanW": 453.08,
+      "gpuPowerMaxW": 518.44
+    },
+    {
+      "phase": "capacity",
+      "concurrency": 8,
+      "requests": 1173,
+      "errorRate": 0.0,
+      "requestsPerSecond": 3.8808,
+      "outputTokensPerSecond": 445.5,
+      "ttftP95Ms": 173.09,
+      "e2eP95Ms": 4654.75,
+      "gpuTemperatureMeanC": 80.18,
+      "gpuTemperatureMaxC": 87.0,
+      "gpuPowerMeanW": 486.48,
+      "gpuPowerMaxW": 529.16
+    },
+    {
+      "phase": "capacity",
+      "concurrency": 16,
+      "requests": 1721,
+      "errorRate": 0.0,
+      "requestsPerSecond": 5.6693,
+      "outputTokensPerSecond": 639.23,
+      "ttftP95Ms": 252.99,
+      "e2eP95Ms": 6470.91,
+      "gpuTemperatureMeanC": 82.8,
+      "gpuTemperatureMaxC": 88.0,
+      "gpuPowerMeanW": 515.72,
+      "gpuPowerMaxW": 598.51
+    },
+    {
+      "phase": "soak",
+      "concurrency": 8,
+      "requests": 3466,
+      "errorRate": 0.0,
+      "requestsPerSecond": 3.8396,
+      "outputTokensPerSecond": 442.19,
+      "ttftP95Ms": 152.15,
+      "ttftP99Ms": 188.76,
+      "e2eP95Ms": 4682.1,
+      "e2eP99Ms": 4803.99,
+      "gpuTemperatureMeanC": 80.95,
+      "gpuTemperatureMaxC": 87.0,
+      "gpuPowerMeanW": 489.23,
+      "gpuPowerMaxW": 546.54
+    }
+  ],
+  "provisionalOperatingPoint": {
+    "concurrency": 8,
+    "reason": "Stable 15-minute soak with zero errors and throughput within about one percent of the five-minute capacity point; final selection still depends on the application SLO.",
+    "conservativeAlternative": 4,
+    "throughputOnlyPoint": 16
+  },
+  "actualProductionTraffic": false,
+  "armContestEvidence": false,
+  "candidateOnly": true,
+  "registeredResult": false,
+  "canClaimAGI": false
+}
