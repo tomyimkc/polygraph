@@ -61,7 +61,7 @@
       "readinessRestartCycles": 1,
       "replayRequestsPerArm": 8,
       "replayRestartCycles": 1,
-      "maxTokens": 12,
+      "maxTokens": 64,
       "requestTimeoutSeconds": 60,
       "readyTimeoutSeconds": 120,
       "minMeasuredRequestsPerArmRun": 1
@@ -80,7 +80,7 @@
       "readinessRestartCycles": 2,
       "replayRequestsPerArm": 18,
       "replayRestartCycles": 2,
-      "maxTokens": 24,
+      "maxTokens": 64,
       "requestTimeoutSeconds": 60,
       "readyTimeoutSeconds": 120,
       "minMeasuredRequestsPerArmRun": 50
