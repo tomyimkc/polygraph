@@ -1,0 +1,50 @@
+{
+  "actualProductionTraffic": false,
+  "aggregateMeasuredSoakSeconds": 8.0,
+  "boundary": "Aggregate duration sums independent same-runner paired synthetic segments. It is not continuous availability, actual production traffic, tenant isolation, deployment authorization, or production readiness.",
+  "candidateOnly": true,
+  "deploymentAuthorized": false,
+  "expectedShardIds": [
+    1
+  ],
+  "llamaCppSha": "dbadb68eecdfb3ab0e86872d011738fc937f0364",
+  "longestContinuousSoakSegmentSeconds": 4.0,
+  "model": {
+    "license": "apache-2.0",
+    "modelId": "qwen2.5-1.5b-q4_0",
+    "sha256": "dcd819ff094852c38faba6873d8ff0c9d51eadb2844539e52042ae5d647bbfdb"
+  },
+  "productionReady": false,
+  "profile": "smoke",
+  "schema": "polygraph.production-campaign.aggregate.v1",
+  "shards": [
+    {
+      "aggregateMeasuredSoakSeconds": 8.0,
+      "gateVerdict": "PASS",
+      "longestContinuousSoakSegmentSeconds": 4.0,
+      "receiptSha256": "a5023f881545c9c9c6e8464b024e221d7209eb8a2404d7259c06090f6f06894b",
+      "rollbackVerdict": "KEEP_CANDIDATE",
+      "sameArtifactControl": true,
+      "shardId": 1,
+      "traceDigests": {
+        "baseline": [
+          "23ec79ad0eb6774a65b0faf5b3cf7e5c600b56a4945852cce88cd4bd69add0fb"
+        ],
+        "candidate": [
+          "23ec79ad0eb6774a65b0faf5b3cf7e5c600b56a4945852cce88cd4bd69add0fb"
+        ]
+      }
+    }
+  ],
+  "source": {
+    "ref": "refs/heads/main",
+    "repository": "tomyimkc/polygraph",
+    "sha": "5833ff20f503d126a8654f127419ed1e27ce2f5d"
+  },
+  "tenantIsolationClaimed": false,
+  "workflow": {
+    "path": ".github/workflows/verify-production-arm64.yml",
+    "runAttempt": "1",
+    "runId": "31312308726"
+  }
+}

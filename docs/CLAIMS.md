@@ -238,6 +238,21 @@ Tier 2 "some JSON leaf has this value" fallback.
 The artifact is deliberately not registered as proof of production readiness. Its source JSON
 retains `actualProductionTraffic:false`, `productionReady:false`, and `candidateOnly:true`.
 
+## New in this update: same-artifact long Arm64 campaign (2026-08-09)
+
+`results/production-readiness/arm64-campaign-31312308726-31312723300/` preserves the workflow
+aggregate, complete strict shard receipts, workflow/artifact API metadata, and an independent
+external validation for smoke run `31312308726` and long run `31312723300`.
+
+The long campaign's headline request count and duration fields are registered below against exact
+paths in `long-validation-receipt.json`. The 36,000-second duration is an aggregate across four
+independent segments on two parallel shards; `longestContinuousSoakSegmentSeconds` is 9,000
+seconds, or 2.5 hours. The baseline/candidate labels used identical server and model artifacts, so
+no optimization or uplift is registered.
+
+The source receipts retain `actualProductionTraffic:false`, `productionReady:false`,
+`candidateOnly:true`, `deploymentAuthorized:false`, and `tenantIsolationClaimed:false`.
+
 ## The registry
 
 <!-- CLAIMS-REGISTRY:BEGIN -->
@@ -1330,6 +1345,47 @@ retains `actualProductionTraffic:false`, `productionReady:false`, and `candidate
       "source_file": "results/production-readiness/arm64-31294460364/summary.json",
       "source_json_path": "gate.checks[8].observed",
       "note": "Slower of the two controlled Arm64 restart-readiness measurements in seconds"
+    },
+    {
+      "id": "arm64-long-combined-measured-requests",
+      "value_text": "79684",
+      "source_file": "results/production-readiness/arm64-campaign-31312308726-31312723300/long-validation-receipt.json",
+      "source_json_path": "totals.combinedMeasuredRequests",
+      "aliases": [
+        "79,684"
+      ],
+      "note": "Combined measured baseline and candidate requests across both long Arm64 shards"
+    },
+    {
+      "id": "arm64-long-aggregate-measured-seconds",
+      "value_text": "36000",
+      "source_file": "results/production-readiness/arm64-campaign-31312308726-31312723300/long-validation-receipt.json",
+      "source_json_path": "durations.aggregateMeasuredSoakSeconds",
+      "aliases": [
+        "36,000"
+      ],
+      "note": "Aggregate measured duration across four independent baseline/candidate segments on two shards"
+    },
+    {
+      "id": "arm64-long-longest-continuous-segment-seconds",
+      "value_text": "9000",
+      "source_file": "results/production-readiness/arm64-campaign-31312308726-31312723300/long-validation-receipt.json",
+      "source_json_path": "durations.longestContinuousSoakSegmentSeconds",
+      "aliases": [
+        "9,000"
+      ],
+      "note": "Longest continuous measured segment in the long campaign"
+    },
+    {
+      "id": "arm64-long-longest-continuous-segment-hours",
+      "value_text": "2.5",
+      "source_file": "results/production-readiness/arm64-campaign-31312308726-31312723300/long-validation-receipt.json",
+      "note": "Longest continuous measured segment converted from 9000 seconds to hours",
+      "compute": {
+        "op": "ratio",
+        "numerator": 9000,
+        "denominator": 3600
+      }
     }
   ]
 }

@@ -58,7 +58,10 @@ Exit codes are contractual, so CI can depend on them: **`0`** what was advertise
 3. Inspect the Arm64 readiness
    [`summary.json`](results/production-readiness/arm64-31294460364/summary.json) and adjacent
    validation/workflow receipts.
-4. Run `python3 tools/check_claims.py` to verify that judge-facing numbers still resolve to their
+4. Inspect the same-artifact long campaign
+   [`long-validation-receipt.json`](results/production-readiness/arm64-campaign-31312308726-31312723300/long-validation-receipt.json)
+   and its aggregate/shard receipts.
+5. Run `python3 tools/check_claims.py` to verify that judge-facing numbers still resolve to their
    committed evidence.
 
 The Arm64 server result is a contest-ready, production-shaped **synthetic evidence candidate**.
@@ -108,6 +111,7 @@ Every row below cites the raw JSON it came from — nothing here is estimated or
 | A second, independent silent fallback: decode never dispatches SME2 above 2 threads | banner still says `SME2`; real dispatch is 0 SME2 hits vs 31,871 NEON hits (8 threads) | [`results/dispatch-ledger-darwin-arm64.json`](results/dispatch-ledger-darwin-arm64.json) |
 | What attaching a debugger to prove this actually costs | **3.63x** wall-clock overhead (1.2056s → 4.379s) for a dispatch count reproducible at 15,936 hits across all 5 runs | [`results/pmu/pmu-crosscheck.json`](results/pmu/pmu-crosscheck.json) |
 | Automated Arm64 server-readiness campaign | 1,543 measured requests, 0 failures, a 10-minute concurrency-4 soak, and 2 clean restart cycles; all 10 configured checks passed | [`results/production-readiness/arm64-31294460364/summary.json`](results/production-readiness/arm64-31294460364/summary.json) |
+| Same-artifact Arm64 temporal-control campaign | 79,684 measured requests, 0 measured failures, 36,000 aggregate measured seconds across 2 shards, and a 9,000-second longest continuous segment; both shards returned `PASS` / `KEEP_CANDIDATE` | [`results/production-readiness/arm64-campaign-31312308726-31312723300/long-validation-receipt.json`](results/production-readiness/arm64-campaign-31312308726-31312723300/long-validation-receipt.json) |
 | This project's own past mistake | a **+57.3%** win for a patch was published, then **publicly retracted** — it came from measuring baseline and patched configs in different, unevenly-contended time windows | [`results/REMEASURE-2026-08-04-QUIET.md`](results/REMEASURE-2026-08-04-QUIET.md) |
 
 The rest of this document is the full paper trail: how L1/L2/L3 verification works, every
@@ -152,7 +156,7 @@ about most of them.
 |---|---|---:|---|---|
 | Apple M4 Max (macOS) | Laptop/desktop SoC | 16 | SME2 | Finding 1, the Apple M4 Max measured results, the optimization + patch |
 | Cortex-X925 / DGX Spark | Server-class Arm, Armv9.2 | 20 | SVE2 (128-bit) → I8MM/DOTPROD | Finding 2 (now dispatch-confirmed), Finding 3, the Cloud AI server lane |
-| Neoverse-N2 | Free, judge-reproducible CI (`ubuntu-24.04-arm`) | 4 | SVE2 (128-bit) → I8MM/DOTPROD | Finding 2's zero-cost judge-reproducible lane plus a mixed-traffic `llama-server` capacity sweep, 10-minute soak, and controlled restart evidence (`.github/workflows/verify-free-arm64.yml`) |
+| Neoverse-N2 | Free, judge-reproducible CI (`ubuntu-24.04-arm`) | 4 | SVE2 (128-bit) → I8MM/DOTPROD | Finding 2's zero-cost judge-reproducible lane, a mixed-traffic `llama-server` capacity/soak/restart run, and a two-shard same-artifact temporal-control campaign |
 
 ---
 
@@ -513,6 +517,20 @@ candidate, not a claim of multi-day availability, failover, tenant isolation, or
 correctness. The complementary 30B RTX PRO 6000 campaign is preserved beside it as larger-model
 systems evidence, explicitly marked as non-Arm:
 [`results/production-readiness/`](results/production-readiness/).
+
+A separate main-only campaign at source commit
+`5833ff20f503d126a8654f127419ed1e27ce2f5d` paired the exact same `llama-server` and model
+artifacts under baseline/candidate temporal labels on two independent Arm64 shards. Long run
+`31312723300` completed 79,684 measured requests with 0 measured failures. Both shards returned
+`PASS` / `KEEP_CANDIDATE`, retained identical paired synthetic trace digests, and preserved
+`deploymentAuthorized:false`.
+
+The duration is deliberately precise: 36,000 aggregate measured seconds (**10 aggregate hours**)
+sum four independent 9,000-second segments across the two parallel shards. The longest continuous
+segment is 9,000 seconds (**2.5 hours**); this is not 10 continuous hours. Because the labels used
+the same binary and model, no optimization or uplift is claimed. The committed aggregate, shard,
+workflow, and independent validation receipts are under
+[`results/production-readiness/arm64-campaign-31312308726-31312723300/`](results/production-readiness/arm64-campaign-31312308726-31312723300/).
 
 ---
 
@@ -985,9 +1003,11 @@ whose remaining numbers you can spend less time second-guessing.
   the sweep and is not smoothed over in the readings above.
 - **The automated Arm64 readiness PASS is synthetic and single-host.** It adds a 1.5B model,
   1,543 measured requests, a 10-minute sustained phase, explicit latency/RSS gates, and two clean
-  restart cycles on free hosted Arm64. It does not establish live production traffic, multi-day
-  availability, failover during faults, multi-tenant isolation, or application correctness; its
-  own `summary.json` therefore retains `productionReady:false`.
+  restart cycles on free hosted Arm64. The supplementary same-artifact campaign adds 79,684
+  measured requests and 10 aggregate measured hours, but its longest continuous segment is only
+  2.5 hours. Neither establishes live production traffic, multi-day continuous availability,
+  host/network failover, multi-tenant isolation, or application correctness; their authoritative
+  receipts therefore retain `productionReady:false`.
 - **Finding 3's build-flag diagnosis is one gcc/toolchain combination.** It was diagnosed and fixed
   against `gcc 13.3.0` on Ubuntu 24.04 aarch64 (`results/server/spark-provenance.txt`); whether the
   same `-mcpu=native+<feature>` probe failure reproduces on other gcc versions, `clang`, or other Arm

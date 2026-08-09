@@ -1,0 +1,325 @@
+{
+  "actualProductionTraffic": false,
+  "artifacts": {
+    "baseline": {
+      "model": {
+        "exists": true,
+        "isFile": true,
+        "isSymlink": false,
+        "path": "/home/runner/work/_temp/polygraph-production-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf",
+        "resolvedPath": "/home/runner/work/_temp/polygraph-production-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf",
+        "sha256": "dcd819ff094852c38faba6873d8ff0c9d51eadb2844539e52042ae5d647bbfdb",
+        "sizeBytes": 1066227232
+      },
+      "server": {
+        "exists": true,
+        "isFile": true,
+        "isSymlink": false,
+        "path": "/home/runner/work/_temp/polygraph-production-cache/llama-reviewed/build/bin/llama-server",
+        "resolvedPath": "/home/runner/work/_temp/polygraph-production-cache/llama-reviewed/build/bin/llama-server",
+        "sha256": "fca95795e760964bdf27768ca11e4220b99001eb7a5f095b178c1714ac483dea",
+        "sizeBytes": 72488
+      }
+    },
+    "candidate": {
+      "model": {
+        "exists": true,
+        "isFile": true,
+        "isSymlink": false,
+        "path": "/home/runner/work/_temp/polygraph-production-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf",
+        "resolvedPath": "/home/runner/work/_temp/polygraph-production-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf",
+        "sha256": "dcd819ff094852c38faba6873d8ff0c9d51eadb2844539e52042ae5d647bbfdb",
+        "sizeBytes": 1066227232
+      },
+      "server": {
+        "exists": true,
+        "isFile": true,
+        "isSymlink": false,
+        "path": "/home/runner/work/_temp/polygraph-production-cache/llama-reviewed/build/bin/llama-server",
+        "resolvedPath": "/home/runner/work/_temp/polygraph-production-cache/llama-reviewed/build/bin/llama-server",
+        "sha256": "fca95795e760964bdf27768ca11e4220b99001eb7a5f095b178c1714ac483dea",
+        "sizeBytes": 72488
+      }
+    }
+  },
+  "baseline": {
+    "actualProductionTraffic": false,
+    "candidateOnly": true,
+    "completedRuns": 1,
+    "configuredSoakSeconds": 9000.0,
+    "expectedInjectedErrors": 3,
+    "expectedRuns": 1,
+    "foreignSentinelLeaks": 0,
+    "infrastructureErrors": [],
+    "label": "reviewed-baseline",
+    "maxRestartRecoverySeconds": 1.520502970999587,
+    "measuredErrorRate": 0.0,
+    "measuredFailures": 0,
+    "measuredRequests": 20113,
+    "observedInjectedErrors": 3,
+    "ownSentinelMissingSuccesses": 0,
+    "productionReady": false,
+    "readinessGatePasses": 1,
+    "readinessSummaries": 1,
+    "replayGatePasses": 1,
+    "responseContractInvalidSuccesses": 0,
+    "soakE2eP99WorstMs": 2011.067159999999,
+    "soakOutputTokensPerSecondMedian": 53.35175514216907,
+    "soakTtftP99WorstMs": 707.9525999999996,
+    "tenantIsolationClaimed": false,
+    "traceDigests": [
+      "f2191307b0c9aac0b5120790275b17051c01356ca4feba1628753943e5ce2011"
+    ],
+    "unexpectedReplayErrors": 0
+  },
+  "boundary": "Synthetic single-host Arm64 candidate evidence only. No actual production traffic or PII is replayed. Per-label sentinel checks do not establish real multi-tenant isolation. A passing comparison does not authorize deployment or establish production readiness.",
+  "campaign": {
+    "aggregateMeasuredSoakSeconds": 18000.0,
+    "configuredTotalSoakSeconds": 18000.0,
+    "faultInjection": [
+      "controlled-process-restart",
+      "controlled-model-reload",
+      "load-generator-delay",
+      "load-generator-error"
+    ],
+    "longestContinuousSoakSegmentSeconds": 9000.0,
+    "repetitions": 1,
+    "shardId": 2,
+    "soakSecondsPerArmRun": 9000.0,
+    "trafficSource": "deterministic-generated-synthetic-only"
+  },
+  "candidate": {
+    "actualProductionTraffic": false,
+    "candidateOnly": true,
+    "completedRuns": 1,
+    "configuredSoakSeconds": 9000.0,
+    "expectedInjectedErrors": 3,
+    "expectedRuns": 1,
+    "foreignSentinelLeaks": 0,
+    "infrastructureErrors": [],
+    "label": "reviewed-temporal-candidate",
+    "maxRestartRecoverySeconds": 1.5290217469992058,
+    "measuredErrorRate": 0.0,
+    "measuredFailures": 0,
+    "measuredRequests": 20288,
+    "observedInjectedErrors": 3,
+    "ownSentinelMissingSuccesses": 0,
+    "productionReady": false,
+    "readinessGatePasses": 1,
+    "readinessSummaries": 1,
+    "replayGatePasses": 1,
+    "responseContractInvalidSuccesses": 0,
+    "soakE2eP99WorstMs": 1981.06468,
+    "soakOutputTokensPerSecondMedian": 53.80633195470269,
+    "soakTtftP99WorstMs": 739.23294,
+    "tenantIsolationClaimed": false,
+    "traceDigests": [
+      "f2191307b0c9aac0b5120790275b17051c01356ca4feba1628753943e5ce2011"
+    ],
+    "unexpectedReplayErrors": 0
+  },
+  "candidateOnly": true,
+  "completedAtUtc": "2026-08-09T17:21:12.227153+00:00",
+  "config": {
+    "claims": {
+      "actualProductionTraffic": false,
+      "candidateOnly": true,
+      "productionReady": false
+    },
+    "configSha256": "78709bb54f0bb199f7c9b2b450c9978e3c5af837852cc65e61c94ad9238b5022",
+    "modelIdentity": {
+      "hfFile": "qwen2.5-1.5b-instruct-q4_0.gguf",
+      "hfRepo": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+      "license": "apache-2.0",
+      "manifestLine": 39,
+      "manifestPath": "/home/runner/work/polygraph/polygraph/scripts/models.txt",
+      "manifestSha256": "09f82fb662f2196e65594c9ebde1d1e42fe74f684076ce07a4e5050342dfa996",
+      "modelId": "qwen2.5-1.5b-q4_0",
+      "sha256": "dcd819ff094852c38faba6873d8ff0c9d51eadb2844539e52042ae5d647bbfdb"
+    },
+    "profile": {
+      "capacityConcurrencies": [
+        1,
+        2,
+        4
+      ],
+      "capacitySecondsPerPoint": 20,
+      "maxTokens": 24,
+      "minMeasuredRequestsPerArmRun": 50,
+      "readinessRestartCycles": 2,
+      "readyTimeoutSeconds": 120,
+      "repetitions": 1,
+      "replayMaxTokens": 64,
+      "replayRequestsPerArm": 18,
+      "replayRestartCycles": 2,
+      "requestTimeoutSeconds": 60,
+      "soakConcurrency": 4,
+      "soakSecondsTotal": 18000,
+      "warmupRequestsPerWorker": 1
+    },
+    "profileName": "long",
+    "schema": "polygraph.production-readiness-config.v1",
+    "slo": {
+      "maxCandidateE2eRatio": 1.25,
+      "maxCandidateErrorRateDelta": 0.0,
+      "maxCandidateTtftRatio": 1.25,
+      "maxE2eP99Ms": 30000,
+      "maxForeignSentinelLeaks": 0,
+      "maxReadinessErrorRate": 0.0,
+      "maxRecoverySeconds": 120,
+      "maxReplayE2eP99Ms": 30000,
+      "maxReplayUnexpectedErrorRate": 0.0,
+      "maxRssMiB": 8192,
+      "maxTtftP99Ms": 5000,
+      "minCandidateThroughputRatio": 0.8
+    },
+    "source": "/home/runner/work/polygraph/polygraph/configs/production-readiness.json",
+    "syntheticTraffic": {
+      "delayEveryRequests": 3,
+      "delayMilliseconds": 25,
+      "errorEveryRequests": 5,
+      "errorHttpStatus": 503,
+      "seed": 20260809,
+      "tenantLabels": [
+        "synthetic-tenant-alpha",
+        "synthetic-tenant-beta",
+        "synthetic-tenant-gamma"
+      ]
+    }
+  },
+  "gate": {
+    "actualProductionTraffic": false,
+    "boundary": "KEEP_CANDIDATE means only that this synthetic candidate gate did not regress against its paired baseline. It is not deployment authorization or evidence of production readiness.",
+    "candidateOnly": true,
+    "checks": [
+      {
+        "limit": 1,
+        "name": "baseline-repetitions-complete",
+        "observed": 1,
+        "passed": true
+      },
+      {
+        "limit": 1,
+        "name": "candidate-repetitions-complete",
+        "observed": 1,
+        "passed": true
+      },
+      {
+        "limit": 1,
+        "name": "baseline-readiness-gates",
+        "observed": 1,
+        "passed": true
+      },
+      {
+        "limit": 1,
+        "name": "candidate-readiness-gates",
+        "observed": 1,
+        "passed": true
+      },
+      {
+        "limit": 1,
+        "name": "baseline-replay-gates",
+        "observed": 1,
+        "passed": true
+      },
+      {
+        "limit": 1,
+        "name": "candidate-replay-gates",
+        "observed": 1,
+        "passed": true
+      },
+      {
+        "limit": true,
+        "name": "paired-synthetic-traces",
+        "observed": true,
+        "passed": true
+      },
+      {
+        "limit": 18000.0,
+        "name": "configured-total-soak-seconds",
+        "observed": 18000.0,
+        "passed": true
+      },
+      {
+        "limit": 0.0,
+        "name": "candidate-error-rate-delta",
+        "observed": 0.0,
+        "passed": true
+      },
+      {
+        "limit": 1.25,
+        "name": "candidate-ttft-ratio",
+        "observed": 1.0441842292831474,
+        "passed": true
+      },
+      {
+        "limit": 1.25,
+        "name": "candidate-e2e-ratio",
+        "observed": 0.9850813137438936,
+        "passed": true
+      },
+      {
+        "limit": 0.8,
+        "name": "candidate-throughput-ratio",
+        "observed": 1.008520372222475,
+        "passed": true
+      }
+    ],
+    "deploymentAuthorized": false,
+    "gateVerdict": "PASS",
+    "infrastructureErrors": [],
+    "metrics": {
+      "candidateE2eRatio": 0.9850813137438936,
+      "candidateErrorRateDelta": 0.0,
+      "candidateThroughputRatio": 1.008520372222475,
+      "candidateTtftRatio": 1.0441842292831474
+    },
+    "productionReady": false,
+    "rollbackVerdict": "KEEP_CANDIDATE",
+    "sameArtifactControl": true
+  },
+  "modelIdentity": {
+    "baselineActualSha256": "dcd819ff094852c38faba6873d8ff0c9d51eadb2844539e52042ae5d647bbfdb",
+    "baselineFileNameMatchesManifest": true,
+    "baselinePath": "/home/runner/work/_temp/polygraph-production-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf",
+    "candidateActualSha256": "dcd819ff094852c38faba6873d8ff0c9d51eadb2844539e52042ae5d647bbfdb",
+    "candidateFileNameMatchesManifest": true,
+    "candidatePath": "/home/runner/work/_temp/polygraph-production-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf",
+    "hfFile": "qwen2.5-1.5b-instruct-q4_0.gguf",
+    "hfRepo": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+    "license": "apache-2.0",
+    "manifestLine": 39,
+    "manifestPath": "/home/runner/work/polygraph/polygraph/scripts/models.txt",
+    "manifestSha256": "09f82fb662f2196e65594c9ebde1d1e42fe74f684076ce07a4e5050342dfa996",
+    "modelId": "qwen2.5-1.5b-q4_0",
+    "sha256": "dcd819ff094852c38faba6873d8ff0c9d51eadb2844539e52042ae5d647bbfdb",
+    "validated": true
+  },
+  "outputDirectoryMode": "0700",
+  "productionReady": false,
+  "profile": "long",
+  "provenance": {
+    "campaignSource": {
+      "hostedWorkflow": true,
+      "ref": "refs/heads/main",
+      "repository": "tomyimkc/polygraph",
+      "sha": "5833ff20f503d126a8654f127419ed1e27ce2f5d"
+    },
+    "llamaCpp": {
+      "allowlistedShas": [
+        "dbadb68eecdfb3ab0e86872d011738fc937f0364"
+      ],
+      "mutableRefAccepted": false,
+      "resolvedSha": "dbadb68eecdfb3ab0e86872d011738fc937f0364",
+      "reviewedSha": "dbadb68eecdfb3ab0e86872d011738fc937f0364"
+    }
+  },
+  "receiptChecksumManifest": "sha256sums.txt",
+  "schema": "polygraph.production-campaign.v1",
+  "startedAtUtc": "2026-08-09T12:17:10.149353+00:00",
+  "syntheticTenantLeakageAssertion": {
+    "baselineForeignSentinelLeaks": 0,
+    "candidateForeignSentinelLeaks": 0,
+    "tenantIsolationClaimed": false
+  }
+}
