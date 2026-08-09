@@ -17,15 +17,20 @@ source "$LIB_DIR/../common.sh"
 STAGE="build_llama_server"
 STAMP_FILE="$LLAMA_CPP_DIR/.polygraph-server-build-stamp"
 STAMP_WANT="ref=$LLAMA_CPP_REF cmake_build_type=Release kleidiai=ON target=llama-server"
+BASE_STAMP_FILE="$LLAMA_CPP_DIR/.polygraph-build-stamp"
+BASE_STAMP_WANT="ref=$LLAMA_CPP_REF cmake_build_type=Release kleidiai=ON targets=llama-cli,llama-bench"
 
 if [[ "$FORCE" != "1" && -x "$LLAMA_SERVER" && -f "$STAMP_FILE" ]] \
-    && [[ "$(cat "$STAMP_FILE" 2>/dev/null)" == "$STAMP_WANT" ]]; then
+    && [[ "$(cat "$STAMP_FILE" 2>/dev/null)" == "$STAMP_WANT" ]] \
+    && [[ -f "$BASE_STAMP_FILE" ]] \
+    && [[ "$(cat "$BASE_STAMP_FILE" 2>/dev/null)" == "$BASE_STAMP_WANT" ]]; then
     record_stage "$STAGE" OK "reusing cached server at $LLAMA_SERVER"
     exit 0
 fi
 
-if [[ ! -f "$LLAMA_CPP_DIR/build/CMakeCache.txt" ]]; then
-    bash "$LIB_DIR/build_llamacpp.sh"
+if [[ "$FORCE" == "1" || ! -f "$BASE_STAMP_FILE" ]] \
+    || [[ "$(cat "$BASE_STAMP_FILE" 2>/dev/null)" != "$BASE_STAMP_WANT" ]]; then
+    FORCE="$FORCE" bash "$LIB_DIR/build_llamacpp.sh"
 fi
 
 log_info "building --target llama-server with -j$JOBS"

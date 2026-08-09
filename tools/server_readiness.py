@@ -335,7 +335,9 @@ class TelemetrySampler:
     def stop(self) -> list[dict[str, Any]]:
         self._stop.set()
         self._thread.join(timeout=5)
-        return self.rows
+        if self._thread.is_alive():
+            raise RuntimeError("telemetry sampler did not stop within 5 seconds")
+        return list(self.rows)
 
     def _run(self) -> None:
         while not self._stop.is_set():

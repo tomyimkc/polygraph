@@ -393,7 +393,8 @@ jobs:
       - name: Resolve cache, model, and output paths
         id: vars
         run: |
-          echo "CACHE_DIR=${RUNNER_TEMP}/polygraph-readiness-cache" >>"$GITHUB_ENV"
+          export CACHE_DIR="${RUNNER_TEMP}/polygraph-readiness-cache"
+          echo "CACHE_DIR=$CACHE_DIR" >>"$GITHUB_ENV"
           source scripts/common.sh
           echo "llama_cpp_ref=${LLAMA_CPP_REF}" >>"$GITHUB_OUTPUT"
 

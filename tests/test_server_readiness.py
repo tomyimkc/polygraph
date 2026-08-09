@@ -7,8 +7,10 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import sys
 import threading
+import time
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -216,6 +218,29 @@ class TestStreamingIntegration(unittest.TestCase):
         self.assertEqual(requests[0]["accept"], "text/event-stream")
         self.assertTrue(requests[0]["body"]["stream"])
         self.assertEqual(requests[0]["body"]["n_predict"], 24)
+
+
+class TestTelemetrySampler(unittest.TestCase):
+    def test_stop_returns_stable_snapshot(self):
+        class Process:
+            pid = os.getpid()
+
+            @staticmethod
+            def poll():
+                return None
+
+        sampler = sr.TelemetrySampler(Process(), "test")
+        sampler.start()
+        deadline = time.monotonic() + 2
+        while not sampler.rows and time.monotonic() < deadline:
+            time.sleep(0.01)
+        snapshot = sampler.stop()
+        row_count = len(snapshot)
+        time.sleep(0.05)
+
+        self.assertGreaterEqual(row_count, 1)
+        self.assertIsNot(snapshot, sampler.rows)
+        self.assertEqual(len(sampler.rows), row_count)
 
 
 if __name__ == "__main__":
