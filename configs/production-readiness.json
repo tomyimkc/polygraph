@@ -1,0 +1,89 @@
+{
+  "schema": "polygraph.production-readiness-config.v1",
+  "claims": {
+    "actualProductionTraffic": false,
+    "productionReady": false,
+    "candidateOnly": true
+  },
+  "syntheticTraffic": {
+    "seed": 20260809,
+    "tenantLabels": [
+      "synthetic-tenant-alpha",
+      "synthetic-tenant-beta",
+      "synthetic-tenant-gamma"
+    ],
+    "delayEveryRequests": 3,
+    "delayMilliseconds": 25,
+    "errorEveryRequests": 5,
+    "errorHttpStatus": 503
+  },
+  "sloProfiles": {
+    "smoke": {
+      "maxReadinessErrorRate": 0.0,
+      "maxTtftP99Ms": 15000,
+      "maxE2eP99Ms": 60000,
+      "maxRecoverySeconds": 120,
+      "maxRssMiB": 8192,
+      "maxReplayUnexpectedErrorRate": 0.0,
+      "maxReplayE2eP99Ms": 60000,
+      "maxForeignSentinelLeaks": 0,
+      "maxCandidateErrorRateDelta": 0.0,
+      "maxCandidateTtftRatio": 10.0,
+      "maxCandidateE2eRatio": 10.0,
+      "minCandidateThroughputRatio": 0.1
+    },
+    "long": {
+      "maxReadinessErrorRate": 0.0,
+      "maxTtftP99Ms": 5000,
+      "maxE2eP99Ms": 30000,
+      "maxRecoverySeconds": 120,
+      "maxRssMiB": 8192,
+      "maxReplayUnexpectedErrorRate": 0.0,
+      "maxReplayE2eP99Ms": 30000,
+      "maxForeignSentinelLeaks": 0,
+      "maxCandidateErrorRateDelta": 0.0,
+      "maxCandidateTtftRatio": 1.25,
+      "maxCandidateE2eRatio": 1.25,
+      "minCandidateThroughputRatio": 0.8
+    }
+  },
+  "profiles": {
+    "smoke": {
+      "repetitions": 1,
+      "soakSecondsTotal": 8,
+      "capacityConcurrencies": [
+        1,
+        2
+      ],
+      "capacitySecondsPerPoint": 1,
+      "soakConcurrency": 2,
+      "warmupRequestsPerWorker": 1,
+      "readinessRestartCycles": 1,
+      "replayRequestsPerArm": 8,
+      "replayRestartCycles": 1,
+      "maxTokens": 12,
+      "requestTimeoutSeconds": 60,
+      "readyTimeoutSeconds": 120,
+      "minMeasuredRequestsPerArmRun": 1
+    },
+    "long": {
+      "repetitions": 1,
+      "soakSecondsTotal": 18000,
+      "capacityConcurrencies": [
+        1,
+        2,
+        4
+      ],
+      "capacitySecondsPerPoint": 20,
+      "soakConcurrency": 4,
+      "warmupRequestsPerWorker": 1,
+      "readinessRestartCycles": 2,
+      "replayRequestsPerArm": 18,
+      "replayRestartCycles": 2,
+      "maxTokens": 24,
+      "requestTimeoutSeconds": 60,
+      "readyTimeoutSeconds": 120,
+      "minMeasuredRequestsPerArmRun": 50
+    }
+  }
+}

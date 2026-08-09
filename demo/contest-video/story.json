@@ -1,0 +1,143 @@
+{
+  "schema": "polygraph.contest-video.story.v1",
+  "title": "Polygraph contest demo — executed-kernel evidence",
+  "target_duration_seconds": 169,
+  "format": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30,
+    "video_codec": "h264",
+    "audio_codec": "aac",
+    "pixel_format": "yuv420p"
+  },
+  "scenes": [
+    {
+      "id": "01-banner",
+      "duration_seconds": 25,
+      "accent": "amber",
+      "kicker": "BASELINE / ADVERTISED CLAIM",
+      "title": "The banner is not proof",
+      "hero": "KLEIDIAI = 1",
+      "subhero": "but {broken_symbols} compiled KleidiAI matmul symbols",
+      "bullets": [
+        "The documented -DGGML_CPU_KLEIDIAI=ON build completed and printed the enabled banner.",
+        "On the same DGX Spark receipt, nm found {broken_symbols} kai_run_matmul symbols.",
+        "That is a broken build finding. With no symbols, Polygraph refuses to invent an L3 result."
+      ],
+      "narration": "Start with the software's own claim. The documented KleidiAI build completes and prints KLEIDIAI equals one. Polygraph does not trust that banner. On the preserved DGX Spark build receipt, the binary contained zero KleidiAI matmul symbols. That proves a build defect, not a runtime dispatch result. To prove execution, we need a build where the kernels exist, and a debugger that counts real calls.",
+      "sources": [
+        "results/server/spark-provenance.txt",
+        "README.md — Finding 3"
+      ]
+    },
+    {
+      "id": "02-l3",
+      "duration_seconds": 28,
+      "accent": "red",
+      "kicker": "L3 / EXECUTED-KERNEL PROOF",
+      "title": "Only the debugger sees the second failure",
+      "hero": "{l3_baseline_hits} → {l3_workaround_hits} dispatch hits",
+      "subhero": "same binary; --no-host changes the runtime buffer choice",
+      "bullets": [
+        "L1: {fixed_symbols} kernel symbols in both runs.",
+        "L2: KLEIDIAI banner and I8MM selection log are identical.",
+        "L3: {l3_reps}/{l3_reps} baseline reps hit zero; {l3_reps}/{l3_reps} workaround reps hit {l3_workaround_hits_commas}."
+      ],
+      "narration": "Now a separate runtime failure, using a build that really contains the kernels. L1 sees ten symbols in both runs. L2 sees the same KLEIDIAI banner and the same I eight M M selection log. Only L3 changes. Non-halting GDB breakpoints count zero KleidiAI calls in the baseline, and seven thousand nine hundred sixty-eight with no-host. That result repeated five out of five times per arm. This is execution proof, not a timing inference.",
+      "sources": [
+        "results/upstream/llamacpp-26334-cuda-host-buffer.json",
+        "results/upstream/FINDING-4-CUDA-HOST-BUFFER.md"
+      ]
+    },
+    {
+      "id": "03-cost",
+      "duration_seconds": 29,
+      "accent": "amber",
+      "kicker": "MEASURED COST / FINDING 3",
+      "title": "The invisible build gap gets expensive at 7B",
+      "hero": "{large_broken_prefill:.2f} → {large_fixed_prefill:.2f} tok/s",
+      "subhero": "{large_prefill_ratio:.2f}x at 7B prefill",
+      "bullets": [
+        "Decode: {large_broken_decode:.2f} → {large_fixed_decode:.2f} tok/s ({large_decode_ratio:.2f}x).",
+        "{scale_reps} round-robin-interleaved reps per arm; median, not a bare mean.",
+        "Same DGX Spark and toolchain. This is one specific broken build, not a universal KleidiAI multiple."
+      ],
+      "narration": "What did the zero-symbol build cost? On the same DGX Spark, with five round-robin-interleaved repetitions, seven B prefill rose from forty-eight point six four to two hundred twenty-two point one four tokens per second after the build was fixed: four point five seven times. Decode rose from eleven point one seven to eighteen point four five: one point six five times. The boundary matters. This measures one specific broken build and toolchain, not KleidiAI in general.",
+      "sources": [
+        "results/scale/scale-experiment.json",
+        "results/server/spark-provenance.txt"
+      ]
+    },
+    {
+      "id": "04-fixes-tooling",
+      "duration_seconds": 29,
+      "accent": "cyan",
+      "kicker": "TECHNICAL FIXES + REUSABLE TOOLING",
+      "title": "Different failures need different fixes",
+      "hero": "{broken_symbols} → {fixed_symbols} symbols",
+      "subhero": "then verify L1 + L2 + L3, fail closed",
+      "bullets": [
+        "Build repair: {build_fix_short}",
+        "Runtime workaround for the CUDA-host-buffer case: --no-host or -dev none.",
+        "tools/polygraph check returns 0 match, 1 mismatch, 2 undetermined — never a silent pass."
+      ],
+      "narration": "The failures stay separate. The Spark build defect is repaired by disabling native probing and supplying the Arm architecture explicitly, restoring ten kernel symbols. The CUDA host-buffer case uses no-host or device none so KleidiAI can be selected. Polygraph packages the method: static symbols at L1, the program's selection log at L2, and debugger hit counts at L3. Exit codes are contractual, and uncertainty never becomes a silent pass.",
+      "live_capture": {
+        "asset": "demo/contest-video/live-run/make-demo.gif",
+        "receipt": "demo/contest-video/live-run/receipt.json",
+        "static_seconds": 9,
+        "footage_seconds": 20,
+        "command": "make demo",
+        "timing_note": "Literal PTY output from the captured run; line-reveal timing is normalized for legibility and the final frame is held. Output text is unchanged."
+      },
+      "sources": [
+        "results/server/spark-provenance.txt",
+        "results/upstream/FINDING-4-CUDA-HOST-BUFFER.md",
+        "tools/polygraph",
+        "tools/verify_dispatch.py"
+      ]
+    },
+    {
+      "id": "05-arm64-readiness",
+      "duration_seconds": 31,
+      "accent": "green",
+      "kicker": "AUTOMATED ARM64 READINESS CANDIDATE",
+      "title": "GitHub Actions run {arm_run_id}",
+      "hero": "{arm_requests_commas} requests • {arm_failures} failures",
+      "subhero": "{arm_gate_passed}/{arm_gate_total} configured checks passed",
+      "bullets": [
+        "GitHub-hosted {arm_machine}, {arm_cpu_count} CPUs; Qwen2.5 1.5B Q4_0, CPU-only llama-server.",
+        "Capacity at concurrency 1, 2, 4 plus a {arm_soak_minutes}-minute concurrency-{arm_soak_concurrency} soak.",
+        "Soak: {arm_soak_output_tps:.2f} output tok/s; TTFT p99 {arm_ttft_p99_ms:.2f} ms; E2E p99 {arm_e2e_p99_ms:.2f} ms.",
+        "{arm_restart_cycles} clean restart cycles; slower readiness {arm_restart_max_seconds:.4f} s."
+      ],
+      "narration": "Then the project automated the operational check on hosted Arm64. GitHub Actions run three one two nine four four six zero three six four served Qwen two point five, one point five B Q four on four AArch sixty-four CPUs. It completed one thousand five hundred forty-three requests with zero failures, including a ten-minute concurrency-four soak. All ten checks passed. The soak sustained fifty-five point four five output tokens per second, and two restarts returned to readiness within one point five one two three seconds.",
+      "sources": [
+        "results/production-readiness/arm64-31294460364/summary.json",
+        "results/production-readiness/arm64-31294460364/validation-receipt.json",
+        "results/production-readiness/arm64-31294460364/workflow-receipt.json"
+      ]
+    },
+    {
+      "id": "06-boundary",
+      "duration_seconds": 27,
+      "accent": "violet",
+      "kicker": "HONEST BOUNDARY",
+      "title": "A passing synthetic gate is not production",
+      "hero": "candidateOnly: true",
+      "subhero": "productionReady: false",
+      "bullets": [
+        "Not live traffic; not multi-day availability, failover, tenant isolation, or customer correctness.",
+        "The RTX PRO 6000 {pro_model_short} run is non-Arm systems evidence only.",
+        "It shows the harness can exercise a larger model; it cannot validate Arm or KleidiAI dispatch.",
+        "Every claim remains attached to raw artifacts, checksums, and explicit limits."
+      ],
+      "narration": "Here is the boundary. The Arm run is real and automated, but its artifact says candidate only and production ready false. It does not establish live traffic, multi-day availability, failover, tenant isolation, or customer correctness. The RTX Pro six thousand, thirty B campaign is non-Arm systems evidence only. It shows the harness scales; it cannot validate Arm or KleidiAI dispatch. Polygraph's product is a better receipt, not a bigger claim.",
+      "sources": [
+        "results/production-readiness/arm64-31294460364/summary.json",
+        "results/production-readiness/README.md",
+        "results/production-readiness/pro6000-31289517517/aggregate.json"
+      ]
+    }
+  ]
+}

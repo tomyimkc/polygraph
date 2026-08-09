@@ -1,35 +1,77 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <!-- SPDX-FileCopyrightText: 2026 Polygraph contributors -->
 
-# Recording the submission video
+# Contest video
 
-**This file is a pointer, not a shot list.** The real, maintained shot list — beat-by-beat
-screen/say/timing, produced by actually running `demo/demo.sh` — lives at
-**[`demo/SHOTLIST.md`](../demo/SHOTLIST.md)**. Read that file, not this one, before recording.
+The **single authoritative submission cut** is the repository-native hybrid
+render produced from
+[`demo/contest-video/story.json`](../demo/contest-video/story.json) by
+[`tools/render_contest_video.py`](../tools/render_contest_video.py). The
+maintained under-three-minute plan is
+[`demo/SHOTLIST.md`](../demo/SHOTLIST.md). Its machine-readable source is
+the story JSON above.
 
-For step-by-step recording mechanics (terminal setup, one-time build, how to record, an
-asciinema alternative, and what to check after recording), see
-**[`demo/README.md`](../demo/README.md)**.
+Create a fresh, audited project-function capture and render the final cut:
 
-## Why this file still exists
+```bash
+python3 -m pip install -r demo/contest-video/requirements.txt
+python3 tools/render_contest_video.py --self-test
+python3 tools/render_contest_video.py --dry-run
+python3 tools/render_contest_video.py --capture-demo
+```
 
-`docs/` and `demo/` are owned by different parts of this project's workflow, and some external
-links (the Devpost submission, older commit messages) may still point at `docs/VIDEO.md`. Rather
-than break those links or let this file drift into a second, stale copy of the shot list, it
-stays as a one-hop redirect.
+After that fresh capture has passed receipt validation, the same final cut can
+be rebuilt from the cached capture:
 
-## The load-bearing facts, if you read nothing else
+```bash
+python3 tools/render_contest_video.py
+```
 
-- The demo's numbers come from **`results/REMEASURE-2026-08-04-QUIET.md`** — the authoritative,
-  round-robin-interleaved re-measurement. An earlier draft's numbers (57.3%, 71.6, 45.5, 4.4x,
-  198.9, 2257.5, 1145.0) are **retracted**; do not use them in narration, captions, or the video
-  description.
-- The honest arc is: tuning (`-t 2` decode, `-t 8` prefill) is a real 3.43x / 1.79x win, zero
-  code changes. This project's own dispatch patch is a proven-but-not-helpful negative result
-  (~12% slower at default threads) — publish that as a strength, not something to hide.
-- **Never show a CI green check that has not actually run** on real infrastructure — narrate
-  the honest fallback instead if something hasn't been triggered yet by recording time.
-- No copyrighted music. Silence or royalty-free/CC0 audio only.
+Authoritative local artifacts:
 
-Everything else — narration lines, screen contents, per-beat timing, what to cut if you run
-long — is in `demo/SHOTLIST.md`.
+```text
+demo/out/polygraph-contest-final.mp4
+demo/out/polygraph-contest-final.srt
+demo/out/polygraph-contest-final.validation.json
+demo/out/polygraph-contest-final.sha256
+demo/out/qa/contact-sheet.jpg
+```
+
+Final post-hardening sidecar values: **169.021333 seconds**, **9,527,083
+bytes**, SHA-256
+**`076de488a8939f56278655a0775775257c7537317697aa3003d4aaf380ed18e4`**.
+The validation sidecar remains the authoritative machine-readable source.
+
+The renderer loads all displayed figures from repository evidence, writes an
+authored sidecar SRT, and emits a validation receipt with source hashes. Beat 4
+uses 9 seconds of its evidence card followed by 20 seconds of footage derived
+from an actual local `make demo` PTY run. Literal output lines are unchanged;
+only line-reveal pauses and the final-frame hold are normalized for legibility.
+The raw ANSI transcript, clean transcript, timestamped/base64 event stream,
+playback GIF, receipt, and `SHA256SUMS` remain under
+`demo/contest-video/live-run/`.
+
+The renderer fails unless the capture matches the current reviewed branch,
+commit archive, capture-driver hash, strict environment policy, and receipt
+hashes. It also fails unless the final MP4 is under 180 seconds and uses
+web-friendly H.264/AAC, 1080p, 30 fps, 4:2:0, and fast-start settings. Exact
+post-render duration, byte size, SHA-256, and codec values are generated from
+the final validation sidecar into
+[`VIDEO-PRODUCTION.md`](VIDEO-PRODUCTION.md).
+
+## Required story
+
+1. baseline/banner claim;
+2. L3 executed-kernel proof;
+3. measured cost;
+4. technical fixes and reusable tooling;
+5. automated Arm64 readiness run `31294460364`;
+6. honest boundary.
+
+The RTX PRO 6000 30B-A3B control may appear only as non-Arm systems evidence.
+It does not validate Arm or KleidiAI dispatch.
+
+Any previous 90-second or 103-second presenter/export cut is historical only
+and must not be submitted as the current cut. The preserved 90-second
+pipeline audit and the reasons it no longer matches the submission story are
+in [`VIDEO-PRODUCTION.md`](VIDEO-PRODUCTION.md).

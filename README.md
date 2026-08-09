@@ -1,8 +1,10 @@
 # Polygraph
 
-**`llama.cpp`'s own documented KleidiAI build command exits `0` and prints `KLEIDIAI = 1`. We
-counted the kernel symbols actually compiled into the binary instead of trusting that banner —
-there were zero. The invisible gap costs 4.57x on prompt processing at a realistic model size.**
+**On one DGX Spark/Cortex-X925 with gcc 13.3, `llama.cpp`'s documented KleidiAI build command
+exited `0` and printed `KLEIDIAI = 1`, while the resulting binary contained zero usable
+`kai_run_matmul` entry points. Correcting that specific broken native-build configuration improved
+measured Qwen2.5-7B prefill from 48.64 to 222.14 tok/s, a 4.57x comparison. This is not a universal
+KleidiAI multiple and does not affect stock releases.**
 
 Polygraph asks that question generically: does software's own claim about the hardware
 acceleration it uses match what actually happened? It answers by counting — compiled-in kernel
@@ -47,6 +49,26 @@ tools/polygraph check llama-cpp-kleidiai --binary ./llama.cpp/build/bin/llama-cl
 Exit codes are contractual, so CI can depend on them: **`0`** what was advertised actually ran,
 **`1`** it did not, **`2`** could not be determined. Never a silent `0`. Full walkthrough in
 [`docs/QUICKSTART.md`](docs/QUICKSTART.md); the one-line CI gate is in [`docs/CI.md`](docs/CI.md).
+
+## Judges: five-minute route
+
+1. Run `make demo` to watch the same banner produce one measured mismatch and one match.
+2. Open [`docs/CONTEST-EVIDENCE-MAP.md`](docs/CONTEST-EVIDENCE-MAP.md) for the
+   **Baseline → Technical change → Measured impact** proof chains.
+3. Inspect the Arm64 readiness
+   [`summary.json`](results/production-readiness/arm64-31294460364/summary.json) and adjacent
+   validation/workflow receipts.
+4. Run `python3 tools/check_claims.py` to verify that judge-facing numbers still resolve to their
+   committed evidence.
+
+The Arm64 server result is a contest-ready, production-shaped **synthetic evidence candidate**.
+Its own authoritative boundary remains:
+
+```text
+actualProductionTraffic:false
+productionReady:false
+candidateOnly:true
+```
 
 ## The sharpest example: a build where every signal lies except execution
 
@@ -888,7 +910,7 @@ non-TTY stdin.
 | `patches/0001-kleidiai-phase-aware-dispatch.patch` + `patches/README.md` | A minimal (56-line), opt-in, upstream-submittable `llama.cpp` patch plus its full design rationale and local verification log — apply with `git am` against `dbadb68`. Reusable as-is by anyone hitting the same GEMV/hybrid-dispatch gate, or as a worked example of how to extend KleidiAI's dispatch decision safely. |
 | `mcp/server.py` | Dependency-free MCP stdio server exposing `detect_arm_features`, `verify_dispatch`, `recommend_config`, and `explain_finding` as callable tools — so an agentic client can ask *this machine, right now* whether SME2/SVE is actually dispatching, instead of trusting a banner. Add to Claude Code with `claude mcp add polygraph -- python3 mcp/server.py`; self-test with `python3 mcp/server.py --selftest`. See `mcp/README.md`. |
 | `kernels/` | A small, dependency-free, correctness-tested NEON/SME2/SVE2 GEMM library with a `CMakeLists.txt` that already encodes the Apple-vs-Linux `-mcpu` selection (and the SIGILL trap fix) — usable as a starting template for anyone porting compute onto Apple SME2 or Arm SVE2. |
-| `site/` + `.github/workflows/pages.yml` | A static, no-build-step dashboard (advertised-vs-executed table, phase-crossover charts, figure gallery) driven entirely off `results/*.json` via a runtime-generated manifest — new results from any of the artifacts above show up with no code change. Validated locally (`actionlint`, headless-Chrome DOM checks); not yet deployed (`has_pages=false`, nothing pushed). |
+| `site/` + `.github/workflows/pages.yml` | A static, no-build-step dashboard (advertised-vs-executed table, phase-crossover charts, figure gallery) driven entirely off `results/*.json` via a runtime-generated manifest — new results from any of the artifacts above show up with no code change. It is deployed at `https://tomyimkc.github.io/polygraph/` and the Pages workflow is green on `main`. |
 | `scripts/models.txt` + `scripts/lib/fetch_model.sh` | A pipe-delimited model manifest (id, HF repo/file, sha256, license) plus a fetcher with single-model, model-set, and CI-matrix modes — turns "add a row" into "add a CI leg." Live-checks license (already caught and rejected a non-commercial GGUF). |
 | `demo/demo.sh` + `demo/README.md` + `demo/SHOTLIST.md` | A self-contained, idempotent, degrade-gracefully terminal walkthrough of the full claim → proof → cost → fix → gap → upstream arc, timed and narrated for the submission video. |
 | `scripts/run_all.sh` + `scripts/lib/*.sh` | An idempotent, cache-aware, CI-ready pipeline (build → verify dispatch → bench → emit ledger) that already runs on three different Arm64 targets. |
@@ -897,6 +919,8 @@ non-TTY stdin.
 | [`docs/RELATED-WORK.md`](docs/RELATED-WORK.md) | Full disclosure that Finding 2's mechanism was independently published two days before this repo existed, what this project adds beyond that prior work, and an honest one-line comparison against every other Track 2 entry we're aware of — a reusable template for how a submission should handle being partially scooped. |
 | `tests/l3_gdb_groundtruth/` | A dlopen-based harness that asserts the L3 probe recovers a *known* call count. Written after our own gdb probe silently reported zero hits on the free CI lane — the exact failure mode this project exists to catch. Reusable by anyone instrumenting a dynamically-loaded kernel library. |
 | Three verify CI lanes (`.github/workflows/verify-*.yml`) | A template for a free-hosted judge-reproducible lane plus two self-hosted lanes with correctly scoped `pull_request` exclusions for physical hardware; the free lane now runs as a model matrix derived from `scripts/models.txt`. |
+| `docs/CONTEST-EVIDENCE-MAP.md` | A judge-first Baseline → Technical change → Measured impact index that maps each submission statement to exact artifacts, receipts, commands, and claim boundaries. |
+| `tools/production_campaign.py` + `.github/workflows/verify-production-arm64.yml` | A fail-closed synthetic production-campaign lane for repeated Arm64 readiness, generated-only traffic replay, controlled faults, explicit SLOs, and rollback decisions. Its outputs always remain `actualProductionTraffic:false`, `productionReady:false`, and `candidateOnly:true`. |
 
 ---
 
@@ -946,11 +970,14 @@ whose remaining numbers you can spend less time second-guessing.
   CI lane meant to produce this automatically still has not completed a clean run (a separate,
   unresolved OOM incident on that runner) — this confirmation stands on its own measurement, not on
   that lane going green.
-- **Both upstream reports are filed and awaiting a maintainer.** Findings 1 and 2 are
+- **Both upstream reports remain open; acknowledgment is not validation.** Findings 1 and 2 are
   [ggml-org/llama.cpp#26547](https://github.com/ggml-org/llama.cpp/issues/26547) (2026-08-04);
-  Finding 3, the broken default KleidiAI build, is [#26630](https://github.com/ggml-org/llama.cpp/issues/26630) (2026-08-05). Neither has a
-  response yet. Nothing here should be read as upstream having accepted, confirmed or agreed with
-  any of it.
+  Finding 3, the broken default KleidiAI build, is
+  [#26630](https://github.com/ggml-org/llama.cpp/issues/26630) (2026-08-05). A `llama.cpp`
+  collaborator acknowledged `#26547` on 2026-08-07 and clarified that the decode fallback and
+  256-bit SVE kernel-compatibility rules are intentional, while agreeing that runtime logging could
+  make the distinction clearer. `#26630` has no response. Neither issue has an accepted patch, an
+  upstream fix, or an upstream validation of this project's performance conclusions.
 - **The Cloud AI server sweep (`results/server/server-bench.json`) is single-machine,
   single-model.** All five rows use `Qwen2.5-0.5B-Instruct-Q4_0` on one DGX Spark, built with the
   Finding 3 fix; TTFT and throughput at a larger model, a larger batch size, or another quantization
@@ -965,9 +992,11 @@ whose remaining numbers you can spend less time second-guessing.
   against `gcc 13.3.0` on Ubuntu 24.04 aarch64 (`results/server/spark-provenance.txt`); whether the
   same `-mcpu=native+<feature>` probe failure reproduces on other gcc versions, `clang`, or other Arm
   server cores is `[not yet measured]`.
-- **Single model.** All throughput numbers are `Qwen2.5-0.5B-Instruct`, `Q4_0` only. `Q8_0` is
-  `[not available]` — no such GGUF existed in this environment, and none was fabricated by
-  up-converting the lossy `Q4_0` file.
+- **Throughput evidence has multiple models, but each claim remains configuration-specific.**
+  The Apple SME2 dispatch/tuning sweep is still `Qwen2.5-0.5B-Instruct` Q4_0 on one M4 Max. The
+  broken-build cost comparison adds Qwen2.5 7B on one DGX Spark, and the free hosted Arm64 matrix
+  adds Qwen2.5 0.5B Q4_0, 0.5B Q8_0, and 1.5B Q4_0. None of those results licenses a universal
+  model-, quantization-, compiler-, or machine-independent throughput claim.
 - **`threads=4` is missing from the `bench.py` throughput sweep** (its grid used `1,2,8`; the
   16-thread cells that are present are high-variance and should be read directionally).
   `tools/crossover.py`'s independent sweep does cover `threads=4`, and both harnesses' overlapping
@@ -998,20 +1027,25 @@ whose remaining numbers you can spend less time second-guessing.
 - **`GGML_KLEIDIAI_SME` remains a process-global setting**, patched or not — the *theoretical* best
   (SME2-decode + NEON-forced-prefill, simultaneously, in one process) stays `[NOT YET ACHIEVABLE]`.
   The patch closes part of the gap for the no-flags default case; it does not touch this limitation.
-- **The dashboard (`site/`) and the broadened model manifest (`scripts/models.txt`) are validated
-  locally, not on live infrastructure.** GitHub Pages is not enabled for this repo (`has_pages`
-  reported `false`) and nothing was pushed, so `pages.yml` has never actually run in GitHub Actions;
-  the model-matrix CI path in `verify-free-arm64.yml` is validated by `actionlint`, YAML parsing, and
-  local shell simulation of its non-trivial steps, not by a live run.
+- **The dashboard and free model matrix are live, but the evidence scope remains bounded.**
+  GitHub Pages is deployed from `site/`, and the `verify-free-arm64.yml` model matrix has completed
+  successfully on GitHub-hosted `ubuntu-24.04-arm` for the three committed model-manifest rows.
+  Those runs establish the recorded Neoverse-N2-class build, correctness, dispatch, and throughput
+  evidence only; they do not validate Apple SME2 behavior or the self-hosted DGX Spark lane.
 - **`sve2_gemm.c`** compiles cleanly cross-compiled for `-march=armv9.2-a+sve2+i8mm+bf16` (real,
   reproducible ELF aarch64 object containing genuine `smmla`/`fmad` SVE2/i8mm instructions, not a
   stub — verified during adversarial review and persisted at
   `results/logs/sve2_cross_compile_check.log`, since this claim previously had no artifact backing
   it in `results/`) but has never executed on real SVE2 hardware in this session — this machine has
   none.
-- **`tools/dispatch_probe.gdb`** (the Linux L3 path) has never been executed — no `gdb` on this Mac.
-- **The three GitHub Actions workflows are syntax/lint-validated only** (`yaml.safe_load` +
-  `actionlint`), not yet run end-to-end on real GitHub Actions infrastructure.
+- **The Linux GDB path is now exercised on hosted Arm64.** The free Arm64 workflow first gates the
+  debugger probe against a known synthetic call count, then runs the model-specific L3 sweep. This
+  validates the probe on that hosted Linux environment; it does not prove that every target binary
+  exports instrumentable symbols or that every self-hosted runner permits attachment.
+- **The hosted workflows have live end-to-end receipts.** Claims, unit tests, Pages, the free
+  Arm64 model matrix, and the manual Arm64 readiness campaign have completed on GitHub Actions.
+  The physical-machine workflows remain separately scoped and must not be inferred green from the
+  hosted lanes.
 - **A known filename-casing footgun:** `scripts/lib/verify_dispatch.sh` derives its output filename
   from `uname -s` (`Darwin-arm64`), while `tools/verify_dispatch.py`'s own default is lowercase
   (`darwin-arm64`). On this Mac's case-insensitive APFS volume they silently collapse to one file;

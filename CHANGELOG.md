@@ -4,6 +4,32 @@ Notable changes to the Polygraph **tooling**. Measurement results are not
 versioned here — they live in `results/` (additive, never edited) and
 `docs/CLAIMS.md`'s registry.
 
+## [Unreleased]
+
+### Added
+
+- Arm Create contest submission package with a judge-oriented evidence map,
+  submission checklist, and claim-bounded Devpost copy.
+- Reproducible contest-video pipeline with evidence-locked live CLI capture,
+  subtitles, validation receipt, checksum sidecar, and visual QA artifacts.
+- Production-shaped Arm64 evidence campaign covering long-soak traffic, fault
+  injection, sanitized replay, tenant sentinels, SLO evaluation, rollback
+  verification, sharded execution, and fail-closed receipt validation.
+
+### Security
+
+- Pinned reviewed workflow actions, upstream source revisions, binaries, and
+  model artifacts; disabled persisted checkout credentials.
+- Added path-containment, symlink, provenance, tenant-isolation, shard, receipt,
+  rollback, and artifact-integrity checks for contest and production evidence.
+
+### Changed
+
+- Upgraded hosted GitHub Actions to current Node-runtime-compatible major
+  versions, pinned by full commit SHA.
+- Clarified contest and README performance language so every comparison names
+  its measured platform, compiler/build condition, model, and evidence scope.
+
 ## [1.0.0] — 2026-08-06
 
 ### Added

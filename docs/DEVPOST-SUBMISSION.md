@@ -1,683 +1,714 @@
-# Devpost submission copy — Polygraph
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
-Paste-ready copy only. Every number below is sourced from `docs/CLAIMS.md`'s registry (which in
-turn cites `results/REMEASURE-2026-08-04-QUIET.md`, `results/AUTODEFAULTS.md`,
-`results/scale/scale-experiment.json`, `results/server/`, `results/production-readiness/`,
-`docs/PRODUCT.md`, `README.md`, and `docs/RELATED-WORK.md`) in this repository. Run
-`python3 tools/check_claims.py` before pasting —
-it fails the build on any number here that drifts from that registry.
+# Arm Create Devpost submission — Polygraph
 
-> **Renamed 2026-08-04.** This project shipped the challenge as `arm-dispatch-ledger`; the repo has
-> since been renamed to **Polygraph** (same code, same history, same GitHub account —
-> `github.com/tomyimkc/polygraph`; the old URL 301-redirects). "Polygraph" names what the tool has
-> always done: it is a lie detector for software — it checks whether the accelerated code path your
-> program claims to use actually ran.
+This is the judge-facing, paste-ready submission source. It deliberately uses the same structure
+for every claim:
 
-> **Rewritten 2026-08-05 to match the actual scored rubric.** The Official Rules score four
-> criteria: **Technological Implementation (40 pts)**, **"WOW" factor (25 pts)**, **Potential
-> Impact (20 pts)**, and **User Experience / Developer Experience (15 pts)**. Everything below is
-> now organized around those four, in that order, with space proportional to their weight — not
-> around the challenge's separate "optimization focus areas" list (that list still gets an
-> appendix, since it's still worth covering, but it is not what gets scored).
+1. **Baseline** — what the software claimed or how the system behaved before the change.
+2. **Technical change** — the exact verifier, build correction, patch, or evidence harness added.
+3. **Measured impact** — only repository-backed observations, including regressions and null
+   results.
 
----
+Run `python3 tools/check_claims.py` before copying any prose. The checker fails if a scanned numeric
+claim is not registered in `docs/CLAIMS.md` or backed by committed JSON.
 
-### FIELD: Project name
+## Submission identity
 
-Polygraph
-
----
-
-### FIELD: Elevator pitch / tagline
-
-Polygraph: a lie detector for software. It checks with a debugger, not a timer, whether the accelerated code path your program claims to use actually runs.
-
----
-
-### FIELD: About the project
-
-## The one-sentence version
-
-`llama.cpp`'s own documented KleidiAI build line compiles a binary whose startup banner still says
-`KLEIDIAI = 1` — while every one of the fast matmul kernels it needs is silently missing, costing
-up to **4.57x** slower prefill on a 7B model, and the cost gets *worse*, not better, at realistic
-model sizes. We found that by attaching a debugger to the real kernel entry points instead of
-trusting a log line — the same three-layer method this project packages as a reusable tool
-(`tools/verify_dispatch.py`, and the `tools/polygraph` CLI built around it) for anyone else to run
-against their own binary.
-
-## Where each judging criterion's evidence lives
-
-| Criterion | Points | What to look for |
-|---|---:|---|
-| Technological Implementation | 40 | The L1/L2/L3 method, the fail-closed exit-code contract, the ground-truth harnesses, a unit-test lane for the toolchain itself, the claims-registry CI gate, cross-platform gdb/lldb, the target system, the two upstream patches |
-| "WOW" factor | 25 | The build-defect finding (banner lies, 0 working kernels, 4.57x cost) and the second wow: we re-ran our own method on our own headline number and published that it shrank |
-| Potential Impact | 20 | Two reports filed upstream (#26547, #26630), an independently-reported defect reproduced and measured, a one-line CI gate any project can adopt, and an honest statement of exactly who this affects (and who it doesn't) |
-| User Experience / Developer Experience | 15 | One command, stdlib-only, JSON output, graceful degradation, a documented exit-code contract that never silently reports success |
-
----
-
-## Technological Implementation — 40 points
-
-### Three independent layers, and the discipline of never trusting the first two alone
-
-A benchmark that only measures tokens/sec cannot see this class of bug: a binary can still run,
-still print a plausible number, and still print a banner that says the accelerator is on, while
-the accelerator never once executes. So this project checks three separate things and reports them
-separately, rather than collapsing them into one verdict:
-
-| Layer | What it checks | Tooling | Proves |
-|---|---|---|---|
-| **L1 — static** | Do the accelerated-kernel symbols exist in the built library at all? | `nm`/`otool` (macOS), `nm`/`objdump` (Linux) | The kernel was *compiled in*. Nothing about runtime behavior. |
-| **L2 — selection** | What does the runtime's own verbose log say it *chose*? | Parses `llama.cpp`'s own `kleidiai: primary q4 kernel feature X` / `SME2 enabled (...)` lines | The kernel was *selected* at load time. Still not proof of execution. |
-| **L3 — dispatch** | Did the kernel's machine code actually *run*? | `lldb`/`gdb`, a regex breakpoint on every real kernel entry point, a real inference workload, real hit counts | The only layer that answers the actual question. |
-
-Every dispatch verdict in this project is backed by L3, not L1 or L2 alone — and the two sharpest
-findings split exactly along that line. Finding 3 (below) is a missing-symbols defect: L1's static
-check is what catches it — counting compiled-in kernel symbols is how this project caught it —
-while the banner and the selection log both say everything is fine. The CUDA+KleidiAI defect
-(measured in "Potential Impact," below) goes one step further: there L1 and L2 both report the
-accelerated path as fully intact — banner, selection log, and symbol count byte-identical between
-the broken and working runs — and only L3, counting real execution, separates them.
-
-### Fail-closed by design, at both the tool level and the CLI level
-
-`tools/verify_dispatch.py` already ships a `--assert` flag that exits non-zero if any swept
-configuration's verdict lands in `NO_DISPATCH_OBSERVED` or `SILENT_FALLBACK` — wiring the
-verifier directly into a CI gate rather than a report a human has to read. This submission's unified
-entry point, `tools/polygraph`, generalizes that into a contract every command honors: exit `0`
-means the advertised capability matches what executed, exit `1` means a real mismatch, and exit `2`
-means undetermined (no debugger, no permission, binary not found) — **never silently `0`.** A tool
-that answers "did the fast path really run?" cannot itself be the kind of tool that quietly claims
-success when it doesn't know.
-
-### Ground-truth harnesses that exist because the probe once lied to us
-
-`tests/l3_gdb_groundtruth/` is a small dlopen-based harness that asserts the L3 probe recovers a
-*known*, pre-computed call count against a synthetic library. It exists because our own `gdb`
-probe once silently reported zero hits on the free CI lane — exactly the failure mode this whole
-project exists to catch, this time inside our own tooling instead of `llama.cpp`'s. We do not ask
-a judge to trust that our dispatch counts are real; we ship the test that would fail if they
-weren't.
-
-The same discipline now covers the whole toolchain, not just the probe:
-`tests/test_check_claims.py`, `tests/test_verify_dispatch_units.py`,
-`tests/test_polygraph_cli.py`, and `tests/test_mcp_server.py` pin the claims gate's own logic
-(retraction guard, claim extraction, arithmetic compute blocks, end-to-end gate runs on fixture
-trees), the verdict derivation, the exit-code contract, the target-schema invariants, and the MCP
-handshake — run on every push and PR by `.github/workflows/unit-tests.yml` on free hosted Arm64
-and Apple Silicon runners. Writing these tests caught two latent bugs in our own tooling in their
-first run: the claims gate's ratio extractor was silently skipping the unicode `×` form — so every
-`N.NN×` figure in this repo's own prose was going unpoliced — and an artifact-lookup helper was
-not honoring its documented preference for unversioned library names. Both fixed in the same
-commit (`CHANGELOG.md`). A verification tool should be the most verified thing in the room.
-
-The free Arm64 lane now also includes a manual, explicit server-readiness campaign rather than
-ending at microbenchmarks. `tools/server_readiness.py` starts the pinned `llama-server`, drives
-mixed short-chat/RAG/summary traffic through concurrency 1/2/4 capacity points and a 10-minute
-concurrency-4 soak, records streamed TTFT and end-to-end latency plus token usage for every request,
-samples server RSS/load/thermal telemetry once per second, and performs two controlled restart
-cycles with canary requests. Run `31294460364` completed 1,543 measured requests with 0 failures;
-soak TTFT p99 was 748.46 ms, E2E p99 was 1,924.57 ms, and maximum RSS was 1,869.69 MiB. All 10
-configured checks passed. The complete artifact and workflow receipt are committed under
-`results/production-readiness/arm64-31294460364/`, while the summary still says
-`actualProductionTraffic:false` and `productionReady:false`.
-
-### A claims registry that fails CI on drift, not just on invention
-
-This repo has shipped a wrong number before: a fabricated **"+57.3%"** win, produced by comparing
-a baseline and a patched config measured in unevenly-contended time windows
-(`results/REMEASURE-2026-08-04-QUIET.md` carries the full retraction). `docs/CLAIMS.md` and
-`tools/check_claims.py` are the structural fix: every ratio, throughput figure, percentage, and
-dispatch-hit count anywhere in `README.md`/`docs/*.md`/`site/` must resolve to either a
-hand-curated, source-cited registry entry or a real leaf value committed under `results/**/*.json`
-— and every previously-retracted figure is permanently banned from reappearing unmarked. It runs on
-every push and PR (`.github/workflows/claims.yml`), stdlib-only, no build step. It has already
-caught real pre-existing drift on its first run against a hand-reviewed tree (documented in
-`docs/CLAIMS.md`'s "Resolved findings" section) — the argument for building it in the first place.
-
-### Cross-platform debugger work, including against a live server process
-
-The L3 layer runs identically on macOS (`lldb`, `dispatch_probe.lldb`) and Linux (`gdb`,
-`dispatch_probe.gdb`), auto-selected per platform. It has been exercised against a one-shot
-`llama-cli` process (the Apple M4 Max results) *and* attached live to a running `llama-server`
-process under concurrent load on a DGX Spark, where it recorded **364,444** I8MM and **11,360**
-DOTPROD `kai_run_matmul` calls across 8 concurrent clients — the same technique, extended from a
-single inference call to a live serving process.
-
-### The target system: built-in presets, plus any binary at all
-
-`tools/polygraph` ships built-in, one-word presets (`polygraph check llama-cpp-kleidiai`, for
-example) that encode the exact symbol regex and workload this project already validated — but the
-underlying mechanism is not `llama.cpp`-specific. And this is not hypothetical: two
-non-`llama.cpp` presets are already committed and validated end-to-end — `whisper.cpp` (a
-KleidiAI-less build correctly ends in an explicit "could not determine," never a false pass) and
-ONNX Runtime (a real CoreML→CPU silent fallback caught on a purpose-built probe graph, with the
-control graph passing) — each with a dated `verified_against` receipt in `tools/targets/*.json`.
-Beyond the presets, `polygraph check --binary PATH --symbols REGEX
---run "CMD"` runs the identical L1/L2/L3 method against *any* binary and *any* claimed accelerated
-symbol, with no preset required. This is what "generalizes beyond `llama.cpp`" means concretely:
-the presets are a convenience layer over a mechanism that only needs a binary, a symbol pattern,
-and a command to run.
-
-### Two upstream patches, one real win and one honest negative result
-
-- **`patches/0002-kleidiai-sme-aware-thread-default.patch`** — a real, on-by-default win. With
-  zero flags, generation (decode) threads now default to KleidiAI's own detected SME2 thread cap
-  instead of the physical-core count. Measured round-robin-interleaved (`llama-cli`, n=9): no-flags
-  decode goes **67.8 → 145.9 tok/s (2.15x)**, matching the hand-tuned ceiling within noise, while
-  prefill stays essentially unchanged (**-3.0%**, within noise) — unlike the naive "just pass
-  `-t 2`" workaround, which reaches the same decode ceiling but collapses prefill by **47%**
-  because stock `llama.cpp`'s `-tb` default silently inherits `-t`.
-- **`patches/0001-kleidiai-phase-aware-dispatch.patch`** — an experimental patch that lets decode
-  into KleidiAI's existing SME+NEON hybrid path above the thread cap. The dispatch change is
-  symbol-level proven, but throughput is **~12% slower** at default thread count — reported as a
-  measured regression, not spun as a win. Rigor cuts both ways here: a companion decomposition
-  sweep shows most of this project's headline decode number (3.95x of a 6.44x total) is
-  thread-oversubscription avoidance alone, a well-documented effect this project did not discover;
-  SME2's own contribution at the tuned thread count is a real but smaller **1.31x**, and it
-  actively **hurts** (0.81x) at the untuned default.
-
-### And the agentic-workload piece the challenge calls out by name
-
-`mcp/server.py` is a dependency-free MCP stdio server exposing `detect_arm_features`,
-`verify_dispatch`, `recommend_config`, and `explain_finding` as callable tools, so an agentic
-client can ask *this machine, right now* whether SME2/SVE is actually dispatching instead of
-trusting a compile-time banner — every tool degrades honestly (missing `lldb` → an explicit
-"unavailable" field, not a fabricated hit count) rather than guessing.
-
-**Full honesty about limits is itself part of this section's evidence**, not a separate liability —
-see "Honest limitations," below, for the complete, unabridged list of what is single-machine,
-single-model, or not yet independently reproduced.
-
----
-
-## "WOW" factor — 25 points
-
-### The finding: a banner that lies, and a cost that grows exactly where it matters
-
-Following `llama.cpp`'s own documented KleidiAI build line (`-DGGML_CPU_KLEIDIAI=ON`) on a DGX
-Spark (Cortex-X925, gcc 13.3) produces a binary with **zero** working `kai_run_matmul` kernels —
-while the startup banner still prints `KLEIDIAI = 1`, the load-time log reports "no compatible q4
-kernels found," and the build exits `0`. No warning anywhere. The cost is not small, and it is not
-flat across model sizes — it gets *worse* the more realistic the model:
-
-| Model | Phase | Cost of the broken build |
-|---|---|---|
-| 0.5B (toy) | prefill | 1.42x |
-| 0.5B (toy) | decode | 0.99x — no measurable effect |
-| 7B (realistic) | prefill | **4.57x** |
-| 7B (realistic) | decode | 1.65x |
-
-A team validating a build on a small model for a quick sanity check would see almost nothing wrong
-and ship it anyway. The one-flag-pair fix (`-DGGML_NATIVE=OFF
--DGGML_CPU_ARM_ARCH=armv9.2-a+sve2+i8mm+bf16+dotprod`) restores 10 working `kai_run_matmul` symbols
-and a correct feature banner.
-
-### The second wow: we pointed the tool at our own headline claim
-
-Most submissions stop at the flattering number. We didn't. This project's own original headline —
-thread-count tuning is a **3.43x** decode win — was measured on a tiny 0.5B model on Apple Silicon.
-We re-ran the identical method on a second machine (DGX Spark) across two model sizes and published
-what we found: the same class of thread-tuning win shrinks from **4.56x at 0.5B to 1.33x at 7B**.
-We did not quietly narrow the claim in a footnote — `README.md` gives the shrinkage its own headed
-section ("Does the 3.43x decode-tuning win generalize to a bigger model? No — it collapses to
-1.33x at 7B"), right next to the dedicated Correction section covering this project's publicly
-retracted number, and `docs/PRODUCT.md` documents rejecting an entire product framing (an
-"auto-tuner for local LLM runners") because this exact re-measurement showed the headline number
-does not survive contact with a realistic model size. Publishing your own tool's finding against
-your own prior claim, and letting it cost you a product direction, is not a normal thing for a
-hackathon entry to do — and it is exactly what a debugger-based verifier should do when pointed at
-anything, including its own project.
-
----
-
-## Potential Impact — 20 points
-
-### We reproduced someone else's bug report, and measured what nobody had measured
-
-The finding with the widest reach is not one of ours. `izard` reported
-[ggml-org/llama.cpp#26334](https://github.com/ggml-org/llama.cpp/issues/26334): build with both
-`-DGGML_CPU_KLEIDIAI=ON` and `-DGGML_CUDA=ON`, run CPU-only with `-ngl 0`, and KleidiAI is silently
-bypassed. They diagnosed the cause by reading the source. A contributor confirmed two CLI
-workarounds and the issue was closed the next day. **Nobody ever measured it.**
-
-We did. Same binary, same model, three arms, five round-robin-interleaved reps each:
-
-| arm | KleidiAI kernels that actually ran |
+| Field | Paste-ready value |
 |---|---|
-| default `-ngl 0` | **0** |
-| `--no-host` | **7,968** |
-| `-dev none` | **7,968** |
+| Project name | **Polygraph** |
+| Tagline | **A lie detector for software: verify with a debugger, not a banner, whether the accelerated code path actually ran.** |
+| Public repository | `https://github.com/tomyimkc/polygraph` |
+| License | Apache-2.0 for this repository's original code, docs, tests, and evidence tooling; see `LICENSE`. Patch files against `llama.cpp` preserve that upstream project's MIT terms. |
+| Dashboard | Optional: include `https://tomyimkc.github.io/polygraph/` only after verifying it is publicly reachable |
+| Primary upstream report | `https://github.com/ggml-org/llama.cpp/issues/26630` |
+| Related upstream report | `https://github.com/ggml-org/llama.cpp/issues/26547` |
+| Demo video | `[PASTE YOUTUBE URL AFTER UPLOAD]` |
+| Submission cut | `demo/out/polygraph-contest-final.mp4`, validated at **169.021333 seconds (2:49.021)**, **9,527,083 bytes**, SHA-256 `076de488a8939f56278655a0775775257c7537317697aa3003d4aaf380ed18e4` |
+| Captions | `demo/out/polygraph-contest-final.srt`, six authored cues |
+| Media receipt | `demo/out/polygraph-contest-final.validation.json` plus `demo/out/polygraph-contest-final.sha256` |
 
-The `KLEIDIAI = 1` banner, the `kleidiai: primary q4/q8 kernel feature I8MM` selection line, and
-the `nm` symbol count (10/149) are **byte-identical across all three arms**. Every signal a user
-can check says the same thing in the broken run as in the working one. Only counting execution
-separates them — which is the entire argument for why L3 exists, demonstrated on a defect we did
-not author.
+The repository-native final cut is under the strict three-minute limit and its validation receipt
+records the encoded media properties plus SHA-256 hashes for the evidence inputs. It contains a
+20-second playback of an isolated, receipt-verified `make demo` capture: the liar execution ends
+`MISMATCH` with zero L3 hits and exit 1, while the honest execution ends `MATCH` with one L3 hit
+and exit 0. The playback preserves the captured text and ordering while normalizing pauses for
+legibility.
 
-This matters more than our own headline finding. Finding 3 needs three simultaneous non-default
-conditions including a compiler older than the CPU. This needs two build flags people deliberately
-combine and the normal way to ask for CPU inference — the obvious build on any machine with an Arm
-CPU next to an NVIDIA GPU. Write-up and the 15-run evidence:
-[`results/upstream/FINDING-4-CUDA-HOST-BUFFER.md`](../results/upstream/FINDING-4-CUDA-HOST-BUFFER.md).
+## The claim ceiling judges should keep in view
 
-**We did not comment on #26334.** It is closed, the reporter's need was met, and a tool-branded
-evidence dump on a resolved thread would be self-promotion, not contribution. The measurement lives
-in our repo where it costs the maintainers nothing.
+The Arm64 readiness artifact records this exact boundary:
 
-### Filed upstream: two reports, both open
+```text
+actualProductionTraffic:false
+productionReady:false
+candidateOnly:true
+```
 
-Both original findings (the SME2 thread-cap gate and the SVE exact-width gate) were filed as
-[ggml-org/llama.cpp#26547](https://github.com/ggml-org/llama.cpp/issues/26547) on 2026-08-04, with
-reproduction commands, exact source-line citations, and an offer to send the patch. The newer
-build-defect finding (Finding 3, the zero-kernel KleidiAI build) was filed separately on
-2026-08-05 as [ggml-org/llama.cpp#26630](https://github.com/ggml-org/llama.cpp/issues/26630), with the same discipline: reproduction commands,
-exact source-line citations, three graduated fix proposals, and an explicit scope section stating
-what was *not* tested (other compilers, other Arm cores, other distributions, cross-compilation).
+Run `31294460364` is a production-shaped, single-host, synthetic Arm64 evidence candidate. It is
+not evidence of live customer traffic, multi-day availability, host or network failover,
+multi-tenant isolation, or application-specific output correctness.
 
-### A CI pattern any project can adopt, not just this one
-
-`docs/CLAIMS.md` is explicit that its check is "deliberately a reusable pattern, not a one-off
-script": any project that measures things, writes results into more than one document, and has
-ever shipped a stale number can adopt the same three checks with the same stdlib-only tool and one
-CI job. That is a piece of infrastructure other maintainers can drop in, independent of whether they
-ever touch KleidiAI.
-
-### The target system generalizes past this one library
-
-Because `tools/polygraph`'s ad-hoc mode (`--binary --symbols --run`, no preset required) needs
-nothing project-specific, the verification method — not just this one finding — is available to
-any maintainer who has ever wondered whether their own "accelerated" build flag actually does
-anything. Two such non-`llama.cpp` presets (`whisper.cpp`, ONNX Runtime) are already committed
-with end-to-end validation receipts — see the target-system section above.
-
-### Being honest about how many people this actually affects
-
-Judges punish inflated impact claims far harder than modest ones, so here is the real scope. We
-checked whether the binaries ordinary users actually download carry the Finding 3 defect. They
-don't: the official `llama.cpp` release (`b10276`, `ubuntu-arm64`) ships all eight
-runtime-dispatch-variant libraries with **0** `kai_*` symbols but **204** `ggml` repack matmul
-kernels compiled into each one — the release is accelerated, it just doesn't route through
-KleidiAI at all, because `GGML_CPU_KLEIDIAI` defaults **off** and neither `llama.cpp`'s nor
-Ollama's release CI ever turns it on. There is no advertised-vs-executed gap in a stock install.
-**The exposed population is source-builders on new Arm silicon and release pipelines** — people who
-manually pass `-DGGML_CPU_KLEIDIAI=ON` on a native build with a compiler whose Arm CPU-name table
-predates their specific core. Real, verified (`results/prevalence/shipped-binaries-2026-08-05.json`,
-`docs/PRODUCT.md`), and small — not "every Ollama user," and we don't claim otherwise.
+The RTX PRO 6000 run `31289517517` is a complementary larger-model systems control. Its artifact
+records `actualProductionTraffic:false`, `armContestEvidence:false`, `candidateOnly:true`, and
+`registeredResult:false`. It is **not** Arm contest evidence, is not a production-ready claim, and
+must not be used for a cross-hardware performance ratio against the Arm64 run.
 
 ---
 
-## User Experience / Developer Experience — 15 points
+## Project overview
 
-### One command, three verbs
+Polygraph answers a question a timer cannot: **did the accelerated code path the program advertised
+actually execute?**
 
+It checks three independent layers:
+
+| Layer | Question | Mechanism | Claim ceiling |
+|---|---|---|---|
+| **L1 — static** | Is the accelerated kernel compiled into the binary? | `nm`, `otool`, or `objdump` symbol inspection | Presence only; not selection or execution |
+| **L2 — selection** | What does the runtime log say it selected? | Parse the program's own verbose selection messages | Self-report only; still not execution |
+| **L3 — dispatch** | Did the kernel's machine code run? | Non-halting `lldb`/`gdb` breakpoints and per-symbol hit counts | Direct execution evidence for the measured workload |
+
+`tools/polygraph` packages that method as a stdlib-only CLI with built-in targets and an ad-hoc
+mode for any binary, symbol regex, and workload command. Its exit-code contract is fail-closed:
+
+- `0` — advertised capability matches what executed;
+- `1` — mismatch;
+- `2` — undetermined because the evidence could not be collected; never silently reported as a
+  match.
+
+---
+
+## Judge-first proof chains
+
+### Proof chain 1 — the documented KleidiAI build can advertise acceleration with zero usable matmul kernels
+
+#### Baseline
+
+On a DGX Spark with a Cortex-X925 and gcc 13.3, `llama.cpp`'s documented
+`-DGGML_CPU_KLEIDIAI=ON` build completed successfully and printed `KLEIDIAI = 1`, but the built
+library contained **0** `kai_run_matmul` entry points. On the measured 7B model, the broken build
+delivered 48.64 tok/s prefill and 11.17 tok/s decode.
+
+#### Technical change
+
+The build was repeated from the same source, commit, compiler, and machine with the explicit
+feature-target pair:
+
+```text
+-DGGML_NATIVE=OFF
+-DGGML_CPU_ARM_ARCH=armv9.2-a+sve2+i8mm+bf16+dotprod
 ```
-polygraph list                        # list built-in targets, one per line
-polygraph check <target> [options]    # run a built-in preset
-polygraph check --binary PATH --symbols REGEX --run "CMD"   # ad-hoc, no preset needed
-polygraph explain <target>            # print what the preset looks for and why
+
+That correction restored all 10 measured `kai_run_matmul` entry points and the expected I8MM
+selection messages. Polygraph separates the misleading banner from the static and runtime
+evidence instead of treating `KLEIDIAI = 1` as proof.
+
+#### Measured impact
+
+On the same 7B model, the fixed build delivered **222.14 tok/s prefill and 18.45 tok/s decode**:
+**4.57x prefill** and **1.65x decode** versus the broken build.
+
+The negative result stays attached to the headline: on the 0.5B model, prefill improved by 1.42x
+but decode was **0.99x — no measurable effect**. This is a specific broken-build comparison on one
+machine and toolchain, not a general claim that KleidiAI is always 4.57x faster and not headroom
+available to stock `llama.cpp` users.
+
+**Evidence:** `results/server/spark-provenance.txt`,
+`results/scale/scale-experiment.json`, `docs/UPSTREAM-ISSUE-FINDING3.md`.
+
+### Proof chain 2 — the useful optimization was made automatic without sacrificing prefill
+
+#### Baseline
+
+On the measured Apple M4 Max, unmodified `llama.cpp` with no thread flags used 12 generation
+threads and 12 batch threads. The round-robin-interleaved `llama-cli` measurement recorded
+**67.8 tok/s decode** and **1,835.2 tok/s prefill**.
+
+The obvious manual workaround, `-t 2`, reached the decode ceiling but also made batch threads
+inherit 2, reducing prefill to 975.6 tok/s — a **47% regression**.
+
+#### Technical change
+
+`patches/0002-kleidiai-sme-aware-thread-default.patch` reads KleidiAI's runtime-detected SME2
+thread cap and, only when the user did not set a generation thread count, defaults generation to
+that cap while leaving batch/prefill threads at the normal default. It preserves explicit user
+choices and includes `GGML_KLEIDIAI_AUTO_THREADS=0` as a kill switch.
+
+#### Measured impact
+
+With no flags, the patched binary recorded **145.9 tok/s decode**, a **2.15x** increase over the
+67.8 tok/s baseline and statistically indistinguishable from the hand-tuned ceiling. Prefill was
+1,779.8 tok/s, **-3.0% and within the measured noise band**, rather than the 47% regression caused
+by the naive one-flag workaround.
+
+The limitation stays visible: the mechanism generalizes across the tested configurations, but the
+fixed SME-cap heuristic is not the true optimum for every model. In the measured 1.5B Q4_0 sweep,
+the cap-selected thread count missed the best measured decode point by about 17.5%.
+
+**Evidence:** `patches/0002-kleidiai-sme-aware-thread-default.patch`,
+`results/AUTODEFAULTS.md`, `results/GENERALIZATION.md`.
+
+### Proof chain 3 — L1 and L2 can both agree while execution still silently falls back
+
+#### Baseline
+
+With one `llama.cpp` binary built with both CUDA and KleidiAI, CPU-only `-ngl 0` inference showed
+the same `KLEIDIAI = 1` banner, the same I8MM selection line, and the same 10/149 symbol count as
+the working arms. L3 recorded **0 KleidiAI dispatch hits** in every one of five interleaved
+repetitions, and Polygraph exited `1`.
+
+#### Technical change
+
+The same binary and model were run with either `--no-host` or `-dev none`, removing the
+CUDA-host-buffer priority condition that bypassed the KleidiAI buffer path.
+
+#### Measured impact
+
+Both corrected arms recorded **7,968 dispatch hits** in every one of five repetitions and
+Polygraph exited `0`. This finding makes **no performance claim**; it proves only the advertised
+versus executed mismatch and the restoration of execution.
+
+The mechanism was originally reported by `izard` in `llama.cpp` issue `#26334`. Polygraph does
+not claim discovery; its contribution is the 15-run debugger-backed reproduction and exact
+execution counts.
+
+**Evidence:** `results/upstream/llamacpp-26334-cuda-host-buffer.json`,
+`results/upstream/FINDING-4-CUDA-HOST-BUFFER.md`.
+
+### Proof chain 4 — contest evidence now extends from microbenchmarks to a production-shaped Arm64 server run
+
+#### Baseline
+
+The earlier Arm evidence established symbols, selection, dispatch, correctness, and throughput,
+but did not test sustained mixed server traffic, one-second telemetry, or controlled recovery.
+
+#### Technical change
+
+`tools/server_readiness.py` now:
+
+- starts a pinned CPU-only `llama-server`;
+- drives short-chat, RAG-like, and longer-summary traffic;
+- measures capacity at concurrency 1, 2, and 4;
+- runs a 10-minute concurrency-4 soak;
+- retains one row per request and one-second telemetry;
+- performs two controlled stop/start cycles with canary requests; and
+- evaluates 10 explicit architecture, request, correctness-of-accounting, latency, recovery, and
+  RSS checks.
+
+The manual `server-readiness` job in `.github/workflows/verify-free-arm64.yml` executes this on
+GitHub's hosted `ubuntu-24.04-arm` runner.
+
+#### Measured impact
+
+Arm64 workflow run **`31294460364`** completed **1,543 measured requests with 0 failures**. The
+10-minute sustained phase recorded **55.45 output tok/s**, **748.46 ms TTFT p99**, and
+**1,924.57 ms end-to-end p99**. Maximum server RSS was **1,869.69 MiB**; the slower restart
+readiness measurement was **1.5123 seconds**. All 10 configured checks passed.
+
+This is an evidence-harness result, not a promotion to production readiness. The authoritative
+artifact still says:
+
+```text
+actualProductionTraffic:false
+productionReady:false
+candidateOnly:true
 ```
 
-Human output leads with a one-line verdict a non-expert can understand — e.g. `MISMATCH: binary
-advertises KleidiAI but 0 of 10 kernel symbols ever executed` — with `--json` available for
-machine consumption and `--quiet` for scripting.
+**Evidence:** `results/production-readiness/arm64-31294460364/summary.json`,
+`validation-receipt.json`, `workflow-receipt.json`, request JSONL, telemetry, server log, checksum
+manifests, and `contest-matrix/`.
 
-### No dependencies beyond a debugger already on the box
+### Proof chain 5 — a larger-model non-Arm control tests the workload method without inflating the Arm claim
 
-Every piece of this project's own tooling — `tools/verify_dispatch.py`,
-`tools/check_claims.py`, `mcp/server.py` — is stdlib-only Python, deliberately, since judges (and
-any real user) will run this on a fresh machine. The only external requirement is a debugger
-(`lldb` on macOS, `gdb` on Linux) that a working Arm dev box already has.
+#### Baseline
 
-### Two minutes to first result, on a laptop, with no Arm hardware
+The Arm64 readiness run is a single-host Qwen2.5 1.5B Q4_0 campaign. That is contest-relevant but
+too narrow to imply that the production-shaped workload and artifact discipline were only usable
+for one small model or one runtime.
+
+#### Technical change
+
+The same evidence philosophy was applied separately on an owned x86_64/CUDA RTX PRO 6000 using
+vLLM and immutable `Qwen/Qwen3-30B-A3B-Instruct-2507` model revision
+`0d7cf23991f47feeb3a57ecb4c9cee8ea4a17bfe`: mixed traffic, concurrency 1/4/8/16 capacity
+points, a 15-minute concurrency-8 soak, one-second host/GPU telemetry, request-level JSONL, and
+checksums.
+
+#### Measured impact
+
+Control run **`31289517517`** retained **7,573 measured requests with 0 failures**, plus 1,071
+successful warm-up requests, with usage accounting present for every measured request.
+
+That result is deliberately quarantined from the Arm score:
+
+```text
+actualProductionTraffic:false
+armContestEvidence:false
+candidateOnly:true
+registeredResult:false
+```
+
+The control aggregate does not contain a `productionReady` field; this submission does not infer
+one. It is a larger-model systems control, not Arm evidence, not a production-ready claim, and not
+a basis for an Arm-versus-GPU ratio.
+
+**Evidence:** `results/production-readiness/pro6000-31289517517/aggregate.json`,
+`README.md`, capacity and soak summaries, request JSONL, telemetry, preflight receipts,
+`workflow-receipt.json`, and `sha256sums.txt`.
+
+### Proof chain 6 — the verifier is applied to this project's own claims
+
+#### Baseline
+
+An early result published a **retracted +57.3%** patch win after comparing baseline and patched
+configurations measured in unevenly contended time windows. A separate first patch,
+`0001-kleidiai-phase-aware-dispatch.patch`, changed dispatch as designed but measured about
+**12% slower** at the default thread count.
+
+#### Technical change
+
+The project:
+
+- published the correction rather than deleting it;
+- re-measured in round-robin-interleaved order;
+- created `docs/CLAIMS.md` plus `tools/check_claims.py`;
+- added unit tests for the claims gate, verifier, CLI, target schema, and MCP server; and
+- retained negative and non-generalizing outcomes next to the positive claims.
+
+#### Measured impact
+
+The positive claim is now narrower and reproducible: patch `0002` automates the measured
+generation-thread improvement while preserving prefill within noise. Patch `0001` remains a
+negative result. The original 0.5B tuning result was also re-tested at 7B and shrank from 4.56x to
+1.33x rather than being presented as universal.
+
+**Evidence:** `results/REMEASURE-2026-08-04-QUIET.md`, `results/AUTODEFAULTS.md`,
+`results/scale/scale-experiment.json`, `docs/CLAIMS.md`, `CHANGELOG.md`.
+
+---
+
+## Judging criteria mapping
+
+### Technological Implementation — 40 points
+
+**Baseline:** banners, logs, and timers can all look healthy during a silent fallback.
+
+**Technical change:** Polygraph combines L1 symbol evidence, L2 selection evidence, and L3
+debugger dispatch counts; packages them behind a fail-closed CLI; validates the L3 probe against a
+ground-truth harness; adds cross-platform `lldb`/`gdb`; exposes the method through a dependency-free
+MCP server; and pins numeric prose through a claims registry.
+
+**Measured impact:** the method separated 0 from 7,968 real kernel calls when L1 and L2 were
+identical, found a zero-kernel build behind `KLEIDIAI = 1`, verified dispatch under concurrent
+serving load, and produced a fully retained Arm64 capacity/soak/restart artifact.
+
+**Judge evidence:** `tools/polygraph`, `tools/verify_dispatch.py`, `tools/server_readiness.py`,
+`tests/`, `.github/workflows/verify-free-arm64.yml`,
+`results/production-readiness/arm64-31294460364/`.
+
+### "WOW" factor — 25 points
+
+**Baseline:** the documented build exits successfully and advertises KleidiAI.
+
+**Technical change:** count what compiled and what executed instead of trusting the banner.
+
+**Measured impact:** 0 usable matmul entry points were present in the broken build; the corrected
+build restored 10, and the measured 7B prefill comparison was 48.64 to 222.14 tok/s, or 4.57x.
+The second reveal is epistemic: the project also published its own retraction, regression, and
+shrinking generalization result.
+
+**Judge evidence:** `results/server/spark-provenance.txt`,
+`results/scale/scale-experiment.json`, `results/REMEASURE-2026-08-04-QUIET.md`.
+
+### Potential Impact — 20 points
+
+**Baseline:** maintainers and release engineers can ship an advertised-versus-executed mismatch
+without a crash, failed build, or obvious latency anomaly.
+
+**Technical change:** provide a generic binary/symbol/workload verifier, a one-command CI contract,
+public upstream reports, reusable target presets, and evidence artifacts that preserve raw rows and
+claim boundaries.
+
+**Measured impact:** two upstream reports covering the project's original findings were filed; the
+independent `#26334` mechanism was reproduced with 15 debugger-backed runs; and the public
+Apache-2.0 repository gives other projects a concrete pattern for checking their own accelerated
+paths.
+
+**Scope limit:** Finding 3 does not affect stock `llama.cpp` releases. The exposed population is
+source builders and release pipelines that explicitly enable KleidiAI under the measured
+compiler/CPU condition.
+
+### User Experience / Developer Experience — 15 points
+
+**Baseline:** proving real dispatch normally requires custom debugger scripting and specialist
+knowledge.
+
+**Technical change:** ship one command, built-in presets, ad-hoc mode, JSON output, `--quiet`,
+`--level`, explicit exit codes, a no-model catch-a-liar demo, and a free GitHub-hosted Arm64
+workflow.
+
+**Measured impact:** a judge can verify both detector directions in about two minutes without Arm
+hardware or a model download:
 
 ```bash
-git clone https://github.com/tomyimkc/polygraph && cd polygraph
+git clone https://github.com/tomyimkc/polygraph.git
+cd polygraph
 make demo
 ```
 
-`examples/catch-a-liar/liar.c` is 45 lines of C compiled two ways. Both builds print
-`using fast path: yes` and return the same answer; one is lying. `polygraph check catch-a-liar`
-exits `1` on the liar and `0` on the honest build. A judge can verify the core claim of this
-entire project before deciding whether to read any of the rest of it. A recording of that run is
-the first thing in the README.
-
-### Graceful degradation that says so, and an exit-code contract that never lies
-
-`--level` caps how far a check attempts to go and falls back cleanly when a layer isn't available
-(`--level 2` for a fast L1+L2-only smoke test; auto debugger selection with an explicit "none"
-fallback) — and always says which layer it actually reached, rather than silently reporting a
-lower-confidence result as a full pass. Exit codes are contractual: `0` match, `1` mismatch, `2`
-undetermined — CI can depend on the distinction between "acceleration failed" and "we couldn't
-check," which is exactly the distinction a timing-only benchmark collapses.
-
-### The rest of the developer experience already shipped
-
-A dependency-free MCP server (`claude mcp add polygraph -- python3 mcp/server.py`, no `pip
-install`), a static dashboard with no build step (`site/`, published by
-`.github/workflows/pages.yml`), and one-command setup/run scripts (`./scripts/setup.sh &&
-./scripts/run_all.sh`) validated on three different Arm64 targets, including a free,
-judge-reproducible GitHub-hosted `ubuntu-24.04-arm` runner that needs no Arm hardware at all.
+The liar reports a mismatch and the honest build reports a match. If the debugger is unavailable,
+the tool exits `2` as undetermined instead of claiming success.
 
 ---
 
-## Appendix: the challenge's stated optimization focus areas (reference only — not the scored rubric)
+## Reproduction commands
 
-The challenge separately names six optimization focus areas. These are not the judging criteria
-above, but they're still worth a maintainer's quick scan. Coverage is uneven by design: this
-project's actual contribution concentrates in speed, server speed, developer experience, and
-Arm-specific work; model size and model quality are measured honestly, not claimed as wins.
+### Fastest judge path: prove the detector works
 
-| Optimization area | This project's evidence |
-|---|---|
-| **Model size** | Peak RSS measured across concurrency: **724 → 901 MiB** (`results/server/server-bench.json`). No size-reduction work (quantization, pruning, distillation) is claimed. |
-| **Model quality** | Byte-identical output at a fixed seed between patched and unpatched builds — an equivalence guarantee, not an accuracy/quality improvement claim. |
-| **Model speed** | Decode **67.8 → 145.9 tok/s (2.15x)** via `patches/0002` (`results/AUTODEFAULTS.md`). |
-| **Inference server speed** | **14.9 → 440.4 tok/s** aggregate across 1–16 concurrent `llama-server` clients (~29.6x); TTFT p99 ranges **89–221ms** across that sweep, peaking at 4 concurrent clients, not the highest-concurrency row (`results/server/server-bench.json`). |
-| **Developer experience** | The symbol-level dispatch verifier, MCP server, free-CI lane, dashboard, and the claims gate — plus Finding 3, a silent llama.cpp build defect this project's own method caught. |
-| **Arm-specific optimization** | `patches/0002` into llama.cpp; SME2/SVE2/I8MM micro-kernels; three Arm microarchitectures measured (Apple M4 Max, GitHub's free Neoverse-N2 runner, DGX Spark Cortex-X925). |
+```bash
+git clone https://github.com/tomyimkc/polygraph.git
+cd polygraph
+make demo
+python3 tools/check_claims.py
+```
+
+### Inspect and verify Arm64 run `31294460364`
+
+```bash
+cd results/production-readiness/arm64-31294460364
+sha256sum -c sha256sums.txt
+wc -l measured-requests.jsonl warmup-requests.jsonl
+jq '{
+  actualProductionTraffic,
+  productionReady,
+  candidateOnly,
+  totals,
+  soak: .results[] | select(.phase == "soak"),
+  gate
+}' summary.json
+jq '{runId, headSha, conclusion, url, jobs, artifacts}' workflow-receipt.json
+jq '{headSha, checks, contestMatrix}' validation-receipt.json
+```
+
+Expected high-level result: 1,543 measured request rows, 11 warm-up rows, gate `PASS`, and the exact
+`false/false/true` claim boundary.
+
+### Re-run the free hosted Arm64 workflow
+
+On a public fork with GitHub CLI authentication:
+
+```bash
+gh workflow run verify-free-arm64.yml --repo OWNER/polygraph
+gh run list --repo OWNER/polygraph --workflow verify-free-arm64.yml --limit 1
+gh run watch --repo OWNER/polygraph RUN_ID --exit-status
+```
+
+The longer `server-readiness` job runs only on `workflow_dispatch`. The workflow itself pins the
+model, source revision, build command, harness arguments, evidence-boundary assertions, and
+artifact upload.
+
+### Run the readiness harness locally after building the pinned server and model
+
+```bash
+python3 tools/server_readiness.py \
+  --server "$LLAMA_SERVER" \
+  --model "$MODEL_PATH" \
+  --out-dir "$READINESS_OUT" \
+  --threads "$(nproc)" \
+  --threads-batch "$(nproc)" \
+  --server-parallel 4 \
+  --capacity-concurrencies 1,2,4 \
+  --capacity-seconds 30 \
+  --soak-concurrency 4 \
+  --soak-seconds 600 \
+  --warmup-requests-per-worker 1 \
+  --restart-cycles 2 \
+  --max-tokens 24 \
+  --request-timeout 60 \
+  --ready-timeout 120 \
+  --min-measured-requests 50 \
+  --max-error-rate 0 \
+  --max-ttft-p99-ms 5000 \
+  --max-e2e-p99-ms 30000 \
+  --max-recovery-seconds 120 \
+  --max-rss-mib 8192
+```
+
+### Reproduce the zero-kernel build correction
+
+Run against `llama.cpp` commit `dbadb68` on the measured class of aarch64 Linux system:
+
+```bash
+cmake -S . -B build-broken \
+  -DGGML_CPU_KLEIDIAI=ON \
+  -DCMAKE_BUILD_TYPE=Release
+cmake --build build-broken -j
+
+cmake -S . -B build-fixed \
+  -DGGML_CPU_KLEIDIAI=ON \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DGGML_NATIVE=OFF \
+  -DGGML_CPU_ARM_ARCH="armv9.2-a+sve2+i8mm+bf16+dotprod"
+cmake --build build-fixed -j
+
+nm -D build-broken/bin/libggml-cpu.so |
+  grep -c '^[0-9a-f]* T kai_run_matmul'
+nm -D build-fixed/bin/libggml-cpu.so |
+  grep -c '^[0-9a-f]* T kai_run_matmul'
+```
+
+### Reproduce the CUDA-host-buffer dispatch mismatch
+
+The three dedicated presets encode the baseline, `--no-host`, and `-dev none` workloads. Run from
+a checkout where `BINARY` points to the CUDA+KleidiAI `llama-cli` build and `MODEL` points to the
+measured `q05.gguf` model:
+
+```bash
+cmake -S . -B build-cuda-kleidiai -DCMAKE_BUILD_TYPE=Release \
+  -DGGML_CPU_KLEIDIAI=ON -DGGML_CUDA=ON \
+  -DGGML_NATIVE=OFF \
+  -DGGML_CPU_ARM_ARCH="armv9.2-a+sve2+i8mm+bf16+dotprod"
+cmake --build build-cuda-kleidiai -j
+
+BINARY="${BINARY:-build-cuda-kleidiai/bin/llama-cli}"
+MODEL="${MODEL:-q05.gguf}"
+
+set +e
+python3 tools/polygraph check llama-cpp-kleidiai-cuda-ngl0-baseline \
+  --binary "$BINARY" --model "$MODEL" \
+  --l3-timeout 60 --l2-timeout 30
+baseline_rc=$?
+
+python3 tools/polygraph check llama-cpp-kleidiai-cuda-ngl0-nohost \
+  --binary "$BINARY" --model "$MODEL" \
+  --l3-timeout 60 --l2-timeout 30
+nohost_rc=$?
+
+python3 tools/polygraph check llama-cpp-kleidiai-cuda-ngl0-devnone \
+  --binary "$BINARY" --model "$MODEL" \
+  --l3-timeout 60 --l2-timeout 30
+devnone_rc=$?
+set -e
+
+printf 'baseline=%s nohost=%s devnone=%s\n' \
+  "$baseline_rc" "$nohost_rc" "$devnone_rc"
+test "$baseline_rc" -eq 1
+test "$nohost_rc" -eq 0
+test "$devnone_rc" -eq 0
+```
+
+### Inspect and verify non-Arm control `31289517517`
+
+```bash
+cd results/production-readiness/pro6000-31289517517
+sha256sum -c sha256sums.txt
+wc -l capacity-sweep/requests-c*.jsonl soak-c8/requests-c8.jsonl
+jq '{
+  runId,
+  gitSha,
+  model,
+  modelRevision,
+  totals,
+  actualProductionTraffic,
+  armContestEvidence,
+  candidateOnly,
+  registeredResult
+}' aggregate.json
+cat workflow-receipt.json
+```
+
+Do not turn this control into Arm evidence or compare its throughput numerically with the Arm64
+run: the hardware, model, runtime, output lengths, and concurrency plans differ.
 
 ---
+
+## Negative results and limitations — keep this visible
+
+- The earlier **+57.3%** patch win was retracted after the measurement-order flaw was found.
+- `patches/0001-kleidiai-phase-aware-dispatch.patch` changed dispatch as intended but measured about
+  **12% slower** at the default thread count; it is not promoted as an optimization.
+- The 0.5B instance of Finding 3 produced **0.99x decode**, a null result.
+- The original tuning multiple shrank from 4.56x at 0.5B to 1.33x at 7B.
+- Patch `0002`'s mechanism works in the tested grid, but its SME-cap thread heuristic missed the
+  measured 1.5B optimum by about 17.5%.
+- Finding 3 is one gcc 13.3/Cortex-X925 build condition and does not affect stock releases.
+- The Arm64 readiness gate is synthetic, single-host, and short-duration; it is not a production
+  readiness or application-quality claim.
+- The PRO 6000 control is x86_64/CUDA and cannot support an Arm contest claim.
+- The automated Spark workflow remains best-effort; the committed SVE2 dispatch confirmation came
+  from a separate manual debugger measurement.
+- The project claims filed evidence, not maintainer acceptance, agreement, or an upstream fix.
+
+---
+
+## Under-three-minute demo plan
+
+The repository-native final cut is:
+
+```text
+demo/out/polygraph-contest-final.mp4
+```
+
+Its current validation receipt records **169.021333 seconds (2:49.021)**, leaving
+**10.978667 seconds** under the three-minute cap. The file is **9,527,083 bytes** with SHA-256
+`076de488a8939f56278655a0775775257c7537317697aa3003d4aaf380ed18e4`. The authored six-cue captions are
+`demo/out/polygraph-contest-final.srt`; the media/evidence receipt is
+`demo/out/polygraph-contest-final.validation.json`; and the MP4 checksum is in
+`demo/out/polygraph-contest-final.sha256`.
+
+The rendered story uses this six-beat sequence:
+
+| Time | Judge question | Baseline → technical change → measured impact |
+|---|---|---|
+| 0:00–0:25 | Why distrust the banner? | `llama.cpp`'s documented KleidiAI build prints `KLEIDIAI = 1` → inspect symbols → find 0 usable matmul entry points |
+| 0:25–0:53 | Why is L3 necessary? | L1/L2 agree in the CUDA-host-buffer case → count non-halting debugger hits → 0 versus 7,968 |
+| 0:53–1:22 | What did the build defect cost? | Broken 7B build → explicit feature-target repair → 48.64 to 222.14 tok/s prefill, 4.57x |
+| 1:22–1:51 | What changed technically? | Separate build and runtime failures → separate build flags/workarounds plus reusable L1/L2/L3 CLI → explicit exit codes |
+| 1:51–2:22 | Is there Arm server evidence? | Prior microbenchmarks only → automated hosted Arm64 readiness harness → run `31294460364`, 1,543 requests, 0 failures |
+| 2:22–2:49 | Does the result overclaim? | Synthetic PASS could be misread → show exact boundary → `actualProductionTraffic:false`, `productionReady:false`, `candidateOnly:true`; PRO 6000 remains non-Arm |
+
+The final cut includes 20 seconds of the real, isolated `make demo` capture. Its capture receipt
+records a strict allowlisted environment, bounded process group and outputs, the exact capture
+driver and source archive hashes, transcript reconstruction, and the expected liar/honest exit
+contract. The encoded playback preserves captured text and ordering while normalizing pauses for
+legibility.
+
+---
+
+## Built with
+
+Arm KleidiAI, Arm SME2, Arm SVE2, Arm NEON/I8MM/DOTPROD, `llama.cpp`, C, C++, Python, Bash,
+CMake, `lldb`, `gdb`, GitHub Actions, vLLM for the non-Arm control, JSONL, MCP, and Apache-2.0
+project licensing.
+
+---
+
+# Final paste-ready Devpost block
+
+## Project Overview
+
+Polygraph is a lie detector for accelerated software. Instead of trusting a startup banner or a
+timing result, it checks three separate layers: whether the accelerated kernels exist in the
+binary, what the runtime says it selected, and whether those kernels actually executed under a
+non-halting debugger breakpoint.
+
+The headline baseline was a `llama.cpp` build on a DGX Spark that completed successfully and
+printed `KLEIDIAI = 1`, yet contained 0 usable `kai_run_matmul` entry points. The technical change
+was an explicit Arm feature-target build plus a reusable L1/L2/L3 verification tool. The measured
+impact on the tested 7B model was 48.64 to 222.14 tok/s prefill, a 4.57x comparison, and 11.17 to
+18.45 tok/s decode, a 1.65x comparison. The 0.5B decode result was 0.99x, so we report it as no
+measurable effect rather than generalizing the 7B result.
+
+We also built a real optimization: patch `0002` changes only the default generation thread count
+to KleidiAI's runtime-detected SME2 cap while preserving the batch/prefill default. In the measured
+Apple M4 Max run, no-flags decode moved from 67.8 to 145.9 tok/s, or 2.15x, while prefill changed
+by -3.0% within noise. The tempting alternative, manually passing `-t 2`, cut prefill by 47%.
+
+The repository is public and Apache-2.0 licensed. Its measurement artifacts, raw request rows,
+telemetry, workflow receipts, validation receipts, negative results, and claim checker are all
+committed for judges to inspect.
+
+## Functionality / Output
+
+The primary interface is:
+
+```bash
+tools/polygraph list
+tools/polygraph explain TARGET
+tools/polygraph check TARGET
+tools/polygraph check --binary PATH --symbols REGEX --run "COMMAND"
+```
+
+Polygraph returns human-readable and JSON output plus contractual exit codes: `0` for a match, `1`
+for a measured mismatch, and `2` for undetermined. The two-minute `make demo` compiles two tiny
+programs that print the same `using fast path: yes` banner. L3 then proves that the liar never
+calls the fast function and the honest build does.
+
+The current Arm64 evidence is GitHub Actions run `31294460364`. It adds a production-shaped
+`llama-server` campaign: mixed traffic, concurrency 1/2/4 capacity points, a 10-minute
+concurrency-4 soak, request-level JSONL, one-second telemetry, and two controlled restarts. It
+completed 1,543 measured requests with 0 failures; all 10 configured checks passed. Its exact
+claim boundary is still:
+
+```text
+actualProductionTraffic:false
+productionReady:false
+candidateOnly:true
+```
+
+The complementary RTX PRO 6000 run `31289517517` retained 7,573 measured requests with 0 failures
+on a larger model, but it is explicitly `armContestEvidence:false` and is included only as a
+non-Arm systems control.
 
 ## Setup Instructions
 
-**Recommended — free, judge-reproducible, zero cost, no Arm hardware needed:**
-
-GitHub's `ubuntu-24.04-arm` runner (Neoverse-N2 class) is free for public repos. Fork this repo and
-either open a PR or click **Run workflow** on `verify-free-arm64` in the Actions tab. It builds
-`llama.cpp` + KleidiAI, builds the kernel library, runs correctness tests, verifies dispatch, runs
-the benchmark sweep, and publishes `results/LEDGER.md` as the job summary plus a downloadable
-`results/` artifact. (Finding 2 is expected — and marked `continue-on-error` — on this runner:
-Neoverse-N2's SVE2 is also below the 256-bit gate the finding describes.)
-
-A manual workflow dispatch also runs the longer `server-readiness` job: pinned 1.5B Q4_0 model,
-capacity sweep, 10-minute sustained load, full request/telemetry retention, explicit SLO checks,
-and two restart cycles. The exact successful receipt and raw output are in
-`results/production-readiness/arm64-31294460364/`.
-
-To run the identical pipeline locally on any `aarch64` Linux box:
+Fastest path, with no Arm hardware and no model download:
 
 ```bash
-sudo apt-get install -y cmake build-essential curl python3 gdb
-git clone https://github.com/tomyimkc/polygraph.git && cd polygraph
-./scripts/setup.sh      # clones+builds llama.cpp w/ KleidiAI, fetches the demo GGUF, builds kernels/
-./scripts/run_all.sh    # correctness -> dispatch verify -> bench -> results/LEDGER.md
+git clone https://github.com/tomyimkc/polygraph.git
+cd polygraph
+make demo
+python3 tools/check_claims.py
 ```
 
-**Local Apple Silicon path (the SME2 lane this submission's headline numbers come from):**
+To reproduce the contest's free Arm64 pipeline, fork the public repo and run
+`verify-free-arm64.yml` from GitHub Actions. The workflow uses GitHub's hosted
+`ubuntu-24.04-arm` runner, pins the `llama.cpp` revision and model hashes, runs the three-model
+dispatch/throughput matrix, and on manual dispatch runs the longer server-readiness job.
 
-Requires Xcode Command Line Tools (`xcode-select --install`, for `clang` + `lldb`) and `cmake`.
+Exact local commands, checksum checks, workflow commands, and artifact inspection commands are in
+`docs/CONTEST-EVIDENCE-MAP.md`.
 
-```bash
-git clone https://github.com/tomyimkc/polygraph.git && cd polygraph
-./scripts/setup.sh
-./scripts/run_all.sh
-```
+## Why it should win
 
-This is a full clone+build+download from scratch (overridable via `scripts/common.sh` to reuse an
-existing checkout). The expensive stage is the `lldb`-attached dispatch sweep (~9m39s on an M4 Max,
-10 configurations); everything else finishes in well under two minutes. If `lldb` reports
-"Developer mode is currently disabled" or a dispatch check times out, see `tools/protocol.md` §6
-item 9 for the documented recovery path.
+**Technological Implementation — 40 points:** Polygraph does not stop at a benchmark. It combines
+static symbols, runtime selection, and real execution counts; works across `lldb` and `gdb`; has a
+fail-closed CLI and CI contract; validates its own debugger probe; exposes an MCP interface; and
+pins every numeric prose claim to evidence.
 
-**To apply and verify the two patches directly** (against a separate `dbadb68` checkout of
-`llama.cpp`):
+**"WOW" factor — 25 points:** a successful build said `KLEIDIAI = 1` while shipping 0 usable
+matmul entry points. Correcting the build produced a 4.57x measured 7B prefill comparison. In a
+second finding, the banner, selection log, and symbol count were identical while L3 changed from 0
+to 7,968 actual kernel calls.
 
-```bash
-git apply patches/0002-kleidiai-sme-aware-thread-default.patch   # the real, on-by-default win
-cmake -S . -B build -DGGML_CPU_KLEIDIAI=ON -DGGML_METAL=OFF -DCMAKE_BUILD_TYPE=Release
-cmake --build build --target llama-cli -j"$(sysctl -n hw.ncpu 2>/dev/null || nproc)"
-./build/bin/llama-cli -m model.gguf -no-cnv -st --simple-io -p "your prompt" -n 128
-# compare: GGML_KLEIDIAI_AUTO_THREADS=0 ./build/bin/llama-cli ... (reproduces stock behavior exactly)
-```
+**Potential Impact — 20 points:** the tool is generic to any binary and symbol regex, the repo is
+public under Apache-2.0, two upstream reports cover the project's original findings, and an
+independently reported mechanism was reproduced with 15 debugger-backed runs. The impact statement
+stays honest: the zero-kernel defect does not affect stock releases.
 
-**Optional — DGX Spark / Cortex-X925 (the SVE2 lane, best-effort, not a gate):**
-`./scripts/setup.sh && ./scripts/run_all.sh` against your own SVE2-capable `aarch64` Linux box.
-The corresponding `verify-spark-aarch64.yml` workflow is `workflow_dispatch`-only and
-`continue-on-error` on every step — there is a live, unresolved incident on this project's own
-Spark runner unrelated to this repo's code, so this lane is documented as best-effort.
+**User Experience / Developer Experience — 15 points:** one clone and `make demo` proves both the
+positive and negative detector paths in about two minutes. JSON output, presets, ad-hoc mode,
+explicit exit codes, graceful degradation, and a free hosted Arm64 workflow make the method usable
+without specialized hardware.
 
-## What changed after 2026-06-04 (the challenge's new-work start date)
+Most importantly, Polygraph applies its standard to itself. We published a retraction, kept a
+slower patch visible, recorded a no-effect result, and refused to turn a synthetic readiness PASS
+or a non-Arm control into a production or Arm claim.
 
-This entire repository is new work created for this challenge: `tomyimkc/polygraph` (created and
-submitted under the name `arm-dispatch-ledger`, renamed 2026-08-04 — same account, same commit
-history, old URL 301-redirects) was created **2026-08-03T23:19:09Z**, and every commit, finding,
-patch, benchmark, and line of code in it was produced between then and this submission. Nothing
-here predates the challenge window — there is no earlier version of this project to compare
-against.
+## Judge evidence index
 
-## Honest limitations
-
-- **Single machine per finding.** Finding 1 (SME2's hardcoded per-chip thread cap) is verified live
-  on one Apple M4 Max; the base "M4"/"M4 Pro"/"M4 Ultra" cap values for other chips are read from
-  source, not independently measured.
-- **Finding 2 (the SVE2 256-bit exact-width gate) is now dispatch-confirmed on real SVE2
-  hardware.** `results/server/` (DGX Spark, Cortex-X925, `SVE_CNT = 16`, i.e. 128-bit SVE) shows
-  I8MM selected over SVE exactly as the gate predicts, including under concurrent `llama-server`
-  load (364,444 I8MM vs. zero SVE calls). That confirmation was gathered manually on the box, not
-  via the automated `verify-spark-aarch64.yml` CI lane, which remains `continue-on-error` and
-  best-effort (see Setup Instructions) because of a separate, unrelated incident on this project's
-  own Spark runner. It was also **published two days before this repository existed** by a
-  different, unrelated project, [`luongs3/arm-dispatch-audit`](https://github.com/luongs3/arm-dispatch-audit)
-  — full disclosure and what this project adds beyond it: `docs/RELATED-WORK.md`. This project does
-  not claim priority on that finding.
-- **The `0001` phase-aware dispatch patch is a measured regression, not a win** (~12% slower at
-  default thread count) — reported honestly as a negative result, not offered as a performance
-  improvement. Only `0002` (the auto-defaults patch) is claimed as a genuine speedup.
-- **The Arm64 readiness PASS is not a production-ready claim.** It is a synthetic single-host run
-  on a free four-core Arm64 runner with a 1.5B model. It covers sustained mixed traffic, request
-  accounting, latency/RSS limits, and controlled process recovery, but not live customer traffic,
-  multi-day availability, host/network failover, multi-tenant isolation, or application-specific
-  output correctness. The artifact itself keeps `productionReady:false`.
-- **Most of the headline 3.43x decode number is not an SME2 discovery.** A decomposition sweep
-  shows 3.95x of it is thread-oversubscription avoidance alone (SME2 forced off), a well-documented
-  Apple Silicon effect this project did not discover; SME2's own contribution at the tuned thread
-  count is a real but smaller 1.31x.
-- **Single model, single quant for the headline 3.43x/1.79x tuning number.** That number
-  (decode/prefill vs. the no-flags default) is `Qwen2.5-0.5B-Instruct`, `Q4_0` only. A separate
-  follow-up did test the `0002` auto-defaults patch specifically against two further configs — see
-  the next bullet — but that is still not a full model-size × quant grid, and still Qwen-family only.
-- **The `0002` patch's speedup magnitude is this machine's numbers, not a general claim** — the
-  mechanism (reading the cap from KleidiAI's own runtime detection) generalizes to any SME2 CPU
-  KleidiAI supports, but 2.15x/-3% was only measured on this Apple M4 Max.
-- **The `0002` patch's auto-selected thread count is not the true per-model decode optimum.** A
-  generalization study (`results/GENERALIZATION.md`) confirms the *mechanism* holds beyond the
-  original 0.5B/Q4_0 config: across the three model/quant configs tested (0.5B/Q4_0, 1.5B/Q4_0,
-  0.5B/Q8_0), the patch beats the no-flags baseline by **1.47x-3.00x decode** and reaches its own
-  `-t <cap>` target within 1-2% every time, never regressing relative to the unpatched baseline.
-  But the *specific* thread count the patch hardcodes to (the SME cap — 2 on this chip) is only the
-  true per-model decode optimum at 0.5B. At 1.5B/Q4_0, an isolated thread sweep shows decode peaks
-  at `-t 4` (122.1 tok/s), not the cap's `-t 2` (103.9 tok/s) — a real, measured **~17.5% miss**.
-  Stated plainly: the auto-defaults mechanism generalizes; the fixed SME-thread-cap heuristic does
-  not generalize to model size.
-- **`GGML_KLEIDIAI_SME` remains a process-global setting.** The theoretical best (SME2-decode +
-  NEON-forced-prefill, simultaneously, in one process) stays `[NOT YET ACHIEVABLE]` with either
-  patch.
-- Absolute throughput numbers throughout were collected on a busy, multi-agent-shared machine; the
-  interleaved **ratios**, not the absolute tok/s figures, are the trustworthy part — stated
-  explicitly everywhere a number is quoted.
-- **The DGX Spark has no SME/SME2.** Finding 1 (SME2's hardcoded per-chip decode thread cap) was
-  not, and cannot be, reproduced there — the Spark lane adds Finding 3 (a new build defect), a
-  second-core confirmation of Finding 2, and the concurrent-serving numbers above; it says nothing
-  new about Finding 1.
-- **The server-lane numbers are one model, one quant, one machine.** `results/server/` is
-  `Qwen2.5-0.5B-Instruct-Q4_0` only, on one DGX Spark unit — not a model-size × quant grid, and not
-  independently reproduced on a second Spark.
-- **`llama-server` only — not vLLM, TGI, or any other serving stack.** The concurrent-serving
-  throughput/TTFT/memory numbers and the dispatch-under-load capture are specific to `llama.cpp`'s
-  own server; nothing here measures or claims anything about other inference servers. (`vLLM`'s Arm
-  CPU path doesn't share the KleidiAI mechanism at all — see `docs/PRODUCT.md`.)
-- **Both upstream reports are open and unanswered.** Findings 1 and 2 are
-  [`ggml-org/llama.cpp#26547`](https://github.com/ggml-org/llama.cpp/issues/26547) (2026-08-04);
-  Finding 3 is [`#26630`](https://github.com/ggml-org/llama.cpp/issues/26630) (2026-08-05). Neither has a maintainer response yet, and we are
-  not claiming upstream agreement — only that the reports are filed, dated and public.
-- **The Finding 3 defect does not affect stock releases.** The official `llama.cpp` release
-  (`b10276`) ships `GGML_CPU_KLEIDIAI` off by default and is not broken by this defect; the exposed
-  population is people manually building with `-DGGML_CPU_KLEIDIAI=ON` on a native build against a
-  compiler whose Arm CPU-name table predates their specific core — real, but small and expert.
-  (`results/prevalence/shipped-binaries-2026-08-05.json`, `docs/PRODUCT.md`.)
-
----
-
-### FIELD: Built with
-
-llama.cpp, Arm KleidiAI, Arm SME2, Arm SVE2, Arm NEON, C, C++, Python, Bash, CMake, lldb, gdb, GitHub Actions, Qwen2.5-0.5B-Instruct (GGUF, Q4_0)
-
----
-
-### FIELD: Repository URL
-
-https://github.com/tomyimkc/polygraph
-
----
-
-### FIELD: Dashboard URL
-
-https://tomyimkc.github.io/polygraph/
-
----
-
-### FIELD: Demo video
-
-[PASTE YOUTUBE URL AFTER UPLOAD]
-
-Runtime **1:43 (103.06s)**, comfortably under the contest's 3-minute cap (`docs/VIDEO-PRODUCTION.md`).
-Captions are burned in, with a sidecar `.srt` (36 cues) also provided for the YouTube upload.
-
----
-
-### FIELD: Upstream issue URL
-
-https://github.com/ggml-org/llama.cpp/issues/26630
-
-This field points at the zero-kernel KleidiAI build defect because that is the bug the "What it
-does" narrative above describes. The SME2/SVE dispatch-gate findings are filed separately as
-https://github.com/ggml-org/llama.cpp/issues/26547 — both issues are linked and described in the
-"Potential Impact" section. (Guidance for pasting, not part of the field value.)
-
----
-
-## Devpost narrative fields
-
-Devpost's own "About the project" box conventionally uses these headers. Paste them, in this
-order, after the judging-criteria sections above — the sections above are the depth a judge scores
-against; these are the plain-language story a general reader skims first.
-
-### FIELD: What it does
-
-Polygraph checks whether the "fast mode" a piece of software claims to be using is actually
-running — not by timing it, but by attaching a debugger to the real code and counting how many
-times the fast function actually gets called. We pointed it at `llama.cpp`, the software behind
-many local AI chatbots, running Arm's KleidiAI acceleration, and found a real, previously-unknown
-bug: following Arm's own official build instructions produces a program whose startup message
-claims acceleration is on, but that has zero of the actual fast kernels compiled in. It silently
-runs slow the entire time, and nothing in the log, the banner, or the exit code tells you. We
-measured exactly how much that costs (up to 4.57x slower on a realistic model size), built the
-one-flag fix, verified the fix with the same debugger method, and reported it to the people who
-maintain `llama.cpp`.
-
-### FIELD: How we built it
-
-We built a three-layer check: first, does the binary even contain the fast code (a static symbol
-check)? Second, what does the program's own log say it picked (its self-reported log line)? Third
-— the layer nobody else was doing — did that code actually execute, proven by literally setting a
-breakpoint on the real function and counting real hits, without stopping the program. That third
-layer is what caught the gap the first two would have missed. Around that core method we built a
-patch that fixes a real, measured performance problem (and a second patch we tried, measured, and
-reported as *not* working, honestly); a small command-line tool and an MCP server so an AI agent
-can ask the same question; a results dashboard; and continuous-integration checks — including one
-that fails the build if any number in our own writeup drifts from what we actually measured, since
-we've been burned by a stale number before. We ran the whole pipeline on three different Arm
-machines: a MacBook, a free GitHub-hosted cloud runner, and a DGX Spark server.
-
-### FIELD: Challenges we ran into
-
-Getting a debugger to catch a function that lives inside a library the program only loads after it
-starts running (`dlopen`) took real work — the fix is "pending breakpoints," a feature most people
-never need. We shipped a wrong headline number once (a fabricated +57.3%), caused by comparing two
-runs measured under different, uneven background load, and had to publicly retract it and build a
-mechanical check so it can't happen silently again. On the DGX Spark, the exact same silent-failure
-pattern this project hunts for happened to our own build: the compiler rejected `llama.cpp`'s own
-CPU-detection probe, which is the root cause of the headline finding. A promising shortcut —
-reading hardware performance counters instead of using a debugger — turned out to be locked down on
-that same server (`perf_event_paranoid=4`, and the specific counters we needed don't exist on that
-chip at all), so we had to keep the debugger-based approach rather than switch to something faster.
-And targeting Arm's newest CPU feature (SME2) the way the documentation says to crashes instantly on
-Apple hardware — the real fix had to be discovered by hitting the crash, not by reading the manual.
-
-### FIELD: Accomplishments that we're proud of
-
-We found and reported a real bug to a major open-source project, with exact reproduction steps and
-an offer to send the fix. We retracted our own wrong number in public instead of quietly fixing it,
-and then built a tool that makes that mistake structurally hard to repeat. We re-ran our own
-headline result on a bigger, more realistic model size and published that it shrank — instead of
-only publishing the number that made us look best. And we tested the "how big is this actually?"
-question honestly: rather than assume the bug affects everyone, we checked what real, official
-release binaries look like, found the bug doesn't affect them, and said so plainly instead of
-inflating the impact.
-
-### FIELD: What we learned
-
-A timing-only benchmark genuinely cannot see this class of bug — you need a debugger on the real
-entry points, because the log and the exit code will both look fine. A number measured on a tiny
-demo-sized model can be dramatically different from the same measurement on a model people actually
-run, which is a lesson we learned about our own results, not just about auditing someone else's.
-And some of Arm's own documented guidance has real gaps that only show up as a crash or a silent
-failure — the fix for both had to be found by hand, not by following the docs as written.
-
-### FIELD: What's next
-
-Both upstream reports are now filed ([#26547](https://github.com/ggml-org/llama.cpp/issues/26547),
-[#26630](https://github.com/ggml-org/llama.cpp/issues/26630)) and the next step there is simply to
-answer whatever the maintainers ask. Generalization is already underway, not just planned: two
-presets beyond `llama.cpp` (`whisper.cpp` and ONNX Runtime) are validated end-to-end with
-committed `verified_against` receipts (`tools/targets/*.json`) — one catching a real CoreML→CPU
-silent fallback, one demonstrating the explicit could-not-determine path — and the next step is
-more of the same, prioritizing Arm-accelerated stacks where the advertised-vs-executed gap is most
-likely. Get the automated SVE2
-confirmation lane green once the unrelated Spark runner incident is resolved, so that result stops
-depending on a manual measurement. And explore per-model auto-tuning that's honest about the thing
-this project already found the hard way: the current thread-cap heuristic is a good default, not a
-universal optimum, and any auto-tuner has to earn that claim per model size instead of assuming it.
-
----
-
-### FIELD: Q1 — What was the hardest part of building or optimizing your project? Select all that apply
-
-Measuring performance, Debugging runtime or compatibility issues, Understanding Arm-specific guidance
-
----
-
-### FIELD: Q2 — What would have made it easier to complete your project? Select all that apply.
-
-More benchmarking examples, More Arm-specific optimization guidance, Better documentation
-
----
-
-### FIELD: Q3 — Did this challenge change your likelihood of building on Arm in the future?
-
-Yes, significantly more likely
-
----
-
-### FIELD: Q4 — How likely are you to continue developing, optimizing, or deploying this project after the challenge?
-
-Very likely
-
----
-
-### FIELD: Q5 — What is one thing Arm could improve to better support developers like you?
-
-Two concrete things hit during this project. First, `-march=armv9-a+sme2` — the generic, documented
-way to target SME2 — SIGILLs at runtime on Apple Silicon, because `clang` emits the SVE instruction
-`cntd` outside streaming mode as part of that target, and Apple ships SME2 without any
-non-streaming SVE at all. The fix is to target the concrete CPU (`-mcpu=apple-m4`) instead of the
-generic architecture level, but nothing in the generic Armv9+SME2 guidance says this — it has to be
-discovered by hitting the SIGILL. Second, kernel dispatch on Arm CPUs is currently unobservable
-without attaching a debugger to the actual kernel entry points: a runtime log or startup banner can
-say an accelerated kernel is selected while the code that actually runs falls back to a slower
-kernel family, and nothing short of an `lldb`/`gdb` breakpoint on the real symbols catches the gap.
-Official tooling that makes dispatch decisions inspectable at runtime — without requiring every
-developer to build their own debugger harness, as this project had to — would close a real, silent
-performance gap that a timing-only benchmark cannot see.
+1. **Start here:** `docs/CONTEST-EVIDENCE-MAP.md` — claim-by-claim evidence and commands.
+2. **Run the product:** `make demo`, then inspect `tools/polygraph` and `docs/QUICKSTART.md`.
+3. **Headline build finding:** `results/server/spark-provenance.txt` and
+   `results/scale/scale-experiment.json`.
+4. **Automatic optimization:** `patches/0002-kleidiai-sme-aware-thread-default.patch` and
+   `results/AUTODEFAULTS.md`.
+5. **L1/L2 agree but L3 fails:** `results/upstream/FINDING-4-CUDA-HOST-BUFFER.md` and its
+   15-run JSON.
+6. **Arm64 run `31294460364`:**
+   `results/production-readiness/arm64-31294460364/summary.json`,
+   `validation-receipt.json`, and `workflow-receipt.json`.
+7. **Non-Arm control `31289517517`:**
+   `results/production-readiness/pro6000-31289517517/aggregate.json` and `README.md`.
+8. **Negative results and corrections:** `results/REMEASURE-2026-08-04-QUIET.md`,
+   `patches/README.md`, `results/GENERALIZATION.md`.
+9. **Claim integrity:** `docs/CLAIMS.md`, `tools/check_claims.py`, and
+   `.github/workflows/claims.yml`.
+10. **Repository-native final video:** `demo/out/polygraph-contest-final.mp4`, captions in
+    `demo/out/polygraph-contest-final.srt`, validation receipt in
+    `demo/out/polygraph-contest-final.validation.json`, and checksum in
+    `demo/out/polygraph-contest-final.sha256`. The final cut includes receipt-verified real
+    `make demo` capture playback with normalized pauses and unchanged captured text.
+11. **Final submission check:** `docs/CONTEST-SUBMISSION-CHECKLIST.md`.

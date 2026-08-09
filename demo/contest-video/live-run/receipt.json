@@ -1,0 +1,87 @@
+{
+  "schema": "polygraph.contest-video.live-capture.v1",
+  "command": [
+    "make",
+    "demo"
+  ],
+  "source": {
+    "branch": "feat/contest-production-hardening-20260809",
+    "gitHead": "78b1baa098343d41429cf340df56a211fca641a3",
+    "gitArchiveSha256": "fc0957f57f29e7510b0071643b6fc7acf68cbbecc873542cacdfa7d88994c77a",
+    "workingTreeEditsIncluded": false,
+    "method": "git archive HEAD extracted to an isolated temporary directory",
+    "captureDriver": "tools/render_contest_video.py",
+    "captureDriverSha256": "34dc6670f7a9c3fe507e6981eccec13f86bb5d0b1c7d1f5335a7665c9c4e8768",
+    "files": {
+      "Makefile": "1745028b79ea7f736ed0e7f80c0be4da90b8500fe5877fb16335534c56051ed9",
+      "examples/catch-a-liar/demo.sh": "04f64b072b6669a3e1ddabc1b9e24dff56d51bcfd4ca432d2e0547876afa5897",
+      "examples/catch-a-liar/liar.c": "c420ad8052800a4d55d8ce8b0fa695b89cd070e39fee177d188e0f5a58d5e5d4",
+      "tools/polygraph": "5e44ca61ee63b6b81145c3435b51b8a9e72eafdb7e19557cfa1a73c85114cd7b",
+      "tools/verify_dispatch.py": "f424422e48beeb6cec2855985218c95ae50a73c1d856ba269ee136cc88049360",
+      "tools/targets/catch-a-liar.json": "48fd3a5a2b0fb307ce73ec5999434fb04ae4f82711e5d9d92b014a6aed89cc5a"
+    }
+  },
+  "run": {
+    "startedAtUtc": "2026-08-09T09:47:35.247748+00:00",
+    "completedAtUtc": "2026-08-09T09:47:40.330967+00:00",
+    "wallSeconds": 4.58224,
+    "exitCode": 0,
+    "ptyEventCount": 18
+  },
+  "capturePolicy": {
+    "environmentMode": "strict-allowlist",
+    "environmentKeys": [
+      "CC",
+      "HOME",
+      "LANG",
+      "LC_ALL",
+      "PATH",
+      "PYTHONHASHSEED",
+      "TERM",
+      "TMPDIR"
+    ],
+    "commandPaths": {
+      "make": "/usr/bin/make",
+      "cc": "/usr/bin/cc",
+      "lldb": "/usr/bin/lldb",
+      "python3": "/Users/tom/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/bin/python3.14"
+    },
+    "timeoutSeconds": 45.0,
+    "termGraceSeconds": 3.0,
+    "maxRawTranscriptBytes": 1048576,
+    "maxCleanTranscriptBytes": 524288,
+    "maxEventCount": 4096,
+    "maxEventsFileBytes": 2097152,
+    "maxGifBytes": 8388608,
+    "processGroup": "new session; SIGTERM then SIGKILL only for owned group"
+  },
+  "host": {
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "python": "3.14.6",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.23.3)",
+    "debugger": "lldb-2103.0.25.1",
+    "make": "GNU Make 3.81"
+  },
+  "verifiedOutput": {
+    "liarBanner": "using fast path: yes",
+    "liarL3Hits": 0,
+    "liarExitCode": 1,
+    "honestBanner": "using fast path: yes",
+    "honestL3Hits": 1,
+    "honestExitCode": 0,
+    "overallExitCode": 0
+  },
+  "playback": {
+    "asset": "demo/contest-video/live-run/make-demo.gif",
+    "durationSeconds": 20.0,
+    "timing": "Literal PTY output from the captured run; line-reveal timing is normalized for legibility and the final frame is held. Output text is unchanged.",
+    "fabricatedOutput": false
+  },
+  "files": {
+    "make-demo.ansi": "f8f2eaee76ce0df3be1bd67707645044f3e0a5a67792bbd402ecf51f9323c682",
+    "make-demo.txt": "de5993052fc16e32a95c49bd8d906c25df8b2ec2ed0c57d5ac441d3e2f04cdda",
+    "make-demo.events.jsonl": "db1ce027450646338a16c435911b4950e1e5f9ffe321b4b0ec2e0376e412edd9",
+    "make-demo.gif": "196dd5fa20b355c3c79eec354b40c119b66f97d0eddfe4a61aa92efa055884a1"
+  }
+}

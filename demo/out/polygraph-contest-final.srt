@@ -1,0 +1,23 @@
+1
+00:00:00,000 --> 00:00:25,000
+Start with the software's own claim. The documented KleidiAI build completes and prints KLEIDIAI equals one. Polygraph does not trust that banner. On the preserved DGX Spark build receipt, the binary contained zero KleidiAI matmul symbols. That proves a build defect, not a runtime dispatch result. To prove execution, we need a build where the kernels exist, and a debugger that counts real calls.
+
+2
+00:00:25,000 --> 00:00:53,000
+Now a separate runtime failure, using a build that really contains the kernels. L1 sees ten symbols in both runs. L2 sees the same KLEIDIAI banner and the same I eight M M selection log. Only L3 changes. Non-halting GDB breakpoints count zero KleidiAI calls in the baseline, and seven thousand nine hundred sixty-eight with no-host. That result repeated five out of five times per arm. This is execution proof, not a timing inference.
+
+3
+00:00:53,000 --> 00:01:22,000
+What did the zero-symbol build cost? On the same DGX Spark, with five round-robin-interleaved repetitions, seven B prefill rose from forty-eight point six four to two hundred twenty-two point one four tokens per second after the build was fixed: four point five seven times. Decode rose from eleven point one seven to eighteen point four five: one point six five times. The boundary matters. This measures one specific broken build and toolchain, not KleidiAI in general.
+
+4
+00:01:22,000 --> 00:01:51,000
+The failures stay separate. The Spark build defect is repaired by disabling native probing and supplying the Arm architecture explicitly, restoring ten kernel symbols. The CUDA host-buffer case uses no-host or device none so KleidiAI can be selected. Polygraph packages the method: static symbols at L1, the program's selection log at L2, and debugger hit counts at L3. Exit codes are contractual, and uncertainty never becomes a silent pass.
+
+5
+00:01:51,000 --> 00:02:22,000
+Then the project automated the operational check on hosted Arm64. GitHub Actions run three one two nine four four six zero three six four served Qwen two point five, one point five B Q four on four AArch sixty-four CPUs. It completed one thousand five hundred forty-three requests with zero failures, including a ten-minute concurrency-four soak. All ten checks passed. The soak sustained fifty-five point four five output tokens per second, and two restarts returned to readiness within one point five one two three seconds.
+
+6
+00:02:22,000 --> 00:02:49,000
+Here is the boundary. The Arm run is real and automated, but its artifact says candidate only and production ready false. It does not establish live traffic, multi-day availability, failover, tenant isolation, or customer correctness. The RTX Pro six thousand, thirty B campaign is non-Arm systems evidence only. It shows the harness scales; it cannot validate Arm or KleidiAI dispatch. Polygraph's product is a better receipt, not a bigger claim.

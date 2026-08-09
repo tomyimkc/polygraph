@@ -1,0 +1,46 @@
+./examples/catch-a-liar/demo.sh
+
+== Step 1/3: compile two builds of examples/catch-a-liar/liar.c ==
+$ /usr/bin/cc -O0 -g -o examples/catch-a-liar/build/liar   examples/catch-a-liar/liar.c
+$ /usr/bin/cc -O0 -g -o examples/catch-a-liar/build/honest examples/catch-a-liar/liar.c -DACTUALLY_FAST
+
+== Both binaries print the identical banner -- that line proves nothing ==
+$ examples/catch-a-liar/build/liar
+using fast path: yes
+result: 500000500000
+$ examples/catch-a-liar/build/honest
+using fast path: yes
+result: 500000500000
+
+== Step 2/3: polygraph check on the LIE (expect MISMATCH, exit 1) ==
+$ tools/polygraph check catch-a-liar
+# auto-resolved --binary from the target's binary_globs: examples/catch-a-liar/build/liar
+# polygraph check catch-a-liar -- darwin-arm64 / Apple M4 Max
+# binary=/private/tmp/polygraph-contest-live-run-i3d37yyq/examples/catch-a-liar/build/liar
+MISMATCH: 1 symbol(s) matching --symbols '^_?fast_path_sum$' exist in the binary but 0 ever dispatched
+
+  L1 (static)     1/4 matching symbols in liar   [nm]
+  L2 (selection)  banner_claim=yes
+  L3 (dispatch)   0 hits, dominant=none   [lldb]
+
+verdict: NO_DISPATCH_OBSERVED   level_reached: 3/3
+exit 1
+exit code: 1
+
+== Step 3/3: polygraph check on the TRUTH (expect MATCH, exit 0) ==
+$ tools/polygraph check --binary examples/catch-a-liar/build/honest --symbols '^fast_path_sum$' --run examples/catch-a-liar/build/honest --level 3
+# polygraph check adhoc -- darwin-arm64 / Apple M4 Max
+# binary=/private/tmp/polygraph-contest-live-run-i3d37yyq/examples/catch-a-liar/build/honest
+MATCH: 1 hit(s) observed for --symbols '^fast_path_sum$' (dominant family: other)
+
+  L1 (static)     1/4 matching symbols in honest   [nm]
+  L2 (selection)  ran, no configured pattern matched
+  L3 (dispatch)   1 hits, dominant=other   [lldb]
+
+verdict: OTHER_DISPATCHED_ADHOC   level_reached: 3/3
+exit 0
+exit code: 0
+
+== Summary ==
+PASS: liar   -> exit 1 (MISMATCH), as expected
+PASS: honest -> exit 0 (MATCH), as expected
