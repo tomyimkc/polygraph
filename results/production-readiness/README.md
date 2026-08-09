@@ -55,7 +55,7 @@ That lane is supporting production-shaped systems evidence only. It is explicitl
 
 ## What remains before a production-ready claim
 
-Neither campaign establishes:
+None of these campaigns establishes:
 
 1. live or sanitized production traffic;
 2. multi-day continuous availability — the longer campaign has 10 aggregate measured hours, but
