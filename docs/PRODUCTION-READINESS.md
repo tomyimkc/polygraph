@@ -251,7 +251,10 @@ records, `CMakeCache.txt`, upstream submodule state, source status, toolchain
 versions, and final server/model/manifest hashes. A final job downloads every
 expected shard and fails if shard ids are not exactly `1..N`, or if any receipt
 is missing, tampered, schema-invalid, provenance-invalid,
-boundary-inconsistent, or not `KEEP_CANDIDATE`.
+boundary-inconsistent, or not `KEEP_CANDIDATE`. On success it uploads a
+checksummed machine-readable aggregate receipt binding the exact source,
+workflow run/attempt, model, llama.cpp commit, shard ids, shard receipt hashes,
+trace digests, duration arithmetic, and claim boundary.
 
 ### Remaining same-runner trust boundary
 
