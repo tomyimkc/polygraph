@@ -1,0 +1,670 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Manual, production-shaped Arm64 evidence campaign. Only repository main may
+# run it. The only executable upstream llama.cpp source is the reviewed exact
+# commit hardcoded below; no branch, tag, short SHA, or user-supplied ref is
+# accepted. Long-profile duration semantics are documented separately and
+# retain hosted-runner timeout headroom.
+
+name: verify-production-arm64
+
+on:
+  workflow_dispatch:
+    inputs:
+      campaign_mode:
+        description: Evidence profile (smoke is short; long keeps hosted-runner headroom)
+        required: true
+        type: choice
+        default: smoke
+        options:
+          - smoke
+          - long
+      model_id:
+        description: Pinned manifest model; 0.5B is smoke-only and long always requires 1.5B
+        required: true
+        type: choice
+        default: qwen2.5-1.5b-q4_0
+        options:
+          - qwen2.5-1.5b-q4_0
+          - qwen2.5-0.5b-q4_0
+      matrix_shards:
+        description: Independent Arm64 shards; two long shards exceed six aggregate evidence hours
+        required: true
+        type: choice
+        default: "1"
+        options:
+          - "1"
+          - "2"
+          - "3"
+      repetitions:
+        description: Paired repetitions within the fixed per-shard measured budget (0 uses profile default)
+        required: true
+        type: string
+        default: "0"
+      soak_seconds_total:
+        description: Paired aggregate measured seconds per shard (0 uses profile default)
+        required: true
+        type: string
+        default: "0"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-production-arm64-${{ github.ref }}-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    name: Validate immutable production campaign plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      profile: ${{ steps.plan.outputs.profile }}
+      timeout_minutes: ${{ steps.plan.outputs.timeout_minutes }}
+      repetitions: ${{ steps.plan.outputs.repetitions }}
+      soak_seconds_total: ${{ steps.plan.outputs.soak_seconds_total }}
+      resolved_repetitions: ${{ steps.plan.outputs.resolved_repetitions }}
+      resolved_soak_seconds_total: ${{ steps.plan.outputs.resolved_soak_seconds_total }}
+      longest_continuous_segment_seconds: ${{ steps.plan.outputs.longest_continuous_segment_seconds }}
+      expected_aggregate_seconds: ${{ steps.plan.outputs.expected_aggregate_seconds }}
+      shard_count: ${{ steps.plan.outputs.shard_count }}
+      model_id: ${{ steps.plan.outputs.model_id }}
+      model_repo: ${{ steps.plan.outputs.model_repo }}
+      model_file: ${{ steps.plan.outputs.model_file }}
+      model_sha256: ${{ steps.plan.outputs.model_sha256 }}
+      model_license: ${{ steps.plan.outputs.model_license }}
+      model_manifest_sha256: ${{ steps.plan.outputs.model_manifest_sha256 }}
+    steps:
+      - name: Reject non-main dispatch before checkout
+        env:
+          DISPATCH_REF: ${{ github.ref }}
+        run: |
+          if [[ "$DISPATCH_REF" != "refs/heads/main" ]]; then
+            echo "::error::production evidence workflow is restricted to refs/heads/main" >&2
+            exit 1
+          fi
+
+      - name: Checkout main source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Verify exact checked-out source commit
+        env:
+          EXPECTED_SOURCE_SHA: ${{ github.sha }}
+        run: |
+          resolved="$(git rev-parse HEAD)"
+          [[ "$resolved" =~ ^[0-9a-f]{40}$ ]] \
+            || { echo "::error::source SHA is not exact 40-hex" >&2; exit 1; }
+          [[ "$resolved" == "$EXPECTED_SOURCE_SHA" ]] \
+            || { echo "::error::checked-out source SHA mismatch" >&2; exit 1; }
+
+      - name: Resolve model manifest and bounded duration
+        id: plan
+        env:
+          CAMPAIGN_MODE: ${{ inputs.campaign_mode }}
+          MODEL_ID: ${{ inputs.model_id }}
+          MATRIX_SHARDS: ${{ inputs.matrix_shards }}
+          REPETITIONS_INPUT: ${{ inputs.repetitions }}
+          SOAK_SECONDS_INPUT: ${{ inputs.soak_seconds_total }}
+        run: |
+          python3 - <<'PY'
+          import importlib.util
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          module_path = Path("tools/production_campaign.py").resolve()
+          spec = importlib.util.spec_from_file_location("production_campaign_plan", module_path)
+          if spec is None or spec.loader is None:
+              raise SystemExit("cannot load production campaign planner")
+          module = importlib.util.module_from_spec(spec)
+          sys.modules[spec.name] = module
+          spec.loader.exec_module(module)
+
+          profile = os.environ["CAMPAIGN_MODE"]
+          model_id = os.environ["MODEL_ID"]
+          shards_raw = os.environ["MATRIX_SHARDS"]
+          repetitions_raw = os.environ["REPETITIONS_INPUT"]
+          soak_raw = os.environ["SOAK_SECONDS_INPUT"]
+
+          module.validate_reviewed_llama_sha(
+              "dbadb68eecdfb3ab0e86872d011738fc937f0364"
+          )
+          model = module.load_model_manifest_entry(
+              Path("scripts/models.txt"), model_id
+          )
+          if profile == "long" and model_id != "qwen2.5-1.5b-q4_0":
+              raise SystemExit(
+                  "long production evidence requires qwen2.5-1.5b-q4_0; "
+                  "the 0.5B choice is explicitly smoke-only"
+              )
+          if not shards_raw.isdigit() or not 1 <= int(shards_raw) <= 3:
+              raise SystemExit("matrix_shards must be 1, 2, or 3")
+          if not repetitions_raw.isdigit() or not 0 <= int(repetitions_raw) <= 3:
+              raise SystemExit("repetitions must be 0..3")
+          try:
+              soak_value = float(soak_raw)
+          except ValueError as exc:
+              raise SystemExit("soak_seconds_total must be numeric") from exc
+          if soak_value < 0:
+              raise SystemExit("soak_seconds_total must be >= 0")
+
+          repetitions_override = int(repetitions_raw) or None
+          soak_override = soak_value or None
+          config = module.load_config(
+              Path("configs/production-readiness.json"),
+              profile,
+              repetitions_override=repetitions_override,
+              soak_seconds_override=soak_override,
+          )
+          repetitions = int(config["profile"]["repetitions"])
+          soak_seconds = float(config["profile"]["soakSecondsTotal"])
+          shards = int(shards_raw)
+          if profile == "long" and soak_seconds > 18000:
+              raise SystemExit(
+                  "hosted long campaigns cap aggregate measured soak at 18000 "
+                  "seconds per shard; add shards instead of removing timeout headroom"
+              )
+          if profile == "smoke" and soak_seconds > 300:
+              raise SystemExit(
+                  "hosted smoke campaigns cap aggregate measured soak at 300 seconds"
+              )
+
+          longest = soak_seconds / (2 * repetitions)
+          aggregate = soak_seconds * shards
+          matrix = {"include": [{"shard": value} for value in range(1, shards + 1)]}
+          outputs = {
+              "matrix": json.dumps(matrix, separators=(",", ":")),
+              "profile": profile,
+              "timeout_minutes": "350" if profile == "long" else "45",
+              "repetitions": "" if repetitions_override is None else str(repetitions),
+              "soak_seconds_total": "" if soak_override is None else str(soak_seconds),
+              "resolved_repetitions": str(repetitions),
+              "resolved_soak_seconds_total": str(soak_seconds),
+              "longest_continuous_segment_seconds": str(longest),
+              "expected_aggregate_seconds": str(aggregate),
+              "shard_count": str(shards),
+              "model_id": model["modelId"],
+              "model_repo": model["hfRepo"],
+              "model_file": model["hfFile"],
+              "model_sha256": model["sha256"],
+              "model_license": model["license"],
+              "model_manifest_sha256": model["manifestSha256"],
+          }
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as handle:
+              for key, value in outputs.items():
+                  handle.write(f"{key}={value}\n")
+          PY
+
+      - name: Record immutable plan boundary
+        env:
+          PROFILE: ${{ steps.plan.outputs.profile }}
+          MODEL_ID: ${{ steps.plan.outputs.model_id }}
+          MODEL_REPO: ${{ steps.plan.outputs.model_repo }}
+          MODEL_FILE: ${{ steps.plan.outputs.model_file }}
+          MODEL_SHA256: ${{ steps.plan.outputs.model_sha256 }}
+          MODEL_LICENSE: ${{ steps.plan.outputs.model_license }}
+          SHARDS: ${{ steps.plan.outputs.shard_count }}
+          SOAK_SECONDS: ${{ steps.plan.outputs.resolved_soak_seconds_total }}
+          LONGEST_SECONDS: ${{ steps.plan.outputs.longest_continuous_segment_seconds }}
+          AGGREGATE_SECONDS: ${{ steps.plan.outputs.expected_aggregate_seconds }}
+        run: |
+          {
+            echo "## Arm64 production-shaped campaign plan"
+            echo
+            echo "- Source ref: \`refs/heads/main\`"
+            echo "- Reviewed llama.cpp commit: \`dbadb68eecdfb3ab0e86872d011738fc937f0364\`"
+            echo "- Model: \`$MODEL_ID\` (\`$MODEL_REPO/$MODEL_FILE\`)"
+            echo "- Model SHA-256: \`$MODEL_SHA256\`"
+            echo "- Model license: \`$MODEL_LICENSE\`"
+            echo "- Profile / shards: \`$PROFILE\` / **$SHARDS**"
+            echo "- Paired measured soak per shard: **$SOAK_SECONDS seconds**"
+            echo "- Longest continuous segment: **$LONGEST_SECONDS seconds**"
+            echo "- Configured aggregate across shards: **$AGGREGATE_SECONDS seconds**"
+            echo
+            echo "_Configured synthetic evidence only; no production traffic or deployment authorization._"
+          } >>"$GITHUB_STEP_SUMMARY"
+
+  campaign:
+    name: Arm64 ${{ needs.plan.outputs.model_id }} shard ${{ matrix.shard }}
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: ${{ fromJSON(needs.plan.outputs.timeout_minutes) }}
+    env:
+      REVIEWED_LLAMA_CPP_SHA: dbadb68eecdfb3ab0e86872d011738fc937f0364
+      PRODUCTION_MODEL_ID: ${{ needs.plan.outputs.model_id }}
+      MODEL_REPO: ${{ needs.plan.outputs.model_repo }}
+      MODEL_FILE: ${{ needs.plan.outputs.model_file }}
+      MODEL_SHA256: ${{ needs.plan.outputs.model_sha256 }}
+      MODEL_LICENSE: ${{ needs.plan.outputs.model_license }}
+      MODEL_MANIFEST_SHA256: ${{ needs.plan.outputs.model_manifest_sha256 }}
+      PRODUCTION_PROFILE: ${{ needs.plan.outputs.profile }}
+      PRODUCTION_REPETITIONS: ${{ needs.plan.outputs.repetitions }}
+      PRODUCTION_SOAK_SECONDS_TOTAL: ${{ needs.plan.outputs.soak_seconds_total }}
+      PRODUCTION_SHARD_ID: ${{ matrix.shard }}
+      PRODUCTION_HOSTED_WORKFLOW: "1"
+      PRODUCTION_SOURCE_REPOSITORY: ${{ github.repository }}
+      PRODUCTION_SOURCE_REF: ${{ github.ref }}
+      PRODUCTION_SOURCE_SHA: ${{ github.sha }}
+    steps:
+      - name: Checkout main source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Verify exact checked-out source commit
+        run: |
+          resolved="$(git rev-parse HEAD)"
+          [[ "$resolved" =~ ^[0-9a-f]{40}$ ]] \
+            || { echo "::error::source SHA is not exact 40-hex" >&2; exit 1; }
+          [[ "$resolved" == "$PRODUCTION_SOURCE_SHA" ]] \
+            || { echo "::error::checked-out source SHA mismatch" >&2; exit 1; }
+
+      - name: Verify preinstalled toolchain
+        run: |
+          for command_name in bash cmake curl git python3 sha256sum; do
+            command -v "$command_name" >/dev/null \
+              || { echo "::error::missing required tool: $command_name" >&2; exit 1; }
+          done
+
+      - name: Resolve private runner paths
+        run: |
+          cache_root="$RUNNER_TEMP/polygraph-production-cache"
+          build_results="$RUNNER_TEMP/polygraph-production-build-results"
+          {
+            echo "CACHE_ROOT=$cache_root"
+            echo "BUILD_RESULTS=$build_results"
+            echo "LLAMA_CPP_DIR=$cache_root/llama-reviewed"
+            echo "MODEL_DIR=$cache_root/models"
+            echo "MODEL_PATH=$cache_root/models/$MODEL_FILE"
+            echo "PRODUCTION_OUT=$RUNNER_TEMP/polygraph-production-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-s${PRODUCTION_SHARD_ID}"
+          } >>"$GITHUB_ENV"
+          mkdir -p "$build_results/logs"
+
+      - name: Cache pinned model
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ${{ runner.temp }}/polygraph-production-cache/models
+          key: production-model-${{ needs.plan.outputs.model_id }}-${{ needs.plan.outputs.model_sha256 }}-${{ needs.plan.outputs.model_manifest_sha256 }}-v3
+
+      - name: Build only the reviewed llama.cpp commit
+        run: |
+          [[ "$REVIEWED_LLAMA_CPP_SHA" =~ ^[0-9a-f]{40}$ ]] \
+            || { echo "::error::reviewed SHA is not exact 40-hex" >&2; exit 1; }
+          [[ "$REVIEWED_LLAMA_CPP_SHA" == "dbadb68eecdfb3ab0e86872d011738fc937f0364" ]] \
+            || { echo "::error::reviewed SHA is not allowlisted" >&2; exit 1; }
+          [[ ! -e "$LLAMA_CPP_DIR" && ! -L "$LLAMA_CPP_DIR" ]] \
+            || { echo "::error::llama.cpp build directory must start absent" >&2; exit 1; }
+          CACHE_DIR="$CACHE_ROOT" \
+          RESULTS_DIR="$BUILD_RESULTS" \
+          LLAMA_CPP_REMOTE="https://github.com/ggml-org/llama.cpp.git" \
+          LLAMA_CPP_REF="$REVIEWED_LLAMA_CPP_SHA" \
+          LLAMA_CPP_DIR="$LLAMA_CPP_DIR" \
+          bash scripts/lib/build_llama_server.sh
+          remote="$(git -C "$LLAMA_CPP_DIR" remote get-url origin)"
+          [[ "$remote" == "https://github.com/ggml-org/llama.cpp.git" ]] \
+            || { echo "::error::llama.cpp repository mismatch" >&2; exit 1; }
+          resolved="$(git -C "$LLAMA_CPP_DIR" rev-parse HEAD)"
+          [[ "$resolved" =~ ^[0-9a-f]{40}$ ]] \
+            || { echo "::error::resolved llama.cpp SHA is not exact 40-hex" >&2; exit 1; }
+          [[ "$resolved" == "$REVIEWED_LLAMA_CPP_SHA" ]] \
+            || { echo "::error::resolved llama.cpp SHA drift: $resolved" >&2; exit 1; }
+          git -C "$LLAMA_CPP_DIR" diff --quiet \
+            || { echo "::error::tracked llama.cpp source changed during build" >&2; exit 1; }
+          git -C "$LLAMA_CPP_DIR" diff --cached --quiet \
+            || { echo "::error::staged llama.cpp source changed during build" >&2; exit 1; }
+          server="$LLAMA_CPP_DIR/build/bin/llama-server"
+          [[ -f "$server" && ! -L "$server" && -x "$server" ]] \
+            || { echo "::error::reviewed llama-server is missing, linked, or non-executable" >&2; exit 1; }
+          server_sha="$(sha256sum "$server" | awk '{print $1}')"
+          {
+            echo "BASELINE_SERVER=$server"
+            echo "CANDIDATE_SERVER=$server"
+            echo "PRODUCTION_LLAMA_CPP_SHA=$REVIEWED_LLAMA_CPP_SHA"
+            echo "PRODUCTION_RESOLVED_LLAMA_CPP_SHA=$resolved"
+            echo "INITIAL_SERVER_SHA256=$server_sha"
+          } >>"$GITHUB_ENV"
+
+      - name: Fetch and verify selected manifest model
+        run: |
+          case "$MODEL_LICENSE" in
+            apache-2.0|mit) ;;
+            *) echo "::error::disallowed model license: $MODEL_LICENSE" >&2; exit 1 ;;
+          esac
+          current_manifest_sha="$(sha256sum scripts/models.txt | awk '{print $1}')"
+          [[ "$current_manifest_sha" == "$MODEL_MANIFEST_SHA256" ]] \
+            || { echo "::error::models manifest changed after planning" >&2; exit 1; }
+          CACHE_DIR="$CACHE_ROOT" \
+          RESULTS_DIR="$BUILD_RESULTS" \
+          MODEL_DIR="$MODEL_DIR" \
+          MODEL_ID="$PRODUCTION_MODEL_ID" \
+          bash scripts/lib/fetch_model.sh
+          [[ -f "$MODEL_PATH" && ! -L "$MODEL_PATH" ]] \
+            || { echo "::error::model is missing or a symlink: $MODEL_PATH" >&2; exit 1; }
+          got="$(sha256sum "$MODEL_PATH" | awk '{print $1}')"
+          [[ "$got" == "$MODEL_SHA256" ]] \
+            || { echo "::error::model SHA-256 mismatch" >&2; exit 1; }
+          {
+            echo "BASELINE_MODEL=$MODEL_PATH"
+            echo "CANDIDATE_MODEL=$MODEL_PATH"
+            echo "INITIAL_MODEL_SHA256=$got"
+          } >>"$GITHUB_ENV"
+
+      - name: Run paired immutable campaign
+        env:
+          BASELINE_LABEL: reviewed-baseline
+          CANDIDATE_LABEL: reviewed-temporal-candidate
+        run: bash scripts/lib/run_production_campaign.sh
+
+      - name: Strictly validate shard receipt
+        if: always()
+        env:
+          EXPECTED_MODEL_ID: ${{ needs.plan.outputs.model_id }}
+          EXPECTED_MODEL_SHA256: ${{ needs.plan.outputs.model_sha256 }}
+          EXPECTED_MODEL_LICENSE: ${{ needs.plan.outputs.model_license }}
+          EXPECTED_SOURCE_REPOSITORY: ${{ github.repository }}
+          EXPECTED_SOURCE_REF: refs/heads/main
+          EXPECTED_SOURCE_SHA: ${{ github.sha }}
+        run: |
+          python3 tools/production_campaign.py verify \
+            --out-dir "$PRODUCTION_OUT" \
+            --require-hosted-workflow \
+            --expected-source-repository "$EXPECTED_SOURCE_REPOSITORY" \
+            --expected-source-ref "$EXPECTED_SOURCE_REF" \
+            --expected-source-sha "$EXPECTED_SOURCE_SHA"
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          failures = []
+          receipt_path = Path(os.environ["PRODUCTION_OUT"]) / "receipt.json"
+          if not receipt_path.is_file():
+              raise SystemExit("receipt.json is missing")
+          receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+          if receipt.get("schema") != "polygraph.production-campaign.v1":
+              failures.append("campaign schema mismatch")
+          for key, expected in (
+              ("actualProductionTraffic", False),
+              ("productionReady", False),
+              ("candidateOnly", True),
+          ):
+              if receipt.get(key) is not expected:
+                  failures.append(f"boundary mismatch: {key}")
+          campaign = receipt.get("campaign", {})
+          if campaign.get("shardId") != int(os.environ["PRODUCTION_SHARD_ID"]):
+              failures.append("shard id mismatch")
+          model = receipt.get("modelIdentity", {})
+          if model.get("modelId") != os.environ["EXPECTED_MODEL_ID"]:
+              failures.append("model id mismatch")
+          if model.get("sha256") != os.environ["EXPECTED_MODEL_SHA256"]:
+              failures.append("model SHA-256 mismatch")
+          if model.get("license") != os.environ["EXPECTED_MODEL_LICENSE"]:
+              failures.append("model license mismatch")
+          if model.get("validated") is not True:
+              failures.append("model identity was not validated")
+          provenance = receipt.get("provenance", {}).get("llamaCpp", {})
+          expected_llama = "dbadb68eecdfb3ab0e86872d011738fc937f0364"
+          if provenance.get("reviewedSha") != expected_llama:
+              failures.append("reviewed llama.cpp SHA mismatch")
+          if provenance.get("resolvedSha") != expected_llama:
+              failures.append("resolved llama.cpp SHA mismatch")
+          if provenance.get("mutableRefAccepted") is not False:
+              failures.append("mutable llama.cpp provenance accepted")
+          source = receipt.get("provenance", {}).get("campaignSource", {})
+          if source.get("hostedWorkflow") is not True:
+              failures.append("hosted workflow provenance missing")
+          if source.get("repository") != os.environ["EXPECTED_SOURCE_REPOSITORY"]:
+              failures.append("source repository mismatch")
+          if source.get("ref") != os.environ["EXPECTED_SOURCE_REF"]:
+              failures.append("source ref mismatch")
+          if source.get("sha") != os.environ["EXPECTED_SOURCE_SHA"]:
+              failures.append("source SHA mismatch")
+          gate = receipt.get("gate", {})
+          if gate.get("gateVerdict") != "PASS":
+              failures.append(f"gate verdict={gate.get('gateVerdict')}")
+          if gate.get("rollbackVerdict") != "KEEP_CANDIDATE":
+              failures.append(f"rollback verdict={gate.get('rollbackVerdict')}")
+          if failures:
+              raise SystemExit("\n".join(failures))
+          print(
+              "POLYGRAPH_PRODUCTION_CAMPAIGN_STRICT_OK",
+              campaign["shardId"],
+              model["modelId"],
+              gate["rollbackVerdict"],
+          )
+          PY
+
+      - name: Write minimal shard summary
+        if: always()
+        run: |
+          if [[ ! -f "$PRODUCTION_OUT/receipt.json" ]]; then
+            {
+              echo "## Campaign shard $PRODUCTION_SHARD_ID"
+              echo
+              echo "No receipt was produced; the shard fails closed."
+            } >>"$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          python3 - <<'PY' >>"$GITHUB_STEP_SUMMARY"
+          import json
+          import os
+          from pathlib import Path
+
+          receipt = json.loads(
+              (Path(os.environ["PRODUCTION_OUT"]) / "receipt.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          campaign = receipt["campaign"]
+          gate = receipt["gate"]
+          model = receipt["modelIdentity"]
+          print(f"## Campaign shard {campaign['shardId']}")
+          print()
+          print(f"- Model: `{model['modelId']}` / `{model['sha256']}`")
+          print(f"- Gate: **{gate['gateVerdict']}**")
+          print(f"- Rollback verdict: **{gate['rollbackVerdict']}**")
+          print(
+              f"- Paired measured soak budget: "
+              f"**{campaign['aggregateMeasuredSoakSeconds']} seconds**"
+          )
+          print(
+              f"- Longest continuous segment: "
+              f"**{campaign['longestContinuousSoakSegmentSeconds']} seconds**"
+          )
+          print()
+          print(
+              "_Same ephemeral runner trust boundary; generated synthetic traffic "
+              "only; no production readiness or tenant isolation is claimed._"
+          )
+          PY
+
+      - name: Upload complete shard receipt
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: polygraph-production-arm64-${{ needs.plan.outputs.profile }}-${{ needs.plan.outputs.model_id }}-${{ github.run_id }}-${{ github.run_attempt }}-s${{ matrix.shard }}
+          path: ${{ runner.temp }}/polygraph-production-${{ github.run_id }}-${{ github.run_attempt }}-s${{ matrix.shard }}
+          if-no-files-found: error
+          retention-days: 30
+
+  verify-all-shards:
+    name: Verify exact aggregate shard set
+    if: always() && needs.plan.result == 'success'
+    needs:
+      - plan
+      - campaign
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout main source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Verify exact checked-out source commit
+        env:
+          EXPECTED_SOURCE_SHA: ${{ github.sha }}
+        run: |
+          resolved="$(git rev-parse HEAD)"
+          [[ "$resolved" =~ ^[0-9a-f]{40}$ ]] \
+            || { echo "::error::source SHA is not exact 40-hex" >&2; exit 1; }
+          [[ "$resolved" == "$EXPECTED_SOURCE_SHA" ]] \
+            || { echo "::error::checked-out source SHA mismatch" >&2; exit 1; }
+
+      - name: Download all shard receipts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: polygraph-production-arm64-${{ needs.plan.outputs.profile }}-${{ needs.plan.outputs.model_id }}-${{ github.run_id }}-${{ github.run_attempt }}-s*
+          path: downloaded-receipts
+
+      - name: Verify unique shards, receipts, provenance, and aggregate
+        env:
+          EXPECTED_SHARDS: ${{ needs.plan.outputs.shard_count }}
+          EXPECTED_MODEL_ID: ${{ needs.plan.outputs.model_id }}
+          EXPECTED_MODEL_SHA256: ${{ needs.plan.outputs.model_sha256 }}
+          EXPECTED_MODEL_LICENSE: ${{ needs.plan.outputs.model_license }}
+          EXPECTED_SOURCE_REPOSITORY: ${{ github.repository }}
+          EXPECTED_SOURCE_REF: refs/heads/main
+          EXPECTED_SOURCE_SHA: ${{ github.sha }}
+          PROFILE: ${{ needs.plan.outputs.profile }}
+          EXPECTED_AGGREGATE_SECONDS: ${{ needs.plan.outputs.expected_aggregate_seconds }}
+          CAMPAIGN_JOB_RESULT: ${{ needs.campaign.result }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          roots = sorted(
+              path.parent
+              for path in Path("downloaded-receipts").rglob("receipt.json")
+          )
+          expected_count = int(os.environ["EXPECTED_SHARDS"])
+          failures = []
+          if len(roots) != expected_count:
+              failures.append(
+                  f"expected {expected_count} shard receipts, found {len(roots)}"
+              )
+
+          shard_ids = []
+          aggregate_seconds = 0.0
+          longest_segments = []
+          for root in roots:
+              verification = subprocess.run(
+                  [
+                      "python3",
+                      "tools/production_campaign.py",
+                      "verify",
+                      "--out-dir",
+                      str(root),
+                      "--require-hosted-workflow",
+                      "--expected-source-repository",
+                      os.environ["EXPECTED_SOURCE_REPOSITORY"],
+                      "--expected-source-ref",
+                      os.environ["EXPECTED_SOURCE_REF"],
+                      "--expected-source-sha",
+                      os.environ["EXPECTED_SOURCE_SHA"],
+                  ],
+                  text=True,
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.STDOUT,
+              )
+              if verification.returncode != 0:
+                  failures.append(f"{root}: strict verification failed")
+                  continue
+              receipt = json.loads((root / "receipt.json").read_text(encoding="utf-8"))
+              campaign = receipt["campaign"]
+              shard_ids.append(campaign["shardId"])
+              model = receipt["modelIdentity"]
+              if model.get("modelId") != os.environ["EXPECTED_MODEL_ID"]:
+                  failures.append(f"{root}: model id mismatch")
+              if model.get("sha256") != os.environ["EXPECTED_MODEL_SHA256"]:
+                  failures.append(f"{root}: model SHA-256 mismatch")
+              if model.get("license") != os.environ["EXPECTED_MODEL_LICENSE"]:
+                  failures.append(f"{root}: model license mismatch")
+              provenance = receipt["provenance"]
+              if provenance["llamaCpp"]["resolvedSha"] != (
+                  "dbadb68eecdfb3ab0e86872d011738fc937f0364"
+              ):
+                  failures.append(f"{root}: resolved llama.cpp SHA mismatch")
+              if provenance["campaignSource"]["repository"] != os.environ[
+                  "EXPECTED_SOURCE_REPOSITORY"
+              ]:
+                  failures.append(f"{root}: source repository mismatch")
+              if provenance["campaignSource"]["ref"] != os.environ[
+                  "EXPECTED_SOURCE_REF"
+              ]:
+                  failures.append(f"{root}: source ref mismatch")
+              if provenance["campaignSource"]["sha"] != os.environ[
+                  "EXPECTED_SOURCE_SHA"
+              ]:
+                  failures.append(f"{root}: source SHA mismatch")
+              gate = receipt["gate"]
+              if gate["gateVerdict"] != "PASS":
+                  failures.append(f"{root}: gate={gate['gateVerdict']}")
+              if gate["rollbackVerdict"] != "KEEP_CANDIDATE":
+                  failures.append(f"{root}: rollback={gate['rollbackVerdict']}")
+              aggregate_seconds += float(campaign["aggregateMeasuredSoakSeconds"])
+              longest_segments.append(
+                  float(campaign["longestContinuousSoakSegmentSeconds"])
+              )
+
+          expected_ids = list(range(1, expected_count + 1))
+          if sorted(shard_ids) != expected_ids:
+              failures.append(
+                  f"shard ids must be exactly {expected_ids}, observed {sorted(shard_ids)}"
+              )
+          if len(shard_ids) != len(set(shard_ids)):
+              failures.append(f"duplicate shard ids observed: {shard_ids}")
+          expected_aggregate = float(os.environ["EXPECTED_AGGREGATE_SECONDS"])
+          if abs(aggregate_seconds - expected_aggregate) > 1e-6:
+              failures.append(
+                  f"aggregate seconds {aggregate_seconds} != {expected_aggregate}"
+              )
+          if (
+              os.environ["PROFILE"] == "long"
+              and longest_segments
+              and max(longest_segments) >= 21600
+          ):
+              failures.append("long profile claimed a six-hour continuous segment")
+          if os.environ["CAMPAIGN_JOB_RESULT"] != "success":
+              failures.append(
+                  f"campaign matrix job result={os.environ['CAMPAIGN_JOB_RESULT']}"
+              )
+          if failures:
+              raise SystemExit("\n".join(failures))
+
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open(
+              "a", encoding="utf-8"
+          ) as handle:
+              handle.write("## Verified aggregate Arm64 evidence\n\n")
+              handle.write(f"- Exact shard ids: **{expected_ids}**\n")
+              handle.write(
+                  f"- Model: `{os.environ['EXPECTED_MODEL_ID']}` / "
+                  f"`{os.environ['EXPECTED_MODEL_SHA256']}`\n"
+              )
+              handle.write(
+                  f"- Aggregate measured soak: **{aggregate_seconds} seconds**\n"
+              )
+              handle.write(
+                  f"- Longest continuous segment: "
+                  f"**{max(longest_segments)} seconds**\n\n"
+              )
+              handle.write(
+                  "_Aggregate duration sums independent same-runner paired segments; "
+                  "it is not continuous availability or production readiness._\n"
+              )
+          PY

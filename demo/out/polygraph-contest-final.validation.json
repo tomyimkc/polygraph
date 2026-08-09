@@ -1,0 +1,220 @@
+{
+  "schema": "polygraph.contest-video.validation.v1",
+  "output": "demo/out/polygraph-contest-final.mp4",
+  "sha256": "0deb7f67697b45ac8b9b38b518d87240ac556db8bb82107f23158862372f8f30",
+  "story": "demo/contest-video/story.json",
+  "storySha256": "7c40419eb162d64756f39d9a34a532e0c5f61b8a55eb5870a4fad5b261619aec",
+  "generator": {
+    "path": "tools/render_contest_video.py",
+    "sha256": "a85aaddc29facb09c3146a42672fca639403c1319a553bfcef646abcf1c7a356"
+  },
+  "ttsMode": "say",
+  "voice": "Samantha",
+  "rateWordsPerMinute": 190,
+  "media": {
+    "durationSeconds": 169.021333,
+    "under180Seconds": true,
+    "video": {
+      "index": 0,
+      "codec_name": "h264",
+      "profile": "High",
+      "codec_type": "video",
+      "width": 1920,
+      "height": 1080,
+      "pix_fmt": "yuv420p",
+      "r_frame_rate": "30/1"
+    },
+    "audio": {
+      "index": 1,
+      "codec_name": "aac",
+      "profile": "LC",
+      "codec_type": "audio",
+      "sample_rate": "48000",
+      "channels": 2,
+      "r_frame_rate": "0/0"
+    },
+    "fastStart": true,
+    "sizeBytes": 9239731,
+    "bitRate": 437328
+  },
+  "liveCapture": {
+    "schema": "polygraph.contest-video.live-capture.v1",
+    "command": [
+      "make",
+      "demo"
+    ],
+    "source": {
+      "branch": "feat/contest-production-hardening-20260809",
+      "gitHead": "3bc7da203db8cec1a10df243dd75f80d53bd55f5",
+      "gitArchiveSha256": "37ba31a8cf433bbe536efcb5a150ae56dce96b9aaa8508765a4fe52ccc71f5e7",
+      "workingTreeEditsIncluded": false,
+      "method": "git archive HEAD extracted to an isolated temporary directory",
+      "captureDriver": "tools/render_contest_video.py",
+      "captureDriverSha256": "a85aaddc29facb09c3146a42672fca639403c1319a553bfcef646abcf1c7a356",
+      "files": {
+        "Makefile": "171e11a13a70708500f855dd8b048f1367c57ebe15c231ce153750e2aa1de899",
+        "examples/catch-a-liar/demo.sh": "04f64b072b6669a3e1ddabc1b9e24dff56d51bcfd4ca432d2e0547876afa5897",
+        "examples/catch-a-liar/liar.c": "c420ad8052800a4d55d8ce8b0fa695b89cd070e39fee177d188e0f5a58d5e5d4",
+        "tools/polygraph": "5e44ca61ee63b6b81145c3435b51b8a9e72eafdb7e19557cfa1a73c85114cd7b",
+        "tools/verify_dispatch.py": "f424422e48beeb6cec2855985218c95ae50a73c1d856ba269ee136cc88049360",
+        "tools/targets/catch-a-liar.json": "48fd3a5a2b0fb307ce73ec5999434fb04ae4f82711e5d9d92b014a6aed89cc5a"
+      }
+    },
+    "run": {
+      "startedAtUtc": "2026-08-09T10:55:47.372622+00:00",
+      "completedAtUtc": "2026-08-09T10:55:55.752658+00:00",
+      "wallSeconds": 7.711195,
+      "exitCode": 0,
+      "ptyEventCount": 23
+    },
+    "capturePolicy": {
+      "environmentMode": "strict-allowlist",
+      "environmentKeys": [
+        "CC",
+        "HOME",
+        "LANG",
+        "LC_ALL",
+        "PATH",
+        "PYTHONHASHSEED",
+        "TERM",
+        "TMPDIR"
+      ],
+      "commandPaths": {
+        "make": "/usr/bin/make",
+        "cc": "/usr/bin/cc",
+        "lldb": "/usr/bin/lldb",
+        "python3": "$HOME/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/bin/python3.14"
+      },
+      "transcriptNormalization": "ephemeral capture root replaced with $CAPTURE_ROOT; CRLF/CR converted to LF",
+      "timeoutSeconds": 45.0,
+      "termGraceSeconds": 3.0,
+      "maxRawTranscriptBytes": 1048576,
+      "maxCleanTranscriptBytes": 524288,
+      "maxEventCount": 4096,
+      "maxEventsFileBytes": 2097152,
+      "maxGifBytes": 8388608,
+      "processGroup": "new session; SIGTERM then SIGKILL only for owned group"
+    },
+    "host": {
+      "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+      "machine": "arm64",
+      "python": "3.14.6",
+      "compiler": "Apple clang version 21.0.0 (clang-2100.3.23.3)",
+      "debugger": "lldb-2103.0.25.1",
+      "make": "GNU Make 3.81"
+    },
+    "verifiedOutput": {
+      "liarBanner": "using fast path: yes",
+      "liarL3Hits": 0,
+      "liarExitCode": 1,
+      "honestBanner": "using fast path: yes",
+      "honestL3Hits": 1,
+      "honestExitCode": 0,
+      "overallExitCode": 0
+    },
+    "playback": {
+      "asset": "demo/contest-video/live-run/make-demo.gif",
+      "durationSeconds": 20.0,
+      "timing": "Literal PTY output from the captured run; ephemeral capture-root paths and line endings are normalized, line-reveal timing is normalized for legibility, and the final frame is held. Semantic output and ordering are unchanged.",
+      "fabricatedOutput": false
+    },
+    "files": {
+      "make-demo.ansi": "dd0a7c76504327c1cee1061577930867c5b8fbcfacc8b3a5bfdeb3d81c867c45",
+      "make-demo.txt": "44d0350e8492d8abc75075fc1e71c67ceb0a1431cf9f887b31df9c8b8f150dca",
+      "make-demo.events.jsonl": "6ccfc42a415b1cbc726addc3853863a3afe47d50687ec5e99112891f21cf65e3",
+      "make-demo.gif": "ed7ed35edc1e69daf07a94ac75fad54de4eb52369d745ded6ca2131d1146d818"
+    }
+  },
+  "qa": [
+    {
+      "path": "demo/out/qa/01.png",
+      "sha256": "9fe84b6623f882be3fef9f8bfacf451e3cd853ad5db41602163a6fa8b838d7ba"
+    },
+    {
+      "path": "demo/out/qa/02.png",
+      "sha256": "b43075cebb7563555f8038e8d9a2013cc8dd2de753599a01c6af0617b585c2be"
+    },
+    {
+      "path": "demo/out/qa/03.png",
+      "sha256": "6b1a1d653dd9aafde4ba14552ccf6d826aa92b96ebe6bfa82d58c619725ad6af"
+    },
+    {
+      "path": "demo/out/qa/04.png",
+      "sha256": "9e02fb45fc927780abf9e9a3bec4b8b6f8eb8194d90b3a1f318a78c004fd1ff7"
+    },
+    {
+      "path": "demo/out/qa/05.png",
+      "sha256": "f5a75b125f886661b50bd09b79c2b5506b08a3c67a5b19d9f4b20815f61caceb"
+    },
+    {
+      "path": "demo/out/qa/06.png",
+      "sha256": "58f3f716b9ec40d3a431531f2264919a8aca80aea4537640f5dca4552c3384e4"
+    },
+    {
+      "path": "demo/out/qa/contact-sheet.jpg",
+      "sha256": "ed3cb97367ef703b4630493ecf3ab0e971ff5a57ba3a20292afcd77bceddc260"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "results/server/spark-provenance.txt",
+      "sha256": "8fd3070ff7955db00cdafbf23e62aad702eb2d70d5e9fa638efb5945f203208a"
+    },
+    {
+      "path": "results/scale/scale-experiment.json",
+      "sha256": "a6c5ecb4280a1a18872e5c0edf03f19f7452458f2ecd2adeca27fd86cea95be3"
+    },
+    {
+      "path": "results/upstream/llamacpp-26334-cuda-host-buffer.json",
+      "sha256": "a89701fc667bca722f562e5c39e3e2c8fdfa52f25f56c900e9f0ffd003f94858"
+    },
+    {
+      "path": "results/production-readiness/arm64-31294460364/summary.json",
+      "sha256": "5c7ce13c8e8ed936a260174c89c31bc708cb8985c22f66ab45c7c1a94a9c9920"
+    },
+    {
+      "path": "results/production-readiness/arm64-31294460364/validation-receipt.json",
+      "sha256": "da6d92a3037ff8a7753f026d582a111c9408f946a0fbe497b731042b8ecc51f6"
+    },
+    {
+      "path": "results/production-readiness/arm64-31294460364/workflow-receipt.json",
+      "sha256": "24865d39a2f49340b0559d7be7a8d2a154c7f4a78d67d9bc1314ddeb499a5b88"
+    },
+    {
+      "path": "results/production-readiness/pro6000-31289517517/aggregate.json",
+      "sha256": "dfbe75b198ddaf51f5b680cb570cb7df5e139740446fd24c5487597c0c3bfabc"
+    },
+    {
+      "path": "tools/polygraph",
+      "sha256": "5e44ca61ee63b6b81145c3435b51b8a9e72eafdb7e19557cfa1a73c85114cd7b"
+    },
+    {
+      "path": "tools/verify_dispatch.py",
+      "sha256": "f424422e48beeb6cec2855985218c95ae50a73c1d856ba269ee136cc88049360"
+    },
+    {
+      "path": "demo/contest-video/live-run/make-demo.ansi",
+      "sha256": "dd0a7c76504327c1cee1061577930867c5b8fbcfacc8b3a5bfdeb3d81c867c45"
+    },
+    {
+      "path": "demo/contest-video/live-run/make-demo.txt",
+      "sha256": "44d0350e8492d8abc75075fc1e71c67ceb0a1431cf9f887b31df9c8b8f150dca"
+    },
+    {
+      "path": "demo/contest-video/live-run/make-demo.events.jsonl",
+      "sha256": "6ccfc42a415b1cbc726addc3853863a3afe47d50687ec5e99112891f21cf65e3"
+    },
+    {
+      "path": "demo/contest-video/live-run/make-demo.gif",
+      "sha256": "ed7ed35edc1e69daf07a94ac75fad54de4eb52369d745ded6ca2131d1146d818"
+    },
+    {
+      "path": "demo/contest-video/live-run/receipt.json",
+      "sha256": "3ee881bb229b20ac3fa18c7023b5c9c512eae466835614ad54dd1bd14c2b766e"
+    },
+    {
+      "path": "demo/contest-video/live-run/SHA256SUMS",
+      "sha256": "71eb831b3dfd7c1f3c9b6c6726d18c0a1c149a7cf99bd28870819fd166de1a89"
+    }
+  ]
+}
