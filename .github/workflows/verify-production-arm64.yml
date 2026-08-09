@@ -359,6 +359,32 @@ jobs:
             echo "INITIAL_MODEL_SHA256=$got"
           } >>"$GITHUB_ENV"
 
+      - name: Capture reproducible build provenance
+        run: |
+          [[ -f "$LLAMA_CPP_DIR/build/CMakeCache.txt" ]] \
+            || { echo "::error::CMakeCache.txt is missing" >&2; exit 1; }
+          cp "$LLAMA_CPP_DIR/build/CMakeCache.txt" "$BUILD_RESULTS/CMakeCache.txt"
+          git -C "$LLAMA_CPP_DIR" submodule status --recursive \
+            >"$BUILD_RESULTS/llama-submodules.txt"
+          git -C "$LLAMA_CPP_DIR" status --porcelain=v1 --untracked-files=no \
+            >"$BUILD_RESULTS/llama-source-status.txt"
+          {
+            echo "runner=$(uname -a)"
+            echo "source_repository=$PRODUCTION_SOURCE_REPOSITORY"
+            echo "source_ref=$PRODUCTION_SOURCE_REF"
+            echo "source_sha=$PRODUCTION_SOURCE_SHA"
+            echo "llama_cpp_remote=$(git -C "$LLAMA_CPP_DIR" remote get-url origin)"
+            echo "llama_cpp_sha=$(git -C "$LLAMA_CPP_DIR" rev-parse HEAD)"
+            echo "server_sha256=$(sha256sum "$BASELINE_SERVER" | awk '{print $1}')"
+            echo "model_id=$PRODUCTION_MODEL_ID"
+            echo "model_sha256=$(sha256sum "$MODEL_PATH" | awk '{print $1}')"
+            echo "model_manifest_sha256=$(sha256sum scripts/models.txt | awk '{print $1}')"
+            echo
+            cmake --version
+            git --version
+            python3 --version
+          } >"$BUILD_RESULTS/toolchain-and-artifacts.txt"
+
       - name: Run paired immutable campaign
         env:
           BASELINE_LABEL: reviewed-baseline
@@ -495,6 +521,15 @@ jobs:
         with:
           name: polygraph-production-arm64-${{ needs.plan.outputs.profile }}-${{ needs.plan.outputs.model_id }}-${{ github.run_id }}-${{ github.run_attempt }}-s${{ matrix.shard }}
           path: ${{ runner.temp }}/polygraph-production-${{ github.run_id }}-${{ github.run_attempt }}-s${{ matrix.shard }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload complete build provenance
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: polygraph-production-build-provenance-${{ needs.plan.outputs.profile }}-${{ needs.plan.outputs.model_id }}-${{ github.run_id }}-${{ github.run_attempt }}-s${{ matrix.shard }}
+          path: ${{ runner.temp }}/polygraph-production-build-results
           if-no-files-found: error
           retention-days: 30
 

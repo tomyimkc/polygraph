@@ -245,7 +245,10 @@ Run `verify-production-arm64` manually. It uses
 The planner rejects hosted-runner requests that remove the timeout headroom.
 Each shard pins and verifies the selected manifest model, builds only the
 reviewed llama.cpp commit, uploads all raw readiness/replay evidence, and
-retains nested plus top-level checksum manifests. A final job downloads every
+retains nested plus top-level checksum manifests. It also uploads separate
+build provenance containing the complete build/fetch logs, stage-status
+records, `CMakeCache.txt`, upstream submodule state, source status, toolchain
+versions, and final server/model/manifest hashes. A final job downloads every
 expected shard and fails if shard ids are not exactly `1..N`, or if any receipt
 is missing, tampered, schema-invalid, provenance-invalid,
 boundary-inconsistent, or not `KEEP_CANDIDATE`.
