@@ -258,7 +258,7 @@ class TestReplayTransport(unittest.TestCase):
                     }
                 )
                 self.send_response(200)
-                self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+                self.send_header("Content-Type", "Text/Event-Stream; Charset=UTF-8")
                 self.end_headers()
                 events = (
                     {

@@ -705,7 +705,7 @@ def send_replay_completion(
         if status_code != 200:
             payload = response.read(4096).decode("utf-8", errors="replace")
             raise RuntimeError(f"HTTP {status_code}: {payload[:500]}")
-        content_type = response.getheader("Content-Type", "")
+        content_type = response.getheader("Content-Type", "").lower()
         if "text/event-stream" in content_type:
             while True:
                 raw = response.readline()
