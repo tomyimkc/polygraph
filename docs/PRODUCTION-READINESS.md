@@ -47,7 +47,8 @@ latency, and sentinel observations.
 The request-specific schema constraint makes this a deterministic
 request/response binding canary across cache reuse and controlled restarts. It
 is not an unconstrained instruction-following score and does not prove model
-correctness.
+correctness. Replay has a separate 64-token response budget; the readiness
+capacity/soak workload keeps its original profile-specific generation limits.
 
 ## Smoke and long duration semantics
 

@@ -88,8 +88,10 @@ class TestConfiguration(unittest.TestCase):
         long_profile = _config("long")
         self.assertEqual(smoke["claims"], pc.CLAIM_FLAGS)
         self.assertEqual(long_profile["claims"], pc.CLAIM_FLAGS)
-        self.assertEqual(smoke["profile"]["maxTokens"], 64)
-        self.assertEqual(long_profile["profile"]["maxTokens"], 64)
+        self.assertEqual(smoke["profile"]["maxTokens"], 12)
+        self.assertEqual(long_profile["profile"]["maxTokens"], 24)
+        self.assertEqual(smoke["profile"]["replayMaxTokens"], 64)
+        self.assertEqual(long_profile["profile"]["replayMaxTokens"], 64)
         self.assertEqual(long_profile["profile"]["soakSecondsTotal"], 18000)
         self.assertEqual(long_profile["profile"]["repetitions"], 1)
 

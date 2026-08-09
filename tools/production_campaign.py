@@ -371,6 +371,7 @@ def load_config(
         "readinessRestartCycles",
         "replayRequestsPerArm",
         "replayRestartCycles",
+        "replayMaxTokens",
         "maxTokens",
         "requestTimeoutSeconds",
         "readyTimeoutSeconds",
@@ -386,6 +387,7 @@ def load_config(
         "readinessRestartCycles",
         "replayRequestsPerArm",
         "replayRestartCycles",
+        "replayMaxTokens",
         "maxTokens",
         "minMeasuredRequestsPerArmRun",
     }
@@ -1399,7 +1401,7 @@ def run_replay_measurement(
             port,
             row.prompt,
             row.sentinel,
-            int(profile["maxTokens"]),
+            int(profile["replayMaxTokens"]),
             float(profile["requestTimeoutSeconds"]),
         )
 
