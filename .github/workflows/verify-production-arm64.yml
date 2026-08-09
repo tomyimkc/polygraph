@@ -359,6 +359,32 @@ jobs:
             echo "INITIAL_MODEL_SHA256=$got"
           } >>"$GITHUB_ENV"
 
+      - name: Capture reproducible build provenance
+        run: |
+          [[ -f "$LLAMA_CPP_DIR/build/CMakeCache.txt" ]] \
+            || { echo "::error::CMakeCache.txt is missing" >&2; exit 1; }
+          cp "$LLAMA_CPP_DIR/build/CMakeCache.txt" "$BUILD_RESULTS/CMakeCache.txt"
+          git -C "$LLAMA_CPP_DIR" submodule status --recursive \
+            >"$BUILD_RESULTS/llama-submodules.txt"
+          git -C "$LLAMA_CPP_DIR" status --porcelain=v1 --untracked-files=no \
+            >"$BUILD_RESULTS/llama-source-status.txt"
+          {
+            echo "runner=$(uname -a)"
+            echo "source_repository=$PRODUCTION_SOURCE_REPOSITORY"
+            echo "source_ref=$PRODUCTION_SOURCE_REF"
+            echo "source_sha=$PRODUCTION_SOURCE_SHA"
+            echo "llama_cpp_remote=$(git -C "$LLAMA_CPP_DIR" remote get-url origin)"
+            echo "llama_cpp_sha=$(git -C "$LLAMA_CPP_DIR" rev-parse HEAD)"
+            echo "server_sha256=$(sha256sum "$BASELINE_SERVER" | awk '{print $1}')"
+            echo "model_id=$PRODUCTION_MODEL_ID"
+            echo "model_sha256=$(sha256sum "$MODEL_PATH" | awk '{print $1}')"
+            echo "model_manifest_sha256=$(sha256sum scripts/models.txt | awk '{print $1}')"
+            echo
+            cmake --version
+            git --version
+            python3 --version
+          } >"$BUILD_RESULTS/toolchain-and-artifacts.txt"
+
       - name: Run paired immutable campaign
         env:
           BASELINE_LABEL: reviewed-baseline
@@ -498,6 +524,15 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Upload complete build provenance
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: polygraph-production-build-provenance-${{ needs.plan.outputs.profile }}-${{ needs.plan.outputs.model_id }}-${{ github.run_id }}-${{ github.run_attempt }}-s${{ matrix.shard }}
+          path: ${{ runner.temp }}/polygraph-production-build-results
+          if-no-files-found: error
+          retention-days: 30
+
   verify-all-shards:
     name: Verify exact aggregate shard set
     if: always() && needs.plan.result == 'success'
@@ -543,6 +578,7 @@ jobs:
           CAMPAIGN_JOB_RESULT: ${{ needs.campaign.result }}
         run: |
           python3 - <<'PY'
+          import hashlib
           import json
           import os
           import subprocess
@@ -562,6 +598,7 @@ jobs:
           shard_ids = []
           aggregate_seconds = 0.0
           longest_segments = []
+          verified_shards = []
           for root in roots:
               verification = subprocess.run(
                   [
@@ -621,6 +658,27 @@ jobs:
               longest_segments.append(
                   float(campaign["longestContinuousSoakSegmentSeconds"])
               )
+              verified_shards.append(
+                  {
+                      "shardId": campaign["shardId"],
+                      "receiptSha256": hashlib.sha256(
+                          (root / "receipt.json").read_bytes()
+                      ).hexdigest(),
+                      "traceDigests": {
+                          "baseline": receipt["baseline"]["traceDigests"],
+                          "candidate": receipt["candidate"]["traceDigests"],
+                      },
+                      "aggregateMeasuredSoakSeconds": campaign[
+                          "aggregateMeasuredSoakSeconds"
+                      ],
+                      "longestContinuousSoakSegmentSeconds": campaign[
+                          "longestContinuousSoakSegmentSeconds"
+                      ],
+                      "gateVerdict": gate["gateVerdict"],
+                      "rollbackVerdict": gate["rollbackVerdict"],
+                      "sameArtifactControl": gate["sameArtifactControl"],
+                  }
+              )
 
           expected_ids = list(range(1, expected_count + 1))
           if sorted(shard_ids) != expected_ids:
@@ -647,6 +705,53 @@ jobs:
           if failures:
               raise SystemExit("\n".join(failures))
 
+          aggregate_dir = Path("aggregate-receipt")
+          aggregate_dir.mkdir()
+          aggregate = {
+              "schema": "polygraph.production-campaign.aggregate.v1",
+              "actualProductionTraffic": False,
+              "productionReady": False,
+              "candidateOnly": True,
+              "profile": os.environ["PROFILE"],
+              "workflow": {
+                  "path": ".github/workflows/verify-production-arm64.yml",
+                  "runId": os.environ["GITHUB_RUN_ID"],
+                  "runAttempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              },
+              "source": {
+                  "repository": os.environ["EXPECTED_SOURCE_REPOSITORY"],
+                  "ref": os.environ["EXPECTED_SOURCE_REF"],
+                  "sha": os.environ["EXPECTED_SOURCE_SHA"],
+              },
+              "llamaCppSha": "dbadb68eecdfb3ab0e86872d011738fc937f0364",
+              "model": {
+                  "modelId": os.environ["EXPECTED_MODEL_ID"],
+                  "sha256": os.environ["EXPECTED_MODEL_SHA256"],
+                  "license": os.environ["EXPECTED_MODEL_LICENSE"],
+              },
+              "expectedShardIds": expected_ids,
+              "shards": sorted(verified_shards, key=lambda row: row["shardId"]),
+              "aggregateMeasuredSoakSeconds": aggregate_seconds,
+              "longestContinuousSoakSegmentSeconds": max(longest_segments),
+              "deploymentAuthorized": False,
+              "tenantIsolationClaimed": False,
+              "boundary": (
+                  "Aggregate duration sums independent same-runner paired "
+                  "synthetic segments. It is not continuous availability, "
+                  "actual production traffic, tenant isolation, deployment "
+                  "authorization, or production readiness."
+              ),
+          }
+          aggregate_path = aggregate_dir / "aggregate-receipt.json"
+          aggregate_path.write_text(
+              json.dumps(aggregate, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          digest = hashlib.sha256(aggregate_path.read_bytes()).hexdigest()
+          (aggregate_dir / "sha256sums.txt").write_text(
+              f"{digest}  aggregate-receipt.json\n", encoding="utf-8"
+          )
+
           with Path(os.environ["GITHUB_STEP_SUMMARY"]).open(
               "a", encoding="utf-8"
           ) as handle:
@@ -668,3 +773,11 @@ jobs:
                   "it is not continuous availability or production readiness._\n"
               )
           PY
+
+      - name: Upload machine-readable aggregate receipt
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: polygraph-production-aggregate-${{ needs.plan.outputs.profile }}-${{ needs.plan.outputs.model_id }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: aggregate-receipt
+          if-no-files-found: error
+          retention-days: 30

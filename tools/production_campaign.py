@@ -371,6 +371,7 @@ def load_config(
         "readinessRestartCycles",
         "replayRequestsPerArm",
         "replayRestartCycles",
+        "replayMaxTokens",
         "maxTokens",
         "requestTimeoutSeconds",
         "readyTimeoutSeconds",
@@ -386,6 +387,7 @@ def load_config(
         "readinessRestartCycles",
         "replayRequestsPerArm",
         "replayRestartCycles",
+        "replayMaxTokens",
         "maxTokens",
         "minMeasuredRequestsPerArmRun",
     }
@@ -520,8 +522,8 @@ def build_synthetic_trace(
         prompt = (
             "Synthetic validation traffic only; no customer or personal data is "
             f"present. Active label: {label}. Active sentinel: {sentinel}. "
-            "Return one short sentence containing the active sentinel. Do not "
-            "invent or repeat any other sentinel."
+            "Return only the active sentinel as a JSON string. Do not invent or "
+            "repeat any other sentinel."
         )
         contains_pii = prompt_contains_pii(prompt)
         row = TrafficItem(
@@ -594,30 +596,97 @@ def _extract_response_text(obj: dict[str, Any]) -> str:
     if isinstance(choices, list) and choices:
         choice = choices[0]
         if isinstance(choice, dict):
+            delta = choice.get("delta")
+            if isinstance(delta, dict):
+                candidate = delta.get("content")
+                if isinstance(candidate, str):
+                    return candidate
+            message = choice.get("message")
+            if isinstance(message, dict):
+                candidate = message.get("content")
+                if isinstance(candidate, str):
+                    return candidate
             candidate = choice.get("text")
             if isinstance(candidate, str):
                 return candidate
     return ""
 
 
+def _extract_replay_usage(obj: dict[str, Any]) -> tuple[int | None, int | None]:
+    usage = obj.get("usage")
+    if isinstance(usage, dict):
+        prompt = usage.get("prompt_tokens")
+        completion = usage.get("completion_tokens")
+        try:
+            prompt_i = (
+                int(prompt)
+                if prompt is not None and not isinstance(prompt, bool)
+                else None
+            )
+        except (TypeError, ValueError):
+            prompt_i = None
+        try:
+            completion_i = (
+                int(completion)
+                if completion is not None and not isinstance(completion, bool)
+                else None
+            )
+        except (TypeError, ValueError):
+            completion_i = None
+        return prompt_i, completion_i
+    return readiness._extract_usage(obj)
+
+
+def parse_sentinel_response(text: str) -> str | None:
+    """Accept only one JSON string containing one syntactically valid sentinel."""
+    try:
+        value = json.loads(text)
+    except (json.JSONDecodeError, TypeError):
+        return None
+    if not isinstance(value, str) or not _SENTINEL_RE.fullmatch(value):
+        return None
+    return value
+
+
 def send_replay_completion(
     host: str,
     port: int,
     prompt: str,
+    sentinel: str,
     max_tokens: int,
     timeout: float,
 ) -> CompletionObservation:
-    """Send one synthetic replay request while retaining text only in memory."""
+    """Send one schema-constrained chat replay while retaining text only in memory."""
+    if not _SENTINEL_RE.fullmatch(sentinel):
+        raise ConfigurationError("replay sentinel has invalid syntax")
     started = time.monotonic()
     conn = http.client.HTTPConnection(host, port, timeout=timeout)
     body = json.dumps(
         {
-            "prompt": prompt,
-            "n_predict": max_tokens,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a deterministic synthetic canary endpoint. "
+                        "Return exactly the requested synthetic sentinel."
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            "max_tokens": max_tokens,
             "temperature": 0,
             "seed": 1,
             "stream": True,
+            "stream_options": {"include_usage": True},
             "cache_prompt": False,
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "schema": {
+                        "const": sentinel,
+                    }
+                },
+            },
         },
         separators=(",", ":"),
     )
@@ -630,13 +699,13 @@ def send_replay_completion(
     error: str | None = None
 
     try:
-        conn.request("POST", "/completion", body=body, headers=headers)
+        conn.request("POST", "/v1/chat/completions", body=body, headers=headers)
         response = conn.getresponse()
         status_code = response.status
         if status_code != 200:
             payload = response.read(4096).decode("utf-8", errors="replace")
             raise RuntimeError(f"HTTP {status_code}: {payload[:500]}")
-        content_type = response.getheader("Content-Type", "")
+        content_type = response.getheader("Content-Type", "").lower()
         if "text/event-stream" in content_type:
             while True:
                 raw = response.readline()
@@ -658,7 +727,7 @@ def send_replay_completion(
                     if first_content_at is None:
                         first_content_at = time.monotonic()
                     output.append(text)
-                prompt_value, completion_value = readiness._extract_usage(obj)
+                prompt_value, completion_value = _extract_replay_usage(obj)
                 if prompt_value is not None:
                     prompt_tokens = prompt_value
                 if completion_value is not None:
@@ -670,7 +739,7 @@ def send_replay_completion(
             if text:
                 first_content_at = time.monotonic()
                 output.append(text)
-            prompt_tokens, completion_tokens = readiness._extract_usage(obj)
+            prompt_tokens, completion_tokens = _extract_replay_usage(obj)
     except Exception as exc:
         error = f"{type(exc).__name__}: {exc}"
     finally:
@@ -765,6 +834,7 @@ def execute_trace(
                     "completionTokens": None,
                     "responseCharacters": 0,
                     "responseSha256": None,
+                    "responseContractValid": False,
                     "ownSentinelObserved": False,
                     "foreignSentinels": [],
                     "error": "synthetic-load-generator-error",
@@ -786,6 +856,7 @@ def execute_trace(
                 error=f"{type(exc).__name__}: {exc}",
             )
         elapsed_ms = round((time.monotonic() - started) * 1000.0, 3)
+        observed_sentinel = parse_sentinel_response(observation.text)
         foreign = sorted(
             sentinel
             for sentinel in tenant_sentinels
@@ -816,7 +887,8 @@ def execute_trace(
                     if observation.text
                     else None
                 ),
-                "ownSentinelObserved": row.sentinel in observation.text,
+                "responseContractValid": observed_sentinel is not None,
+                "ownSentinelObserved": observed_sentinel == row.sentinel,
                 "foreignSentinels": foreign,
                 "error": observation.error,
             }
@@ -847,6 +919,9 @@ def summarize_replay(
     sent = [row for row in results if row["requestSentToServer"]]
     successes = [row for row in sent if row["status"] == "success"]
     unexpected = [row for row in sent if row["status"] != "success"]
+    invalid_response_contract = [
+        row for row in successes if row.get("responseContractValid") is not True
+    ]
     own_sentinel_missing = [
         row for row in successes if row.get("ownSentinelObserved") is not True
     ]
@@ -883,6 +958,12 @@ def summarize_replay(
             slo["maxForeignSentinelLeaks"],
         ),
         _check(
+            "synthetic-sentinel-response-contract",
+            not invalid_response_contract,
+            len(invalid_response_contract),
+            0,
+        ),
+        _check(
             "synthetic-tenant-own-sentinel-present",
             not own_sentinel_missing,
             len(own_sentinel_missing),
@@ -911,6 +992,7 @@ def summarize_replay(
         "unexpectedErrors": len(unexpected),
         "unexpectedErrorRate": unexpected_rate,
         "foreignSentinelLeaks": foreign_leaks,
+        "responseContractInvalidSuccesses": len(invalid_response_contract),
         "ownSentinelMissingSuccesses": len(own_sentinel_missing),
         "loadGeneratorE2eP99Ms": e2e_p99,
         "restartEvents": list(restarts),
@@ -1318,7 +1400,8 @@ def run_replay_measurement(
             host,
             port,
             row.prompt,
-            int(profile["maxTokens"]),
+            row.sentinel,
+            int(profile["replayMaxTokens"]),
             float(profile["requestTimeoutSeconds"]),
         )
 
@@ -1591,6 +1674,10 @@ def aggregate_arm(
         ),
         "foreignSentinelLeaks": sum(
             int(summary.get("foreignSentinelLeaks", 0))
+            for summary in replay_summaries
+        ),
+        "responseContractInvalidSuccesses": sum(
+            int(summary.get("responseContractInvalidSuccesses", 0))
             for summary in replay_summaries
         ),
         "ownSentinelMissingSuccesses": sum(
@@ -2404,6 +2491,10 @@ def validate_full_receipt(
             require(
                 aggregate_arm_receipt.get("foreignSentinelLeaks") == 0,
                 f"{arm} foreign sentinel leak",
+            )
+            require(
+                aggregate_arm_receipt.get("responseContractInvalidSuccesses") == 0,
+                f"{arm} malformed synthetic sentinel response",
             )
             require(
                 aggregate_arm_receipt.get("ownSentinelMissingSuccesses") == 0,

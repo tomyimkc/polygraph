@@ -31,14 +31,24 @@ synthetic replay that adds:
   generator**, without pretending those errors came from a real network;
 - controlled process termination and restart, which unloads and reloads the
   configured model;
+- OpenAI-compatible chat replay with a request-specific JSON-schema `const`
+  constraint, so the only valid completion is that request's own quoted
+  sentinel;
 - response scanning for another synthetic label's sentinel;
-- rejection of any nominally successful response that omits its own sentinel.
+- rejection of any nominally successful response that is not exactly one valid
+  JSON sentinel string or that omits its own sentinel.
 
 The foreign-sentinel assertion covers only the generated trace in that run. It
 does **not** establish real multi-tenant isolation, authorization boundaries,
 storage isolation, or customer correctness. Raw model response text is not
 written to the receipt; the campaign retains response length, digest, status,
 latency, and sentinel observations.
+
+The request-specific schema constraint makes this a deterministic
+request/response binding canary across cache reuse and controlled restarts. It
+is not an unconstrained instruction-following score and does not prove model
+correctness. Replay has a separate 64-token response budget; the readiness
+capacity/soak workload keeps its original profile-specific generation limits.
 
 ## Smoke and long duration semantics
 
@@ -153,6 +163,8 @@ The replay gates bind:
 - zero unexpected replay errors by default;
 - replay end-to-end p99;
 - zero foreign synthetic sentinels;
+- zero malformed synthetic-sentinel responses;
+- the own sentinel in every nominally successful response;
 - exact process/model-restart count and successful recovery.
 
 The paired comparison then checks identical trace digests, complete repetitions,
@@ -233,10 +245,16 @@ Run `verify-production-arm64` manually. It uses
 The planner rejects hosted-runner requests that remove the timeout headroom.
 Each shard pins and verifies the selected manifest model, builds only the
 reviewed llama.cpp commit, uploads all raw readiness/replay evidence, and
-retains nested plus top-level checksum manifests. A final job downloads every
+retains nested plus top-level checksum manifests. It also uploads separate
+build provenance containing the complete build/fetch logs, stage-status
+records, `CMakeCache.txt`, upstream submodule state, source status, toolchain
+versions, and final server/model/manifest hashes. A final job downloads every
 expected shard and fails if shard ids are not exactly `1..N`, or if any receipt
 is missing, tampered, schema-invalid, provenance-invalid,
-boundary-inconsistent, or not `KEEP_CANDIDATE`.
+boundary-inconsistent, or not `KEEP_CANDIDATE`. On success it uploads a
+checksummed machine-readable aggregate receipt binding the exact source,
+workflow run/attempt, model, llama.cpp commit, shard ids, shard receipt hashes,
+trace digests, duration arithmetic, and claim boundary.
 
 ### Remaining same-runner trust boundary
 

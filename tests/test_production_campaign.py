@@ -14,7 +14,9 @@ import re
 import stat
 import sys
 import tempfile
+import threading
 import unittest
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from unittest import mock
 
@@ -86,6 +88,10 @@ class TestConfiguration(unittest.TestCase):
         long_profile = _config("long")
         self.assertEqual(smoke["claims"], pc.CLAIM_FLAGS)
         self.assertEqual(long_profile["claims"], pc.CLAIM_FLAGS)
+        self.assertEqual(smoke["profile"]["maxTokens"], 12)
+        self.assertEqual(long_profile["profile"]["maxTokens"], 24)
+        self.assertEqual(smoke["profile"]["replayMaxTokens"], 64)
+        self.assertEqual(long_profile["profile"]["replayMaxTokens"], 64)
         self.assertEqual(long_profile["profile"]["soakSecondsTotal"], 18000)
         self.assertEqual(long_profile["profile"]["repetitions"], 1)
 
@@ -233,6 +239,272 @@ class TestSyntheticTrace(unittest.TestCase):
             )
 
 
+class TestReplayTransport(unittest.TestCase):
+    def test_openai_chat_stream_uses_request_specific_sentinel_schema(self):
+        row = pc.build_synthetic_trace(_config(), 1)[0]
+        requests = []
+        quoted_sentinel = json.dumps(row.sentinel)
+
+        class Handler(BaseHTTPRequestHandler):
+            protocol_version = "HTTP/1.0"
+
+            def do_POST(self):
+                length = int(self.headers["Content-Length"])
+                requests.append(
+                    {
+                        "path": self.path,
+                        "accept": self.headers.get("Accept"),
+                        "body": json.loads(self.rfile.read(length)),
+                    }
+                )
+                self.send_response(200)
+                self.send_header("Content-Type", "Text/Event-Stream; Charset=UTF-8")
+                self.end_headers()
+                events = (
+                    {
+                        "id": "chatcmpl-polygraph",
+                        "object": "chat.completion.chunk",
+                        "created": 1786262400,
+                        "model": "test-model",
+                        "choices": [
+                            {
+                                "index": 0,
+                                "delta": {
+                                    "role": "assistant",
+                                    "content": quoted_sentinel[:12],
+                                },
+                                "finish_reason": None,
+                            }
+                        ],
+                    },
+                    {
+                        "id": "chatcmpl-polygraph",
+                        "object": "chat.completion.chunk",
+                        "created": 1786262400,
+                        "model": "test-model",
+                        "choices": [
+                            {
+                                "index": 0,
+                                "delta": {"content": quoted_sentinel[12:]},
+                                "finish_reason": None,
+                            }
+                        ],
+                    },
+                    {
+                        "id": "chatcmpl-polygraph",
+                        "object": "chat.completion.chunk",
+                        "created": 1786262400,
+                        "model": "test-model",
+                        "choices": [
+                            {
+                                "index": 0,
+                                "delta": {},
+                                "finish_reason": "stop",
+                            }
+                        ],
+                        "usage": {
+                            "prompt_tokens": 17,
+                            "completion_tokens": 9,
+                            "total_tokens": 26,
+                        },
+                    },
+                )
+                for event in events:
+                    self.wfile.write(
+                        b"data: "
+                        + json.dumps(event, separators=(",", ":")).encode("utf-8")
+                        + b"\n\n"
+                    )
+                self.wfile.write(b"data: [DONE]\n\n")
+                self.wfile.flush()
+
+            def log_message(self, _format, *_args):
+                return
+
+        server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            observation = pc.send_replay_completion(
+                host="127.0.0.1",
+                port=server.server_address[1],
+                prompt=row.prompt,
+                sentinel=row.sentinel,
+                max_tokens=24,
+                timeout=5,
+            )
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=5)
+
+        self.assertEqual(observation.status, "success")
+        self.assertEqual(observation.text, quoted_sentinel)
+        self.assertEqual(observation.promptTokens, 17)
+        self.assertEqual(observation.completionTokens, 9)
+        self.assertIsNone(observation.error)
+        results, restarts = pc.execute_trace(
+            [row],
+            sender=lambda _row: observation,
+            tenant_sentinels=[row.sentinel],
+            injected_error_http_status=503,
+            sleep_fn=lambda _seconds: None,
+            restart_at=set(),
+        )
+        self.assertIs(results[0]["responseContractValid"], True)
+        self.assertIs(results[0]["ownSentinelObserved"], True)
+        summary = pc.summarize_replay(
+            results,
+            restarts,
+            expected_restart_cycles=0,
+            slo=_config()["slo"],
+        )
+        self.assertEqual(summary["verdict"], "PASS")
+        self.assertEqual(len(requests), 1)
+        request = requests[0]
+        self.assertEqual(request["path"], "/v1/chat/completions")
+        self.assertEqual(request["accept"], "text/event-stream")
+        body = request["body"]
+        self.assertEqual(body["messages"][-1], {"role": "user", "content": row.prompt})
+        self.assertEqual(body["messages"][0]["role"], "system")
+        self.assertEqual(body["max_tokens"], 24)
+        self.assertEqual(body["temperature"], 0)
+        self.assertEqual(body["seed"], 1)
+        self.assertIs(body["stream"], True)
+        self.assertEqual(body["stream_options"], {"include_usage": True})
+        self.assertNotIn("prompt", body)
+        self.assertNotIn("n_predict", body)
+        response_format = body["response_format"]
+        self.assertEqual(response_format["type"], "json_schema")
+        schema = response_format["json_schema"]["schema"]
+        self.assertEqual(schema["const"], row.sentinel)
+
+    def test_non_streaming_chat_content_fails_closed_unless_exact_json_string(self):
+        trace = pc.build_synthetic_trace(_config(), 1)
+        row = trace[0]
+        foreign = trace[1].sentinel
+        cases = (
+            ("exact", json.dumps(row.sentinel), "pass"),
+            ("missing", None, "unexpected-error"),
+            ("unquoted", row.sentinel, "invalid-contract"),
+            ("malformed-json", f'"{row.sentinel}', "invalid-contract"),
+            (
+                "wrong-json-shape",
+                json.dumps({"sentinel": row.sentinel}),
+                "invalid-contract",
+            ),
+            ("foreign", json.dumps(foreign), "foreign"),
+        )
+
+        for label, content, expected in cases:
+            with self.subTest(label=label):
+                message = {"role": "assistant"}
+                if content is not None:
+                    message["content"] = content
+                payload = {
+                    "id": f"chatcmpl-{label}",
+                    "object": "chat.completion",
+                    "created": 1786262400,
+                    "model": "test-model",
+                    "choices": [
+                        {
+                            "index": 0,
+                            "message": message,
+                            "finish_reason": "stop",
+                        }
+                    ],
+                    "usage": {
+                        "prompt_tokens": 11,
+                        "completion_tokens": 2,
+                        "total_tokens": 13,
+                    },
+                }
+
+                class FakeResponse:
+                    status = 200
+
+                    @staticmethod
+                    def getheader(name, default=""):
+                        if name.lower() == "content-type":
+                            return "application/json"
+                        return default
+
+                    @staticmethod
+                    def read(_limit=None):
+                        return json.dumps(payload).encode("utf-8")
+
+                class FakeConnection:
+                    def __init__(self, *_args, **_kwargs):
+                        pass
+
+                    def request(self, *_args, **_kwargs):
+                        pass
+
+                    @staticmethod
+                    def getresponse():
+                        return FakeResponse()
+
+                    def close(self):
+                        pass
+
+                with mock.patch.object(
+                    pc.http.client, "HTTPConnection", FakeConnection
+                ):
+                    observation = pc.send_replay_completion(
+                        host="127.0.0.1",
+                        port=8080,
+                        prompt=row.prompt,
+                        sentinel=row.sentinel,
+                        max_tokens=24,
+                        timeout=5,
+                    )
+
+                self.assertEqual(observation.httpStatus, 200)
+                results, restarts = pc.execute_trace(
+                    [row],
+                    sender=lambda _row: observation,
+                    tenant_sentinels=sorted({item.sentinel for item in trace}),
+                    injected_error_http_status=503,
+                    sleep_fn=lambda _seconds: None,
+                    restart_at=set(),
+                )
+                summary = pc.summarize_replay(
+                    results,
+                    restarts,
+                    expected_restart_cycles=0,
+                    slo=_config()["slo"],
+                )
+
+                if expected == "pass":
+                    self.assertEqual(observation.status, "success")
+                    self.assertIsNone(observation.error)
+                    self.assertIs(results[0]["responseContractValid"], True)
+                    self.assertIs(results[0]["ownSentinelObserved"], True)
+                    self.assertEqual(summary["verdict"], "PASS")
+                elif expected == "unexpected-error":
+                    self.assertEqual(observation.status, "error")
+                    self.assertIsNotNone(observation.error)
+                    self.assertEqual(results[0]["status"], "unexpected-error")
+                    self.assertEqual(summary["unexpectedErrors"], 1)
+                    self.assertEqual(summary["verdict"], "FAIL")
+                elif expected == "invalid-contract":
+                    self.assertEqual(observation.status, "success")
+                    self.assertIs(results[0]["responseContractValid"], False)
+                    self.assertIs(results[0]["ownSentinelObserved"], False)
+                    self.assertEqual(summary["responseContractInvalidSuccesses"], 1)
+                    self.assertEqual(summary["ownSentinelMissingSuccesses"], 1)
+                    self.assertEqual(summary["verdict"], "FAIL")
+                else:
+                    self.assertEqual(expected, "foreign")
+                    self.assertEqual(observation.status, "success")
+                    self.assertIs(results[0]["responseContractValid"], True)
+                    self.assertIs(results[0]["ownSentinelObserved"], False)
+                    self.assertEqual(results[0]["foreignSentinels"], [foreign])
+                    self.assertEqual(summary["foreignSentinelLeaks"], 1)
+                    self.assertEqual(summary["ownSentinelMissingSuccesses"], 1)
+                    self.assertEqual(summary["verdict"], "FAIL")
+
+
 class TestReplay(unittest.TestCase):
     def test_injections_do_not_reach_sender_and_restart_is_controlled(self):
         config = _config()
@@ -243,7 +515,7 @@ class TestReplay(unittest.TestCase):
 
         def sender(row):
             sent.append(row.sequence)
-            return _observation(f"ack {row.sentinel}")
+            return _observation(json.dumps(row.sentinel))
 
         def restart_hook(sequence):
             restarts.append(sequence)
@@ -286,10 +558,9 @@ class TestReplay(unittest.TestCase):
         foreign = trace[1].sentinel
 
         def sender(row):
-            text = f"ack {row.sentinel}"
             if row.sequence == 1:
-                text += f" foreign {foreign}"
-            return _observation(text)
+                return _observation(json.dumps(foreign))
+            return _observation(json.dumps(row.sentinel))
 
         results, events = pc.execute_trace(
             trace,
@@ -312,8 +583,12 @@ class TestReplay(unittest.TestCase):
         config = _config()
         trace = pc.build_synthetic_trace(config, 1)
 
-        def sender(_row):
-            return _observation("synthetic response without the required canary")
+        def sender(row):
+            if row.sequence == 1:
+                return _observation(
+                    "synthetic response without the required canary"
+                )
+            return _observation(json.dumps(row.sentinel))
 
         results, events = pc.execute_trace(
             trace,
@@ -330,7 +605,7 @@ class TestReplay(unittest.TestCase):
             slo=config["slo"],
         )
         self.assertEqual(summary["verdict"], "FAIL")
-        self.assertGreater(summary["ownSentinelMissingSuccesses"], 0)
+        self.assertEqual(summary["ownSentinelMissingSuccesses"], 1)
 
     def test_restart_positions_are_deterministic(self):
         self.assertEqual(pc.restart_positions(18, 2), {6, 13})
@@ -778,6 +1053,17 @@ class TestWorkflowContract(unittest.TestCase):
         self.assertIn(pc.REVIEWED_LLAMA_CPP_SHA, workflow)
         self.assertIn("persist-credentials: false", workflow)
         self.assertIn("sorted(shard_ids) != expected_ids", workflow)
+        self.assertIn("Capture reproducible build provenance", workflow)
+        self.assertIn("CMakeCache.txt", workflow)
+        self.assertIn("llama-submodules.txt", workflow)
+        self.assertIn("toolchain-and-artifacts.txt", workflow)
+        self.assertIn("Upload complete build provenance", workflow)
+        self.assertIn("polygraph-production-build-provenance-", workflow)
+        self.assertIn("polygraph.production-campaign.aggregate.v1", workflow)
+        self.assertIn("aggregate-receipt.json", workflow)
+        self.assertIn("receiptSha256", workflow)
+        self.assertIn("Upload machine-readable aggregate receipt", workflow)
+        self.assertIn("polygraph-production-aggregate-", workflow)
         self.assertIn("--require-hosted-workflow", workflow)
         self.assertIn("--expected-source-repository", workflow)
         self.assertIn("--expected-source-ref", workflow)
