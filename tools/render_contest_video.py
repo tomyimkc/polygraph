@@ -4,8 +4,9 @@
 The renderer loads figures from committed repository evidence, combines 1080p
 evidence cards with an auditable terminal replay from a real local ``make
 demo`` execution, and encodes a web-friendly H.264/AAC MP4 with FFmpeg.  The
-raw PTY transcript, timing events, receipt, and hashes remain beside the story
-manifest so the project-function footage cannot silently become a mockup.
+normalized ANSI PTY transcript, timing events, receipt, and hashes remain
+beside the story manifest so the project-function footage cannot silently
+become a mockup.
 
 macOS can add narration with the built-in ``say`` command.  On other hosts use
 ``--tts none``; the output still contains a silent AAC track and the full
@@ -49,8 +50,13 @@ PRODUCTION_RECORD_PATH = Path("docs/VIDEO-PRODUCTION.md")
 PRODUCTION_RECORD_BEGIN = "<!-- BEGIN AUTHORITATIVE VIDEO RECEIPT -->"
 PRODUCTION_RECORD_END = "<!-- END AUTHORITATIVE VIDEO RECEIPT -->"
 LIVE_CAPTURE_TIMING_NOTE = (
-    "Literal PTY output from the captured run; line-reveal timing is normalized "
-    "for legibility and the final frame is held. Output text is unchanged."
+    "Literal PTY output from the captured run; ephemeral capture-root paths and "
+    "line endings are normalized, line-reveal timing is normalized for "
+    "legibility, and the final frame is held. Semantic output and ordering are "
+    "unchanged."
+)
+CAPTURE_TRANSCRIPT_NORMALIZATION = (
+    "ephemeral capture root replaced with $CAPTURE_ROOT; CRLF/CR converted to LF"
 )
 MAX_DURATION_SECONDS = 180.0
 MIN_LIVE_FOOTAGE_SECONDS = 15.0
@@ -428,6 +434,62 @@ def capture_pty(
     return exit_code, time.monotonic() - started, bytes(raw), events
 
 
+def normalize_capture_stream(
+    raw: bytes,
+    events: list[dict[str, Any]],
+    *,
+    scratch: Path,
+) -> tuple[bytes, list[dict[str, Any]]]:
+    """Sanitize ephemeral host paths while preserving event reconstruction."""
+
+    scratch_bytes = str(scratch).encode("utf-8")
+
+    def normalize(chunk: bytes) -> bytes:
+        return (
+            chunk.replace(scratch_bytes, b"$CAPTURE_ROOT")
+            .replace(b"\r\n", b"\n")
+            .replace(b"\r", b"\n")
+        )
+
+    normalized_raw = normalize(raw)
+    original_chunks = [
+        base64.b64decode(event["dataBase64"], validate=True)
+        for event in events
+    ]
+    normalized_chunks = [normalize(chunk) for chunk in original_chunks]
+    if b"".join(normalized_chunks) != normalized_raw:
+        normalized_chunks = []
+        original_total = max(1, sum(len(chunk) for chunk in original_chunks))
+        original_cursor = 0
+        normalized_cursor = 0
+        for index, chunk in enumerate(original_chunks):
+            original_cursor += len(chunk)
+            if index == len(original_chunks) - 1:
+                normalized_end = len(normalized_raw)
+            else:
+                normalized_end = round(
+                    original_cursor * len(normalized_raw) / original_total
+                )
+            normalized_chunks.append(
+                normalized_raw[normalized_cursor:normalized_end]
+            )
+            normalized_cursor = normalized_end
+
+    normalized_events = [
+        {
+            "t": event["t"],
+            "dataBase64": base64.b64encode(chunk).decode("ascii"),
+        }
+        for event, chunk in zip(events, normalized_chunks, strict=True)
+    ]
+    if b"".join(
+        base64.b64decode(event["dataBase64"], validate=True)
+        for event in normalized_events
+    ) != normalized_raw:
+        raise RenderError("normalized event stream does not reconstruct transcript")
+    return normalized_raw, normalized_events
+
+
 def verify_demo_transcript(text: str) -> None:
     required = [
         "using fast path: yes",
@@ -533,6 +595,7 @@ def capture_make_demo(capture_dir: Path) -> tuple[Path, list[Path], dict[str, An
             cwd=scratch,
             env=capture_env,
         )
+        raw, events = normalize_capture_stream(raw, events, scratch=scratch)
         host_metadata = {
             "platform": platform.platform(),
             "machine": platform.machine(),
@@ -632,6 +695,7 @@ def capture_make_demo(capture_dir: Path) -> tuple[Path, list[Path], dict[str, An
             "environmentMode": "strict-allowlist",
             "environmentKeys": sorted(capture_env),
             "commandPaths": sanitize_command_paths(command_paths),
+            "transcriptNormalization": CAPTURE_TRANSCRIPT_NORMALIZATION,
             "timeoutSeconds": CAPTURE_TIMEOUT_SECONDS,
             "termGraceSeconds": CAPTURE_TERM_GRACE_SECONDS,
             "maxRawTranscriptBytes": MAX_RAW_TRANSCRIPT_BYTES,
@@ -1080,6 +1144,7 @@ def resolve_live_capture(
             "environmentMode",
             "environmentKeys",
             "commandPaths",
+            "transcriptNormalization",
             "timeoutSeconds",
             "termGraceSeconds",
             "maxRawTranscriptBytes",
@@ -1157,6 +1222,11 @@ def resolve_live_capture(
     )
     if capture_policy["commandPaths"] != current_command_paths:
         raise RenderError("live capture command paths differ from the reviewed host tools")
+    if (
+        capture_policy["transcriptNormalization"]
+        != CAPTURE_TRANSCRIPT_NORMALIZATION
+    ):
+        raise RenderError("live capture transcript normalization policy changed")
     expected_policy_values = {
         "timeoutSeconds": CAPTURE_TIMEOUT_SECONDS,
         "termGraceSeconds": CAPTURE_TERM_GRACE_SECONDS,
@@ -2243,7 +2313,7 @@ def update_production_record_from_receipt(receipt_path: Path) -> None:
             f"| In final cut | 9.000 s evidence card + {float(live_playback['durationSeconds']):.3f} s literal-output playback |",
             f"| Playback timing | {live_playback['timing']} |",
             f"| Capture receipt | `{live_receipt_relative}`; SHA-256 `{live_receipt_hash}` |",
-            f"| Raw transcript SHA-256 | `{live['files']['make-demo.ansi']}` |",
+            f"| Normalized ANSI transcript SHA-256 | `{live['files']['make-demo.ansi']}` |",
             f"| Event stream SHA-256 | `{live['files']['make-demo.events.jsonl']}` |",
             f"| Playback GIF SHA-256 | `{live['files']['make-demo.gif']}` |",
             PRODUCTION_RECORD_END,

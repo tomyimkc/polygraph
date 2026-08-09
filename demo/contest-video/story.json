@@ -88,7 +88,7 @@
         "static_seconds": 9,
         "footage_seconds": 20,
         "command": "make demo",
-        "timing_note": "Literal PTY output from the captured run; line-reveal timing is normalized for legibility and the final frame is held. Output text is unchanged."
+        "timing_note": "Literal PTY output from the captured run; ephemeral capture-root paths and line endings are normalized, line-reveal timing is normalized for legibility, and the final frame is held. Semantic output and ordering are unchanged."
       },
       "sources": [
         "results/server/spark-provenance.txt",
