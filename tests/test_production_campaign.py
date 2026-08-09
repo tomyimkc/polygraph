@@ -27,6 +27,8 @@ def _load_module():
     spec = importlib.util.spec_from_file_location(
         "production_campaign_under_test", path
     )
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"could not load production campaign module from {path}")
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
@@ -780,6 +782,11 @@ class TestWorkflowContract(unittest.TestCase):
         self.assertIn("--expected-source-repository", workflow)
         self.assertIn("--expected-source-ref", workflow)
         self.assertIn("--expected-source-sha", workflow)
+        wrapper = (
+            REPO_ROOT / "scripts" / "lib" / "run_production_campaign.sh"
+        ).read_text()
+        self.assertIn("10#$PRODUCTION_PORT >= 1", wrapper)
+        self.assertIn("10#$PRODUCTION_PORT <= 65535", wrapper)
 
         uses = re.findall(r"uses:\s*([^\s#]+)", workflow)
         self.assertTrue(uses)

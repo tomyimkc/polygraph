@@ -286,6 +286,24 @@ def resolve_command_paths(names: Iterable[str]) -> dict[str, str]:
     return resolved_paths
 
 
+def sanitize_host_path(path: str) -> str:
+    """Remove the current username from host paths retained in public receipts."""
+    resolved = Path(path).resolve(strict=True)
+    home = Path.home().resolve(strict=True)
+    try:
+        relative = resolved.relative_to(home)
+    except ValueError:
+        return str(resolved)
+    return f"$HOME/{relative.as_posix()}"
+
+
+def sanitize_command_paths(command_paths: dict[str, str]) -> dict[str, str]:
+    return {
+        name: sanitize_host_path(path)
+        for name, path in command_paths.items()
+    }
+
+
 def command_first_line(
     command: list[str],
     *,
@@ -613,7 +631,7 @@ def capture_make_demo(capture_dir: Path) -> tuple[Path, list[Path], dict[str, An
         "capturePolicy": {
             "environmentMode": "strict-allowlist",
             "environmentKeys": sorted(capture_env),
-            "commandPaths": command_paths,
+            "commandPaths": sanitize_command_paths(command_paths),
             "timeoutSeconds": CAPTURE_TIMEOUT_SECONDS,
             "termGraceSeconds": CAPTURE_TERM_GRACE_SECONDS,
             "maxRawTranscriptBytes": MAX_RAW_TRANSCRIPT_BYTES,
@@ -1134,7 +1152,9 @@ def resolve_live_capture(
     }
     if set(capture_policy["environmentKeys"]) != expected_environment_keys:
         raise RenderError("live capture environment allowlist keys changed")
-    current_command_paths = resolve_command_paths(("make", "cc", "lldb", "python3"))
+    current_command_paths = sanitize_command_paths(
+        resolve_command_paths(("make", "cc", "lldb", "python3"))
+    )
     if capture_policy["commandPaths"] != current_command_paths:
         raise RenderError("live capture command paths differ from the reviewed host tools")
     expected_policy_values = {
@@ -1179,41 +1199,42 @@ def resolve_live_capture(
         raise RenderError("live capture source-isolation method changed")
     if source["captureDriver"] != str(RENDERER_PATH):
         raise RenderError("live capture driver path changed")
-    if source["captureDriverSha256"] != sha256(REPO_ROOT_RESOLVED / RENDERER_PATH):
-        raise RenderError(
-            "live make-demo capture is stale for the current reviewed capture driver"
-        )
     if config["timing_note"] != LIVE_CAPTURE_TIMING_NOTE:
         raise RenderError("story live-capture timing disclosure changed")
     if playback["timing"] != LIVE_CAPTURE_TIMING_NOTE:
         raise RenderError("live capture timing disclosure differs from the story")
 
-    current_head = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=REPO_ROOT,
-        check=True,
-        text=True,
-        stdout=subprocess.PIPE,
-    ).stdout.strip()
-    current_branch = subprocess.run(
-        ["git", "branch", "--show-current"],
-        cwd=REPO_ROOT,
-        check=True,
-        text=True,
-        stdout=subprocess.PIPE,
-    ).stdout.strip()
-    if source["gitHead"] != current_head or source["branch"] != current_branch:
+    git_head = source["gitHead"]
+    if re.fullmatch(r"[0-9a-f]{40}", str(git_head)) is None:
+        raise RenderError("live capture source gitHead is not exact lowercase 40-hex")
+    try:
+        archive_bytes = subprocess.run(
+            ["git", "archive", "--format=tar", git_head],
+            cwd=REPO_ROOT,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        ).stdout
+        capture_driver_bytes = subprocess.run(
+            ["git", "show", f"{git_head}:{source['captureDriver']}"],
+            cwd=REPO_ROOT,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        ).stdout
+    except subprocess.CalledProcessError as exc:
         raise RenderError(
-            "live make-demo capture is stale for the current reviewed branch/HEAD"
+            "live capture source commit or capture driver is unavailable"
+        ) from exc
+    if (
+        hashlib.sha256(capture_driver_bytes).hexdigest()
+        != source["captureDriverSha256"]
+    ):
+        raise RenderError(
+            "live capture driver hash does not match its reviewed source commit"
         )
-    archive_bytes = subprocess.run(
-        ["git", "archive", "--format=tar", "HEAD"],
-        cwd=REPO_ROOT,
-        check=True,
-        stdout=subprocess.PIPE,
-    ).stdout
     if hashlib.sha256(archive_bytes).hexdigest() != source["gitArchiveSha256"]:
-        raise RenderError("live capture git archive hash does not match current HEAD")
+        raise RenderError("live capture git archive hash does not match source commit")
     with tarfile.open(fileobj=io.BytesIO(archive_bytes), mode="r:") as archive:
         for filename, expected_hash in source_files.items():
             member = archive.getmember(filename)
@@ -2205,7 +2226,6 @@ def update_production_record_from_receipt(receipt_path: Path) -> None:
             "| Property | Final post-hardening value |",
             "|---|---|",
             f"| Repository path | `{receipt['output']}` |",
-            f"| Exact local path | `{output}` |",
             f"| Encoded duration | {duration:.6f} s ({format_clock(duration)}) |",
             f"| Margin under 180 s | {margin:.6f} s |",
             f"| Frame | {video['width']}×{video['height']} at {video['r_frame_rate']} fps |",

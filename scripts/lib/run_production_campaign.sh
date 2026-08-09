@@ -65,6 +65,8 @@ fail() {
     || fail "PRODUCTION_SHARD_ID must be a positive integer"
 [[ "$PRODUCTION_PORT" =~ ^[0-9]+$ ]] \
     || fail "PRODUCTION_PORT must be an integer"
+(( 10#$PRODUCTION_PORT >= 1 && 10#$PRODUCTION_PORT <= 65535 )) \
+    || fail "PRODUCTION_PORT must be between 1 and 65535"
 [[ "$PRODUCTION_LLAMA_CPP_SHA" == "dbadb68eecdfb3ab0e86872d011738fc937f0364" ]] \
     || fail "PRODUCTION_LLAMA_CPP_SHA is not the reviewed allowlisted commit"
 [[ "$PRODUCTION_RESOLVED_LLAMA_CPP_SHA" == "$PRODUCTION_LLAMA_CPP_SHA" ]] \
