@@ -16,7 +16,7 @@ result: 500000500000
 $ tools/polygraph check catch-a-liar
 # auto-resolved --binary from the target's binary_globs: examples/catch-a-liar/build/liar
 # polygraph check catch-a-liar -- darwin-arm64 / Apple M4 Max
-# binary=/private/tmp/polygraph-contest-live-run-i3d37yyq/examples/catch-a-liar/build/liar
+# binary=$CAPTURE_ROOT/examples/catch-a-liar/build/liar
 MISMATCH: 1 symbol(s) matching --symbols '^_?fast_path_sum$' exist in the binary but 0 ever dispatched
 
   L1 (static)     1/4 matching symbols in liar   [nm]
@@ -30,7 +30,7 @@ exit code: 1
 == Step 3/3: polygraph check on the TRUTH (expect MATCH, exit 0) ==
 $ tools/polygraph check --binary examples/catch-a-liar/build/honest --symbols '^fast_path_sum$' --run examples/catch-a-liar/build/honest --level 3
 # polygraph check adhoc -- darwin-arm64 / Apple M4 Max
-# binary=/private/tmp/polygraph-contest-live-run-i3d37yyq/examples/catch-a-liar/build/honest
+# binary=$CAPTURE_ROOT/examples/catch-a-liar/build/honest
 MATCH: 1 hit(s) observed for --symbols '^fast_path_sum$' (dominant family: other)
 
   L1 (static)     1/4 matching symbols in honest   [nm]

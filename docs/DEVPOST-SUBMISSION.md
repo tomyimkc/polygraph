@@ -25,7 +25,7 @@ claim is not registered in `docs/CLAIMS.md` or backed by committed JSON.
 | Primary upstream report | `https://github.com/ggml-org/llama.cpp/issues/26630` |
 | Related upstream report | `https://github.com/ggml-org/llama.cpp/issues/26547` |
 | Demo video | `[PASTE YOUTUBE URL AFTER UPLOAD]` |
-| Submission cut | `demo/out/polygraph-contest-final.mp4`, validated at **169.021333 seconds (2:49.021)**, **9,527,083 bytes**, SHA-256 `076de488a8939f56278655a0775775257c7537317697aa3003d4aaf380ed18e4` |
+| Submission cut | `demo/out/polygraph-contest-final.mp4`, validated at **169.021333 seconds (2:49.021)**, **9,239,731 bytes**, SHA-256 `0deb7f67697b45ac8b9b38b518d87240ac556db8bb82107f23158862372f8f30` |
 | Captions | `demo/out/polygraph-contest-final.srt`, six authored cues |
 | Media receipt | `demo/out/polygraph-contest-final.validation.json` plus `demo/out/polygraph-contest-final.sha256` |
 
@@ -552,8 +552,8 @@ demo/out/polygraph-contest-final.mp4
 ```
 
 Its current validation receipt records **169.021333 seconds (2:49.021)**, leaving
-**10.978667 seconds** under the three-minute cap. The file is **9,527,083 bytes** with SHA-256
-`076de488a8939f56278655a0775775257c7537317697aa3003d4aaf380ed18e4`. The authored six-cue captions are
+**10.978667 seconds** under the three-minute cap. The file is **9,239,731 bytes** with SHA-256
+`0deb7f67697b45ac8b9b38b518d87240ac556db8bb82107f23158862372f8f30`. The authored six-cue captions are
 `demo/out/polygraph-contest-final.srt`; the media/evidence receipt is
 `demo/out/polygraph-contest-final.validation.json`; and the MP4 checksum is in
 `demo/out/polygraph-contest-final.sha256`.
@@ -710,5 +710,6 @@ or a non-Arm control into a production or Arm claim.
     `demo/out/polygraph-contest-final.srt`, validation receipt in
     `demo/out/polygraph-contest-final.validation.json`, and checksum in
     `demo/out/polygraph-contest-final.sha256`. The final cut includes receipt-verified real
-    `make demo` capture playback with normalized pauses and unchanged captured text.
+    `make demo` capture playback with normalized pauses, sanitized ephemeral capture-root paths,
+    normalized line endings, and unchanged semantic output ordering.
 11. **Final submission check:** `docs/CONTEST-SUBMISSION-CHECKLIST.md`.

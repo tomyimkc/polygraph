@@ -36,9 +36,9 @@ demo/out/polygraph-contest-final.validation.json
 demo/out/qa/contact-sheet.jpg
 ```
 
-Final post-hardening sidecar values: **169.021333 seconds**, **9,527,083
+Final post-hardening sidecar values: **169.021333 seconds**, **9,239,731
 bytes**, SHA-256
-**`076de488a8939f56278655a0775775257c7537317697aa3003d4aaf380ed18e4`**.
+**`0deb7f67697b45ac8b9b38b518d87240ac556db8bb82107f23158862372f8f30`**.
 The validation sidecar remains the authoritative machine-readable source.
 
 The renderer fails before encoding if the required evidence has drifted, if the
@@ -75,8 +75,10 @@ static card:
 - 9 seconds: sourced technical-fixes/tooling card;
 - 20 seconds: literal output from an actual `make demo` PTY run.
 
-Playback timing is normalized only by revealing captured lines in order with
-legible pauses and holding the final captured frame. Text is unchanged. The
+Playback timing is normalized by revealing captured lines in order with
+legible pauses and holding the final captured frame. Ephemeral capture-root
+paths are replaced with `$CAPTURE_ROOT`, PTY line endings are normalized to LF,
+and semantic CLI output ordering is unchanged. The
 auditable bundle is:
 
 ```text
@@ -91,7 +93,7 @@ demo/contest-video/live-run/SHA256SUMS
 The receipt binds the reviewed branch and HEAD archive, capture-driver hash,
 strict environment key allowlist, exact executable paths, command, overall and
 liar/honest exit codes, wall time, PTY event count, output hashes, and playback
-duration. The renderer reconstructs the raw transcript from the event stream
+duration. The renderer reconstructs the normalized ANSI transcript from the event stream
 and rejects absolute/traversal/symlink paths, unknown receipt keys or capture
 filenames, stale source state, changed hashes, oversize output, or a failed
 capture.

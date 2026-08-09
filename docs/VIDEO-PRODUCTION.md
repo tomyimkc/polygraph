@@ -64,27 +64,26 @@ Final sidecar: `demo/out/polygraph-contest-final.validation.json`
 | Property | Final post-hardening value |
 |---|---|
 | Repository path | `demo/out/polygraph-contest-final.mp4` |
-| Exact local path | `/private/tmp/polygraph-contest-production-20260809/demo/out/polygraph-contest-final.mp4` |
 | Encoded duration | 169.021333 s (2:49.021) |
 | Margin under 180 s | 10.978667 s |
 | Frame | 1920×1080 at 30/1 fps |
 | Video | H.264 High, `yuv420p` |
 | Audio | AAC-LC, 48000 Hz, 2 channels |
 | Streaming | fast-start: `true` |
-| Size | 9,527,083 bytes |
-| SHA-256 | `076de488a8939f56278655a0775775257c7537317697aa3003d4aaf380ed18e4` |
+| Size | 9,239,731 bytes |
+| SHA-256 | `0deb7f67697b45ac8b9b38b518d87240ac556db8bb82107f23158862372f8f30` |
 
 | Real project-function capture | Bound value |
 |---|---|
 | Command | `make demo` |
-| Reviewed source | `feat/contest-production-hardening-20260809` at `78b1baa098343d41429cf340df56a211fca641a3`; `git archive HEAD`, working-tree edits excluded |
-| Actual run | 4.582240 s wall time; overall exit 0; 18 PTY events |
+| Reviewed source | `feat/contest-production-hardening-20260809` at `3bc7da203db8cec1a10df243dd75f80d53bd55f5`; `git archive HEAD`, working-tree edits excluded |
+| Actual run | 7.711195 s wall time; overall exit 0; 23 PTY events |
 | In final cut | 9.000 s evidence card + 20.000 s literal-output playback |
-| Playback timing | Literal PTY output from the captured run; line-reveal timing is normalized for legibility and the final frame is held. Output text is unchanged. |
-| Capture receipt | `demo/contest-video/live-run/receipt.json`; SHA-256 `de16969d0a3db523a3c879edb4db0c9d8da66d3fa5e1f1634d1a120729072d5c` |
-| Raw transcript SHA-256 | `f8f2eaee76ce0df3be1bd67707645044f3e0a5a67792bbd402ecf51f9323c682` |
-| Event stream SHA-256 | `db1ce027450646338a16c435911b4950e1e5f9ffe321b4b0ec2e0376e412edd9` |
-| Playback GIF SHA-256 | `196dd5fa20b355c3c79eec354b40c119b66f97d0eddfe4a61aa92efa055884a1` |
+| Playback timing | Literal PTY output from the captured run; ephemeral capture-root paths and line endings are normalized, line-reveal timing is normalized for legibility, and the final frame is held. Semantic output and ordering are unchanged. |
+| Capture receipt | `demo/contest-video/live-run/receipt.json`; SHA-256 `3ee881bb229b20ac3fa18c7023b5c9c512eae466835614ad54dd1bd14c2b766e` |
+| Normalized ANSI transcript SHA-256 | `dd0a7c76504327c1cee1061577930867c5b8fbcfacc8b3a5bfdeb3d81c867c45` |
+| Event stream SHA-256 | `6ccfc42a415b1cbc726addc3853863a3afe47d50687ec5e99112891f21cf65e3` |
+| Playback GIF SHA-256 | `ed7ed35edc1e69daf07a94ac75fad54de4eb52369d745ded6ca2131d1146d818` |
 <!-- END AUTHORITATIVE VIDEO RECEIPT -->
 
 Midpoint frames from all six beats and a contact sheet are regenerated after

@@ -421,8 +421,8 @@ test "$devnone_rc" -eq 0
 |---|---|
 | Final MP4 | `demo/out/polygraph-contest-final.mp4` |
 | Duration | 169.021333 seconds (2:49.021), 10.978667 seconds under the cap |
-| Size | 9,527,083 bytes |
-| SHA-256 | `076de488a8939f56278655a0775775257c7537317697aa3003d4aaf380ed18e4` |
+| Size | 9,239,731 bytes |
+| SHA-256 | `0deb7f67697b45ac8b9b38b518d87240ac556db8bb82107f23158862372f8f30` |
 | Captions | `demo/out/polygraph-contest-final.srt`, six authored cues |
 | Validation receipt | `demo/out/polygraph-contest-final.validation.json` |
 | Checksum | `demo/out/polygraph-contest-final.sha256` |

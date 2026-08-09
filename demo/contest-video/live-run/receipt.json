@@ -6,14 +6,14 @@
   ],
   "source": {
     "branch": "feat/contest-production-hardening-20260809",
-    "gitHead": "78b1baa098343d41429cf340df56a211fca641a3",
-    "gitArchiveSha256": "fc0957f57f29e7510b0071643b6fc7acf68cbbecc873542cacdfa7d88994c77a",
+    "gitHead": "3bc7da203db8cec1a10df243dd75f80d53bd55f5",
+    "gitArchiveSha256": "37ba31a8cf433bbe536efcb5a150ae56dce96b9aaa8508765a4fe52ccc71f5e7",
     "workingTreeEditsIncluded": false,
     "method": "git archive HEAD extracted to an isolated temporary directory",
     "captureDriver": "tools/render_contest_video.py",
-    "captureDriverSha256": "34dc6670f7a9c3fe507e6981eccec13f86bb5d0b1c7d1f5335a7665c9c4e8768",
+    "captureDriverSha256": "a85aaddc29facb09c3146a42672fca639403c1319a553bfcef646abcf1c7a356",
     "files": {
-      "Makefile": "1745028b79ea7f736ed0e7f80c0be4da90b8500fe5877fb16335534c56051ed9",
+      "Makefile": "171e11a13a70708500f855dd8b048f1367c57ebe15c231ce153750e2aa1de899",
       "examples/catch-a-liar/demo.sh": "04f64b072b6669a3e1ddabc1b9e24dff56d51bcfd4ca432d2e0547876afa5897",
       "examples/catch-a-liar/liar.c": "c420ad8052800a4d55d8ce8b0fa695b89cd070e39fee177d188e0f5a58d5e5d4",
       "tools/polygraph": "5e44ca61ee63b6b81145c3435b51b8a9e72eafdb7e19557cfa1a73c85114cd7b",
@@ -22,11 +22,11 @@
     }
   },
   "run": {
-    "startedAtUtc": "2026-08-09T09:47:35.247748+00:00",
-    "completedAtUtc": "2026-08-09T09:47:40.330967+00:00",
-    "wallSeconds": 4.58224,
+    "startedAtUtc": "2026-08-09T10:55:47.372622+00:00",
+    "completedAtUtc": "2026-08-09T10:55:55.752658+00:00",
+    "wallSeconds": 7.711195,
     "exitCode": 0,
-    "ptyEventCount": 18
+    "ptyEventCount": 23
   },
   "capturePolicy": {
     "environmentMode": "strict-allowlist",
@@ -44,8 +44,9 @@
       "make": "/usr/bin/make",
       "cc": "/usr/bin/cc",
       "lldb": "/usr/bin/lldb",
-      "python3": "/Users/tom/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/bin/python3.14"
+      "python3": "$HOME/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/bin/python3.14"
     },
+    "transcriptNormalization": "ephemeral capture root replaced with $CAPTURE_ROOT; CRLF/CR converted to LF",
     "timeoutSeconds": 45.0,
     "termGraceSeconds": 3.0,
     "maxRawTranscriptBytes": 1048576,
@@ -75,13 +76,13 @@
   "playback": {
     "asset": "demo/contest-video/live-run/make-demo.gif",
     "durationSeconds": 20.0,
-    "timing": "Literal PTY output from the captured run; line-reveal timing is normalized for legibility and the final frame is held. Output text is unchanged.",
+    "timing": "Literal PTY output from the captured run; ephemeral capture-root paths and line endings are normalized, line-reveal timing is normalized for legibility, and the final frame is held. Semantic output and ordering are unchanged.",
     "fabricatedOutput": false
   },
   "files": {
-    "make-demo.ansi": "f8f2eaee76ce0df3be1bd67707645044f3e0a5a67792bbd402ecf51f9323c682",
-    "make-demo.txt": "de5993052fc16e32a95c49bd8d906c25df8b2ec2ed0c57d5ac441d3e2f04cdda",
-    "make-demo.events.jsonl": "db1ce027450646338a16c435911b4950e1e5f9ffe321b4b0ec2e0376e412edd9",
-    "make-demo.gif": "196dd5fa20b355c3c79eec354b40c119b66f97d0eddfe4a61aa92efa055884a1"
+    "make-demo.ansi": "dd0a7c76504327c1cee1061577930867c5b8fbcfacc8b3a5bfdeb3d81c867c45",
+    "make-demo.txt": "44d0350e8492d8abc75075fc1e71c67ceb0a1431cf9f887b31df9c8b8f150dca",
+    "make-demo.events.jsonl": "6ccfc42a415b1cbc726addc3853863a3afe47d50687ec5e99112891f21cf65e3",
+    "make-demo.gif": "ed7ed35edc1e69daf07a94ac75fad54de4eb52369d745ded6ca2131d1146d818"
   }
 }

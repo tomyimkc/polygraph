@@ -199,8 +199,8 @@ For every judge-facing proof chain, verify all three parts are present.
   `demo/out/polygraph-contest-final.mp4`.
 - [ ] Confirm the independent `ffprobe` duration is 169.021333 seconds (2:49.021), strictly under
   three minutes.
-- [ ] Confirm the final file is 9,527,083 bytes with SHA-256
-  `076de488a8939f56278655a0775775257c7537317697aa3003d4aaf380ed18e4`.
+- [ ] Confirm the final file is 9,239,731 bytes with SHA-256
+  `0deb7f67697b45ac8b9b38b518d87240ac556db8bb82107f23158862372f8f30`.
 - [ ] Confirm the authored six-cue sidecar is:
   `demo/out/polygraph-contest-final.srt`.
 - [ ] Confirm the validation receipt is:
@@ -223,9 +223,9 @@ For every judge-facing proof chain, verify all three parts are present.
 
   jq -e '
     .schema == "polygraph.contest-video.validation.v1" and
-    .sha256 == "076de488a8939f56278655a0775775257c7537317697aa3003d4aaf380ed18e4" and
+    .sha256 == "0deb7f67697b45ac8b9b38b518d87240ac556db8bb82107f23158862372f8f30" and
     .media.durationSeconds == 169.021333 and
-    .media.sizeBytes == 9527083 and
+    .media.sizeBytes == 9239731 and
     .media.under180Seconds == true and
     .media.video.codec_name == "h264" and
     .media.video.width == 1920 and
@@ -241,8 +241,9 @@ For every judge-facing proof chain, verify all three parts are present.
   non-Arm, as recorded by the story and validation receipt.
 - [ ] Confirm the receipt-verified 20-second `make demo` playback is present and visibly shows the
   liar `MISMATCH`/zero-hit result and honest `MATCH`/one-hit result.
-- [ ] Describe the capture precisely: real isolated CLI output with unchanged captured text and
-  ordering, replayed with normalized pauses for legibility.
+- [ ] Describe the capture precisely: real isolated CLI output with ephemeral capture-root paths
+  and line endings normalized, semantic output ordering preserved, and replay pauses normalized
+  for legibility.
 - [ ] Do not edit or overwrite `docs/VIDEO.md`, `docs/VIDEO-PRODUCTION.md`, `demo/README.md`,
   `demo/SHOTLIST.md`, renderer sources, or `demo/out/` from this contest-writing task.
 

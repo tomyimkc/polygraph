@@ -37,9 +37,9 @@ demo/out/polygraph-contest-final.sha256
 demo/out/qa/contact-sheet.jpg
 ```
 
-Final post-hardening sidecar values: **169.021333 seconds**, **9,527,083
+Final post-hardening sidecar values: **169.021333 seconds**, **9,239,731
 bytes**, SHA-256
-**`076de488a8939f56278655a0775775257c7537317697aa3003d4aaf380ed18e4`**.
+**`0deb7f67697b45ac8b9b38b518d87240ac556db8bb82107f23158862372f8f30`**.
 The validation sidecar remains the authoritative machine-readable source.
 
 The renderer loads all displayed figures from repository evidence, writes an
