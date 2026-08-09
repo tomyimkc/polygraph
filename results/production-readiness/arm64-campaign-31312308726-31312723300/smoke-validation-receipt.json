@@ -1,0 +1,168 @@
+{
+  "actualProductionTraffic": false,
+  "aggregateChecksumManifest": [
+    {
+      "actual": "a5924d9d7963ba3a50011681cfeec70ebc84c18296309df31fc5e6673f71495c",
+      "expected": "a5924d9d7963ba3a50011681cfeec70ebc84c18296309df31fc5e6673f71495c",
+      "passed": true,
+      "path": "aggregate-receipt.json"
+    }
+  ],
+  "aggregateReceiptSha256": "a5924d9d7963ba3a50011681cfeec70ebc84c18296309df31fc5e6673f71495c",
+  "artifactManifest": [
+    {
+      "apiDigest": "sha256:ff6edbc8dbfdd238356bfc703d714053e38f181340950625eb5128df95cde932",
+      "apiSizeInBytes": 1192,
+      "digestMatches": true,
+      "downloadedSha256": "ff6edbc8dbfdd238356bfc703d714053e38f181340950625eb5128df95cde932",
+      "extractedFileCount": 2,
+      "extractedPath": "extracted/polygraph-production-aggregate-smoke-qwen2.5-1.5b-q4_0-31312308726-1",
+      "id": 9037783122,
+      "kind": "aggregate",
+      "name": "polygraph-production-aggregate-smoke-qwen2.5-1.5b-q4_0-31312308726-1",
+      "shardId": null,
+      "sizeInBytes": 1192,
+      "sizeMatches": true,
+      "zipIntegrity": true,
+      "zipPath": "artifacts/polygraph-production-aggregate-smoke-qwen2.5-1.5b-q4_0-31312308726-1.zip"
+    },
+    {
+      "apiDigest": "sha256:aea54705c878a5a8c3a567a14b5522d47b432bb9730303c5840557014eaff73a",
+      "apiSizeInBytes": 45223,
+      "digestMatches": true,
+      "downloadedSha256": "aea54705c878a5a8c3a567a14b5522d47b432bb9730303c5840557014eaff73a",
+      "extractedFileCount": 29,
+      "extractedPath": "extracted/polygraph-production-arm64-smoke-qwen2.5-1.5b-q4_0-31312308726-1-s1",
+      "id": 9037779785,
+      "kind": "shard",
+      "name": "polygraph-production-arm64-smoke-qwen2.5-1.5b-q4_0-31312308726-1-s1",
+      "shardId": 1,
+      "sizeInBytes": 45223,
+      "sizeMatches": true,
+      "zipIntegrity": true,
+      "zipPath": "artifacts/polygraph-production-arm64-smoke-qwen2.5-1.5b-q4_0-31312308726-1-s1.zip"
+    },
+    {
+      "apiDigest": "sha256:e57f9188018adde3e831e075768aa430a091b25e00a667c4bdfbd148d94f8873",
+      "apiSizeInBytes": 18925,
+      "digestMatches": true,
+      "downloadedSha256": "e57f9188018adde3e831e075768aa430a091b25e00a667c4bdfbd148d94f8873",
+      "extractedFileCount": 9,
+      "extractedPath": "extracted/polygraph-production-build-provenance-smoke-qwen2.5-1.5b-q4_0-31312308726-1-s1",
+      "id": 9037779955,
+      "kind": "build",
+      "name": "polygraph-production-build-provenance-smoke-qwen2.5-1.5b-q4_0-31312308726-1-s1",
+      "shardId": 1,
+      "sizeInBytes": 18925,
+      "sizeMatches": true,
+      "zipIntegrity": true,
+      "zipPath": "artifacts/polygraph-production-build-provenance-smoke-qwen2.5-1.5b-q4_0-31312308726-1-s1.zip"
+    }
+  ],
+  "boundary": "Independent validation of same-artifact, same-model temporal-control synthetic Arm64 evidence. It does not establish actual production traffic, production readiness, deployment authorization, tenant isolation, failover, or continuous availability.",
+  "buildProvenance": [
+    {
+      "llamaSourceStatusEmpty": true,
+      "shardId": 1,
+      "stages": [
+        {
+          "detail": "built /home/runner/work/_temp/polygraph-production-cache/llama-reviewed/build/bin/llama-cli and /home/runner/work/_temp/polygraph-production-cache/llama-reviewed/build/bin/llama-bench (dbadb68)",
+          "stage": "build_llamacpp",
+          "status": "OK",
+          "timestamp": "1786277193"
+        },
+        {
+          "detail": "built /home/runner/work/_temp/polygraph-production-cache/llama-reviewed/build/bin/llama-server",
+          "stage": "build_llama_server",
+          "status": "OK",
+          "timestamp": "1786277194"
+        },
+        {
+          "detail": "MODEL_ID=qwen2.5-1.5b-q4_0 (apache-2.0) -> /home/runner/work/_temp/polygraph-production-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf",
+          "stage": "fetch_model",
+          "status": "OK",
+          "timestamp": "1786277250"
+        }
+      ],
+      "toolchain": {
+        "llama_cpp_remote": "https://github.com/ggml-org/llama.cpp.git",
+        "llama_cpp_sha": "dbadb68eecdfb3ab0e86872d011738fc937f0364",
+        "model_id": "qwen2.5-1.5b-q4_0",
+        "model_manifest_sha256": "09f82fb662f2196e65594c9ebde1d1e42fe74f684076ce07a4e5050342dfa996",
+        "model_sha256": "dcd819ff094852c38faba6873d8ff0c9d51eadb2844539e52042ae5d647bbfdb",
+        "runner": "Linux runnervma9114 6.17.0-1020-azure #20~24.04.1-Ubuntu SMP Fri Jun 19 20:26:28 UTC 2026 aarch64 aarch64 aarch64 GNU/Linux",
+        "server_sha256": "fca95795e760964bdf27768ca11e4220b99001eb7a5f095b178c1714ac483dea",
+        "source_ref": "refs/heads/main",
+        "source_repository": "tomyimkc/polygraph",
+        "source_sha": "5833ff20f503d126a8654f127419ed1e27ce2f5d"
+      }
+    }
+  ],
+  "candidateOnly": true,
+  "checks": {
+    "aggregateChecksumManifest": true,
+    "aggregateRecomputedFromShards": true,
+    "claimBoundaryPreserved": true,
+    "completeBuildProvenance": true,
+    "exactArtifactSet": true,
+    "originalGithubZipDigests": true,
+    "safeExtraction": true,
+    "sameArtifactTemporalControl": true,
+    "strictShardReceiptVerification": true,
+    "workflowAllChecksPassed": true,
+    "workflowIdentity": {
+      "conclusion": true,
+      "event": true,
+      "headBranch": true,
+      "headSha": true,
+      "id": true,
+      "status": true,
+      "workflowPath": true
+    },
+    "zipIntegrity": true
+  },
+  "durations": {
+    "aggregateMeasuredSoakSeconds": 8.0,
+    "continuousAvailabilityClaimed": false,
+    "longestContinuousSoakSegmentSeconds": 4.0
+  },
+  "productionReady": false,
+  "profile": "smoke",
+  "repository": "tomyimkc/polygraph",
+  "runAttempt": 1,
+  "runId": 31312308726,
+  "schema": "polygraph.production-campaign.external-validation.v1",
+  "shards": [
+    {
+      "aggregateMeasuredSoakSeconds": 8.0,
+      "baselineMeasuredFailures": 0,
+      "baselineMeasuredRequests": 19,
+      "baselineTraceDigests": [
+        "23ec79ad0eb6774a65b0faf5b3cf7e5c600b56a4945852cce88cd4bd69add0fb"
+      ],
+      "candidateMeasuredFailures": 0,
+      "candidateMeasuredRequests": 19,
+      "candidateTraceDigests": [
+        "23ec79ad0eb6774a65b0faf5b3cf7e5c600b56a4945852cce88cd4bd69add0fb"
+      ],
+      "gateVerdict": "PASS",
+      "longestContinuousSoakSegmentSeconds": 4.0,
+      "receiptSha256": "a5023f881545c9c9c6e8464b024e221d7209eb8a2404d7259c06090f6f06894b",
+      "rollbackVerdict": "KEEP_CANDIDATE",
+      "sameArtifactControl": true,
+      "shardId": 1,
+      "strictVerifierOutput": "{\n  \"errors\": [],\n  \"files\": 28,\n  \"receiptSchemaValid\": true,\n  \"valid\": true\n}"
+    }
+  ],
+  "source": {
+    "ref": "refs/heads/main",
+    "sha": "5833ff20f503d126a8654f127419ed1e27ce2f5d"
+  },
+  "totals": {
+    "baselineMeasuredRequests": 19,
+    "candidateMeasuredRequests": 19,
+    "combinedMeasuredRequests": 38,
+    "measuredFailures": 0
+  },
+  "validatedAtUtc": "2026-08-09T12:38:41.422673+00:00"
+}

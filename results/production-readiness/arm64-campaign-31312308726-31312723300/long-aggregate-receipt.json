@@ -1,0 +1,68 @@
+{
+  "actualProductionTraffic": false,
+  "aggregateMeasuredSoakSeconds": 36000.0,
+  "boundary": "Aggregate duration sums independent same-runner paired synthetic segments. It is not continuous availability, actual production traffic, tenant isolation, deployment authorization, or production readiness.",
+  "candidateOnly": true,
+  "deploymentAuthorized": false,
+  "expectedShardIds": [
+    1,
+    2
+  ],
+  "llamaCppSha": "dbadb68eecdfb3ab0e86872d011738fc937f0364",
+  "longestContinuousSoakSegmentSeconds": 9000.0,
+  "model": {
+    "license": "apache-2.0",
+    "modelId": "qwen2.5-1.5b-q4_0",
+    "sha256": "dcd819ff094852c38faba6873d8ff0c9d51eadb2844539e52042ae5d647bbfdb"
+  },
+  "productionReady": false,
+  "profile": "long",
+  "schema": "polygraph.production-campaign.aggregate.v1",
+  "shards": [
+    {
+      "aggregateMeasuredSoakSeconds": 18000.0,
+      "gateVerdict": "PASS",
+      "longestContinuousSoakSegmentSeconds": 9000.0,
+      "receiptSha256": "3f85571bf729baba46b385d424388922bf9a602b58e8d65def2f199a410126d2",
+      "rollbackVerdict": "KEEP_CANDIDATE",
+      "sameArtifactControl": true,
+      "shardId": 1,
+      "traceDigests": {
+        "baseline": [
+          "fdb66ade20b108870deed88a1feb674ec739ef7f9a4ee96e8876137380f17213"
+        ],
+        "candidate": [
+          "fdb66ade20b108870deed88a1feb674ec739ef7f9a4ee96e8876137380f17213"
+        ]
+      }
+    },
+    {
+      "aggregateMeasuredSoakSeconds": 18000.0,
+      "gateVerdict": "PASS",
+      "longestContinuousSoakSegmentSeconds": 9000.0,
+      "receiptSha256": "5336a7947b1d5084c36709365f61a234e22cc1ed5591e7bd967dbd568d6be05e",
+      "rollbackVerdict": "KEEP_CANDIDATE",
+      "sameArtifactControl": true,
+      "shardId": 2,
+      "traceDigests": {
+        "baseline": [
+          "f2191307b0c9aac0b5120790275b17051c01356ca4feba1628753943e5ce2011"
+        ],
+        "candidate": [
+          "f2191307b0c9aac0b5120790275b17051c01356ca4feba1628753943e5ce2011"
+        ]
+      }
+    }
+  ],
+  "source": {
+    "ref": "refs/heads/main",
+    "repository": "tomyimkc/polygraph",
+    "sha": "5833ff20f503d126a8654f127419ed1e27ce2f5d"
+  },
+  "tenantIsolationClaimed": false,
+  "workflow": {
+    "path": ".github/workflows/verify-production-arm64.yml",
+    "runAttempt": "1",
+    "runId": "31312723300"
+  }
+}

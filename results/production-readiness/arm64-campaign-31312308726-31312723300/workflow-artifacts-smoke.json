@@ -1,0 +1,65 @@
+{
+  "artifacts": [
+    {
+      "archive_download_url": "https://api.github.com/repos/tomyimkc/polygraph/actions/artifacts/9037783122/zip",
+      "created_at": "2026-08-09T12:09:14Z",
+      "digest": "sha256:ff6edbc8dbfdd238356bfc703d714053e38f181340950625eb5128df95cde932",
+      "expired": false,
+      "expires_at": "2026-09-08T12:09:13Z",
+      "id": 9037783122,
+      "name": "polygraph-production-aggregate-smoke-qwen2.5-1.5b-q4_0-31312308726-1",
+      "node_id": "MDg6QXJ0aWZhY3Q5MDM3NzgzMTIy",
+      "size_in_bytes": 1192,
+      "updated_at": "2026-08-09T12:09:14Z",
+      "url": "https://api.github.com/repos/tomyimkc/polygraph/actions/artifacts/9037783122",
+      "workflow_run": {
+        "head_branch": "main",
+        "head_repository_id": 1322311271,
+        "head_sha": "5833ff20f503d126a8654f127419ed1e27ce2f5d",
+        "id": 31312308726,
+        "repository_id": 1322311271
+      }
+    },
+    {
+      "archive_download_url": "https://api.github.com/repos/tomyimkc/polygraph/actions/artifacts/9037779955/zip",
+      "created_at": "2026-08-09T12:08:57Z",
+      "digest": "sha256:e57f9188018adde3e831e075768aa430a091b25e00a667c4bdfbd148d94f8873",
+      "expired": false,
+      "expires_at": "2026-09-08T12:08:57Z",
+      "id": 9037779955,
+      "name": "polygraph-production-build-provenance-smoke-qwen2.5-1.5b-q4_0-31312308726-1-s1",
+      "node_id": "MDg6QXJ0aWZhY3Q5MDM3Nzc5OTU1",
+      "size_in_bytes": 18925,
+      "updated_at": "2026-08-09T12:08:57Z",
+      "url": "https://api.github.com/repos/tomyimkc/polygraph/actions/artifacts/9037779955",
+      "workflow_run": {
+        "head_branch": "main",
+        "head_repository_id": 1322311271,
+        "head_sha": "5833ff20f503d126a8654f127419ed1e27ce2f5d",
+        "id": 31312308726,
+        "repository_id": 1322311271
+      }
+    },
+    {
+      "archive_download_url": "https://api.github.com/repos/tomyimkc/polygraph/actions/artifacts/9037779785/zip",
+      "created_at": "2026-08-09T12:08:56Z",
+      "digest": "sha256:aea54705c878a5a8c3a567a14b5522d47b432bb9730303c5840557014eaff73a",
+      "expired": false,
+      "expires_at": "2026-09-08T12:08:56Z",
+      "id": 9037779785,
+      "name": "polygraph-production-arm64-smoke-qwen2.5-1.5b-q4_0-31312308726-1-s1",
+      "node_id": "MDg6QXJ0aWZhY3Q5MDM3Nzc5Nzg1",
+      "size_in_bytes": 45223,
+      "updated_at": "2026-08-09T12:08:56Z",
+      "url": "https://api.github.com/repos/tomyimkc/polygraph/actions/artifacts/9037779785",
+      "workflow_run": {
+        "head_branch": "main",
+        "head_repository_id": 1322311271,
+        "head_sha": "5833ff20f503d126a8654f127419ed1e27ce2f5d",
+        "id": 31312308726,
+        "repository_id": 1322311271
+      }
+    }
+  ],
+  "total_count": 3
+}

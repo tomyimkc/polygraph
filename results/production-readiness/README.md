@@ -1,6 +1,7 @@
 # Polygraph production-readiness evidence portfolio
 
-This directory preserves two complementary production-shaped serving campaigns.
+This directory preserves two complementary production-shaped serving lanes plus a longer
+same-artifact Arm64 temporal-control campaign.
 It does **not** assert that Polygraph or either serving stack is production-ready.
 
 ```text
@@ -14,12 +15,19 @@ candidateOnly: true
 | lane | architecture | model | measured requests | failures | sustained phase | role |
 |---|---|---|---:|---:|---|---|
 | [`arm64-31294460364/`](arm64-31294460364/) | `aarch64`, GitHub-hosted Arm64 | Qwen2.5 1.5B Q4_0 | 1,543 | 0 | 10-minute concurrency-4 soak | Reproducible Arm contest candidate with explicit SLO and restart gates |
+| [`arm64-campaign-31312308726-31312723300/`](arm64-campaign-31312308726-31312723300/) | `aarch64`, 2 GitHub-hosted Arm64 shards | Qwen2.5 1.5B Q4_0 | 79,684 | 0 | 36,000 aggregate measured seconds; 9,000-second longest continuous segment | Same-artifact temporal control with strict receipts; not an uplift claim |
 | [`pro6000-31289517517/`](pro6000-31289517517/) | `x86_64` / CUDA, RTX PRO 6000 | Qwen3 30B-A3B | 7,573 | 0 | 15-minute concurrency-8 soak | Larger-model, higher-load production-shaped control; not Arm contest evidence |
 
 The 1.5B Arm lane is deliberately small enough for a judge to reproduce on a free
 four-core Arm64 runner. The 30B Pro 6000 lane establishes that the serving/load
 instrumentation is not limited to a sub-billion-parameter demo. The two runs answer
 different questions and must not be merged into one architecture or performance claim.
+
+The longer Arm64 campaign answers a third question: whether the deterministic replay,
+same-artifact comparison, fault-injection, rollback-decision, and provenance machinery remains
+internally consistent across a larger synthetic exposure. Its baseline and candidate labels used
+the same server and model hashes. The small temporal differences are therefore not an optimization
+comparison and do not support an uplift claim.
 
 ## What the Arm lane establishes
 
@@ -47,14 +55,15 @@ That lane is supporting production-shaped systems evidence only. It is explicitl
 
 ## What remains before a production-ready claim
 
-Neither campaign establishes:
+None of these campaigns establishes:
 
 1. live or sanitized production traffic;
-2. repeated multi-hour or multi-day availability;
+2. multi-day continuous availability — the longer campaign has 10 aggregate measured hours, but
+   its longest continuous segment is 2.5 hours;
 3. failover during host, process, model, or network faults;
 4. multi-tenant isolation, authentication, abuse controls, or security review;
 5. application-specific output correctness and customer SLOs;
-6. autoscaling, alerting, capacity forecasting, rollback, or cost targets.
+6. autoscaling, alerting, capacity forecasting, deployment-integrated rollback, or cost targets.
 
 A production-ready claim requires those application and operational controls in addition
 to synthetic serving evidence.

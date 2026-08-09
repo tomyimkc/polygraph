@@ -25,6 +25,12 @@ Interpretation:
 - it is not proof of multi-day availability, failover, tenant isolation, or application
   correctness.
 
+The longer same-artifact campaign keeps the same three fields. Its aggregate additionally
+records `deploymentAuthorized:false` and `tenantIsolationClaimed:false`; the external
+validation receipt records `durations.continuousAvailabilityClaimed:false`. Its 36,000 measured
+seconds are **10 aggregate hours** across four independent segments; the longest continuous
+segment is 9,000 seconds, or **2.5 hours**.
+
 The RTX PRO 6000 control records:
 
 ```text
@@ -44,8 +50,10 @@ not Arm contest evidence and not a cross-hardware benchmark baseline.
 3. Open `results/scale/scale-experiment.json`.
 4. Open `results/production-readiness/arm64-31294460364/summary.json`.
 5. Open the adjacent `validation-receipt.json` and `workflow-receipt.json`.
-6. Run `python3 tools/check_claims.py`.
-7. Read the negative-result index near the end of this file.
+6. Open
+   `results/production-readiness/arm64-campaign-31312308726-31312723300/long-validation-receipt.json`.
+7. Run `python3 tools/check_claims.py`.
+8. Read the negative-result index near the end of this file.
 
 ## Proof-chain map
 
@@ -215,7 +223,66 @@ productionReady:false
 candidateOnly:true
 ```
 
-### E5 — RTX PRO 6000 non-Arm systems control
+### E5 — same-artifact long Arm64 temporal-control campaign
+
+**Baseline**
+
+- The first Arm64 readiness artifact preserves a 10-minute soak and two controlled restarts.
+- It does not test the deterministic paired replay and rollback-decision machinery over a larger
+  aggregate synthetic exposure.
+- A baseline/candidate label could be misread as an optimization comparison unless artifact
+  identity and the claim ceiling are made explicit.
+
+**Technical change**
+
+- Add the main-only `.github/workflows/verify-production-arm64.yml` lane.
+- Pin source commit `5833ff20f503d126a8654f127419ed1e27ce2f5d`, reviewed `llama.cpp` commit
+  `dbadb68eecdfb3ab0e86872d011738fc937f0364`, and the Qwen2.5 1.5B Q4_0 model hash.
+- Use the exact same `llama-server` and model artifacts for the baseline and temporal-candidate
+  labels.
+- Generate deterministic synthetic traces with shard-scoped labels; do not replay production
+  traffic or PII.
+- Exercise capacity, readiness, replay, controlled process restart/model reload, deterministic
+  load-generator delay/error, and rollback-decision checks.
+- Run two independent long shards and preserve complete strict-verifier receipts, build
+  provenance, original GitHub ZIP digests, workflow metadata, and an independently recomputed
+  aggregate.
+
+**Measured impact**
+
+- Smoke preflight run `31312308726`: 38 measured requests, 0 measured failures, 8 aggregate
+  measured seconds, 4-second longest continuous segment, `PASS` / `KEEP_CANDIDATE`.
+- Long run `31312723300`: 79,684 measured requests and 0 measured failures.
+- Long duration: 36,000 aggregate measured seconds (**10 aggregate hours**) across two shards.
+- Longest continuous segment: 9,000 seconds (**2.5 hours**).
+- Both long shards: `PASS` / `KEEP_CANDIDATE`, identical paired trace digests, and
+  `sameArtifactControl:true`.
+- No optimization or uplift is claimed because the baseline and candidate artifacts are
+  identical.
+
+**Authoritative paths**
+
+- `results/production-readiness/arm64-campaign-31312308726-31312723300/README.md`
+- `results/production-readiness/arm64-campaign-31312308726-31312723300/long-aggregate-receipt.json`
+- `results/production-readiness/arm64-campaign-31312308726-31312723300/long-shard-1-receipt.json`
+- `results/production-readiness/arm64-campaign-31312308726-31312723300/long-shard-2-receipt.json`
+- `results/production-readiness/arm64-campaign-31312308726-31312723300/long-validation-receipt.json`
+- `results/production-readiness/arm64-campaign-31312308726-31312723300/package-sha256sums.txt`
+- immutable release `arm-create-evidence-31312723300` for the original GitHub artifact ZIPs and
+  build-provenance bundles
+
+**Claim boundary**
+
+```text
+actualProductionTraffic:false
+productionReady:false
+candidateOnly:true
+deploymentAuthorized:false
+tenantIsolationClaimed:false
+continuousAvailabilityClaimed:false
+```
+
+### E6 — RTX PRO 6000 non-Arm systems control
 
 **Baseline**
 
@@ -261,7 +328,7 @@ registeredResult:false
 
 The aggregate does not contain `productionReady`; no production-ready status is inferred.
 
-### E6 — claim-integrity and negative-result discipline
+### E7 — claim-integrity and negative-result discipline
 
 **Baseline**
 
@@ -333,6 +400,26 @@ jq '{
 jq '{headSha, checks, contestMatrix}' validation-receipt.json
 jq '{runId, headSha, conclusion, url, jobs, artifacts}' workflow-receipt.json
 ```
+
+### Same-artifact long Arm64 campaign
+
+```bash
+cd results/production-readiness/arm64-campaign-31312308726-31312723300
+sha256sum -c package-sha256sums.txt
+jq '{
+  actualProductionTraffic,
+  productionReady,
+  candidateOnly,
+  aggregateMeasuredSoakSeconds,
+  longestContinuousSoakSegmentSeconds,
+  shards
+}' long-aggregate-receipt.json
+jq '{source, checks, durations, totals, shards, boundary}' long-validation-receipt.json
+```
+
+Read `aggregateMeasuredSoakSeconds:36000` as **10 aggregate measured hours**, not continuous
+availability. The authoritative longest continuous segment is
+`longestContinuousSoakSegmentSeconds:9000` (**2.5 hours**).
 
 ### Non-Arm control integrity and boundary
 
@@ -445,6 +532,7 @@ ordering are unchanged; pauses are normalized for legibility.
 | Tuning result shrinks from 4.56x at 0.5B to 1.33x at 7B | `results/scale/scale-experiment.json` |
 | Patch `0002` fixed cap misses the measured 1.5B optimum by about 17.5% | `results/GENERALIZATION.md` |
 | Arm64 readiness is synthetic and single-host | `results/production-readiness/arm64-31294460364/summary.json` |
+| Long Arm64 campaign is aggregate, same-artifact synthetic evidence — not 10 continuous hours and not uplift | `results/production-readiness/arm64-campaign-31312308726-31312723300/long-validation-receipt.json` |
 | PRO 6000 control is not Arm evidence | `results/production-readiness/pro6000-31289517517/aggregate.json` |
 | Finding 3 does not affect stock release binaries | `docs/PRODUCT.md`, `results/prevalence/shipped-binaries-2026-08-05.json` |
 | Automated Spark lane remains best-effort | `README.md`, `.github/workflows/verify-spark-aarch64.yml` |
@@ -470,6 +558,7 @@ ordering are unchanged; pauses are normalized for legibility.
 | Inspect the positive patch | `results/AUTODEFAULTS.md` and `patches/0002-kleidiai-sme-aware-thread-default.patch` |
 | See why L3 is necessary | `results/upstream/FINDING-4-CUDA-HOST-BUFFER.md` |
 | Audit Arm64 run `31294460364` | `results/production-readiness/arm64-31294460364/` |
+| Audit long campaign `31312723300` | `results/production-readiness/arm64-campaign-31312308726-31312723300/` |
 | Audit control `31289517517` | `results/production-readiness/pro6000-31289517517/` |
 | Audit the final contest video | `demo/out/polygraph-contest-final.validation.json`, `.sha256`, and `.srt` |
 | Inspect corrections and negative results | `results/REMEASURE-2026-08-04-QUIET.md`, `results/GENERALIZATION.md`, `patches/README.md` |

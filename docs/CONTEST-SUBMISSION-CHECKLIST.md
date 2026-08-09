@@ -36,6 +36,14 @@ production claim would be worse than an incomplete submission.
 
 - [ ] Run `31294460364` is called **production-shaped synthetic Arm64 evidence**, not production
   traffic and not a production-ready deployment.
+- [ ] Run `31312723300` is called a **same-artifact temporal-control synthetic Arm64 campaign**,
+  not a candidate optimization or uplift.
+- [ ] Its duration is stated exactly: 36,000 aggregate measured seconds (**10 aggregate hours**)
+  across four independent segments; longest continuous segment 9,000 seconds (**2.5 hours**).
+- [ ] Never say "10 continuous hours."
+- [ ] The long aggregate retains `deploymentAuthorized:false` and
+  `tenantIsolationClaimed:false`; external validation retains
+  `durations.continuousAvailabilityClaimed:false`.
 - [ ] Run `31289517517` is called a **non-Arm RTX PRO 6000 systems control**.
 - [ ] The PRO 6000 control remains explicitly:
 
@@ -94,6 +102,18 @@ For every judge-facing proof chain, verify all three parts are present.
 - [ ] **Measured impact:** run `31294460364`, 1,543 measured requests, 0 failures, registered p99,
   RSS, and restart observations.
 - [ ] The exact `false/false/true` boundary appears beside the PASS.
+
+### Same-artifact long Arm64 campaign
+
+- [ ] **Baseline:** the earlier 10-minute Arm64 readiness artifact did not exercise the paired
+  temporal-control and rollback-decision machinery over a larger aggregate exposure.
+- [ ] **Technical change:** exact source/model/server provenance, deterministic generated traces,
+  identical baseline/candidate artifacts, two shards, controlled restart/model reload, synthetic
+  delay/error injection, strict receipts, and external aggregate validation.
+- [ ] **Measured impact:** run `31312723300`, 79,684 measured requests, 0 measured failures,
+  36,000 aggregate measured seconds, 9,000-second longest continuous segment, both shards
+  `PASS` / `KEEP_CANDIDATE`.
+- [ ] The text explicitly says identical artifacts mean no optimization or uplift is established.
 
 ### PRO 6000 control
 
@@ -157,6 +177,48 @@ For every judge-facing proof chain, verify all three parts are present.
 - [ ] Confirm `workflow-receipt.json` points to run `31294460364`, head
   `97f1c210dc0e3435d04f8082a362e291d409a261`, and a successful conclusion.
 
+### Same-artifact long Arm64 campaign
+
+- [ ] Run:
+
+  ```bash
+  (
+    cd results/production-readiness/arm64-campaign-31312308726-31312723300
+    sha256sum -c package-sha256sums.txt
+    jq -e '
+      .actualProductionTraffic == false and
+      .productionReady == false and
+      .candidateOnly == true and
+      .deploymentAuthorized == false and
+      .tenantIsolationClaimed == false and
+      .aggregateMeasuredSoakSeconds == 36000 and
+      .longestContinuousSoakSegmentSeconds == 9000 and
+      ([.shards[].gateVerdict] | all(. == "PASS")) and
+      ([.shards[].rollbackVerdict] | all(. == "KEEP_CANDIDATE")) and
+      ([.shards[].sameArtifactControl] | all)
+    ' long-aggregate-receipt.json
+    jq -e '
+      .runId == 31312723300 and
+      .source.sha == "5833ff20f503d126a8654f127419ed1e27ce2f5d" and
+      .checks.workflowAllChecksPassed == true and
+      .checks.exactArtifactSet == true and
+      .checks.originalGithubZipDigests == true and
+      .checks.strictShardReceiptVerification == true and
+      .checks.aggregateRecomputedFromShards == true and
+      .checks.sameArtifactTemporalControl == true and
+      .durations.aggregateMeasuredSoakSeconds == 36000 and
+      .durations.longestContinuousSoakSegmentSeconds == 9000 and
+      .durations.continuousAvailabilityClaimed == false and
+      .totals.combinedMeasuredRequests == 79684 and
+      .totals.measuredFailures == 0
+    ' long-validation-receipt.json
+  )
+  ```
+
+- [ ] Confirm smoke preflight `31312308726` passed and is preserved beside the long receipts.
+- [ ] Confirm the immutable release contains the original 3 smoke ZIPs, 5 long ZIPs, exact
+  workflow metadata, external validation receipts, campaign-source archive, and final video.
+
 ### PRO 6000 control
 
 - [ ] Run:
@@ -191,6 +253,8 @@ For every judge-facing proof chain, verify all three parts are present.
 - [ ] Patch `0002`'s model-dependent thread-optimum limitation remains visible.
 - [ ] Finding 3's stock-release non-impact remains visible.
 - [ ] Automated Spark lane limitations remain visible.
+- [ ] Long-campaign aggregate-versus-continuous duration semantics remain visible.
+- [ ] Same-artifact temporal differences are not described as performance uplift.
 - [ ] No upstream issue is described as accepted, fixed, or endorsed without new evidence.
 
 ## 7. Demo video
@@ -239,6 +303,8 @@ For every judge-facing proof chain, verify all three parts are present.
 - [ ] Paste the YouTube URL into the Devpost demo field.
 - [ ] Confirm the final cut includes the Arm64 run `31294460364` and labels the PRO 6000 control
   non-Arm, as recorded by the story and validation receipt.
+- [ ] State that the final cut predates long run `31312723300`; the repository/release is the
+  addendum. Do not claim the video shows the long campaign.
 - [ ] Confirm the receipt-verified 20-second `make demo` playback is present and visibly shows the
   liar `MISMATCH`/zero-hit result and honest `MATCH`/one-hit result.
 - [ ] Describe the capture precisely: real isolated CLI output with ephemeral capture-root paths
@@ -259,6 +325,9 @@ For every judge-facing proof chain, verify all three parts are present.
 - [ ] Built-with tags include Arm KleidiAI, SME2, SVE2, NEON/I8MM/DOTPROD, `llama.cpp`, C/C++,
   Python, Bash, CMake, `lldb`, `gdb`, GitHub Actions, JSONL, and MCP.
 - [ ] Repository URL is the public `tomyimkc/polygraph` URL.
+- [ ] Dashboard URL is `https://tomyimkc.github.io/polygraph/` and returns HTTP 200.
+- [ ] Immutable release URL is
+  `https://github.com/tomyimkc/polygraph/releases/tag/arm-create-evidence-31312723300`.
 - [ ] License is listed as Apache-2.0 with the patch/upstream attribution caveat.
 - [ ] Primary upstream issue field points to `#26630`.
 - [ ] Related narrative links `#26547` and credits `#26334`.
@@ -271,6 +340,8 @@ For every judge-facing proof chain, verify all three parts are present.
 - [ ] Raw paths are code-formatted and remain clickable after paste where Devpost supports links.
 - [ ] No paragraph starts with unexplained KleidiAI/SME2 jargon before the plain-language claim.
 - [ ] The claim boundary is visible before the first readiness PASS.
+- [ ] The 10-aggregate-hours / 2.5-hour-longest-segment distinction is visible beside the long
+  campaign result.
 - [ ] The PRO 6000 control is visually separated from Arm contest evidence.
 - [ ] Negative results are not below a collapsed section or hidden after owner-only survey fields.
 
@@ -280,7 +351,8 @@ For every judge-facing proof chain, verify all three parts are present.
 - [ ] Upload or paste the authored captions.
 - [ ] Paste the final video URL.
 - [ ] Verify the public GitHub repository opens in a logged-out/private browser session.
-- [ ] Verify the dashboard URL opens if included; remove it from Devpost if not publicly reachable.
+- [ ] Verify the dashboard URL opens; remove it from Devpost if it is no longer publicly reachable.
+- [ ] Verify the immutable release URL opens and every asset listed in `SHA256SUMS` is present.
 - [ ] Verify both upstream issue links open.
 - [ ] Preview the entire Devpost submission on desktop and mobile widths.
 - [ ] Save a local copy or screenshot of every final field before submission.

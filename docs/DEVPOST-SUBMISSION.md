@@ -21,7 +21,8 @@ claim is not registered in `docs/CLAIMS.md` or backed by committed JSON.
 | Tagline | **A lie detector for software: verify with a debugger, not a banner, whether the accelerated code path actually ran.** |
 | Public repository | `https://github.com/tomyimkc/polygraph` |
 | License | Apache-2.0 for this repository's original code, docs, tests, and evidence tooling; see `LICENSE`. Patch files against `llama.cpp` preserve that upstream project's MIT terms. |
-| Dashboard | Optional: include `https://tomyimkc.github.io/polygraph/` only after verifying it is publicly reachable |
+| Dashboard | `https://tomyimkc.github.io/polygraph/` |
+| Immutable evidence release | `https://github.com/tomyimkc/polygraph/releases/tag/arm-create-evidence-31312723300` |
 | Primary upstream report | `https://github.com/ggml-org/llama.cpp/issues/26630` |
 | Related upstream report | `https://github.com/ggml-org/llama.cpp/issues/26547` |
 | Demo video | `[PASTE YOUTUBE URL AFTER UPLOAD]` |
@@ -49,6 +50,12 @@ candidateOnly:true
 Run `31294460364` is a production-shaped, single-host, synthetic Arm64 evidence candidate. It is
 not evidence of live customer traffic, multi-day availability, host or network failover,
 multi-tenant isolation, or application-specific output correctness.
+
+Long run `31312723300` is a same-binary, same-model temporal control. It completed 79,684 measured
+requests with 0 measured failures across two shards. Its 36,000 measured seconds are **10
+aggregate hours**, while the longest continuous segment is 9,000 seconds (**2.5 hours**). Both
+shards returned `PASS` / `KEEP_CANDIDATE`, but this is not an optimization or uplift claim and
+does not authorize deployment.
 
 The RTX PRO 6000 run `31289517517` is a complementary larger-model systems control. Its artifact
 records `actualProductionTraffic:false`, `armContestEvidence:false`, `candidateOnly:true`, and
@@ -220,7 +227,46 @@ candidateOnly:true
 `validation-receipt.json`, `workflow-receipt.json`, request JSONL, telemetry, server log, checksum
 manifests, and `contest-matrix/`.
 
-### Proof chain 5 — a larger-model non-Arm control tests the workload method without inflating the Arm claim
+### Proof chain 5 — a long same-artifact Arm64 campaign tests the evidence machinery without inventing uplift
+
+#### Baseline
+
+The first Arm64 readiness run preserves a 10-minute soak and controlled restarts, but not a longer
+paired temporal-control exposure. Baseline/candidate labels also create a claim risk unless the
+artifact identity and aggregate-duration semantics are explicit.
+
+#### Technical change
+
+The main-only `.github/workflows/verify-production-arm64.yml` campaign:
+
+- pins the exact Polygraph source, reviewed `llama.cpp` commit, model file, and model hash;
+- reuses the same `llama-server` and model bytes for baseline and temporal-candidate labels;
+- generates deterministic shard-scoped synthetic traces rather than production traffic or PII;
+- exercises capacity, readiness, replay, controlled process restart/model reload, deterministic
+  load-generator delay/error, and rollback-decision checks;
+- runs two independent hosted Arm64 shards; and
+- retains strict shard receipts, build provenance, original GitHub ZIP digests, workflow metadata,
+  and an independently recomputed aggregate.
+
+#### Measured impact
+
+Smoke preflight `31312308726` passed before the long dispatch. Long run `31312723300` then
+completed **79,684 measured requests with 0 measured failures**. Both shards returned
+`PASS` / `KEEP_CANDIDATE`, used identical baseline/candidate trace digests, and recorded
+`sameArtifactControl:true`.
+
+The duration is **36,000 aggregate measured seconds (10 aggregate hours)** across four independent
+segments on two parallel shards. The longest continuous segment is **9,000 seconds (2.5 hours)**.
+It is not 10 continuous hours. Because the artifacts are identical, no optimization or uplift is
+claimed.
+
+**Evidence:**
+`results/production-readiness/arm64-campaign-31312308726-31312723300/`,
+especially `long-validation-receipt.json`, `long-aggregate-receipt.json`, both strict shard
+receipts, workflow metadata, and `package-sha256sums.txt`; original GitHub ZIPs and build
+provenance are in release `arm-create-evidence-31312723300`.
+
+### Proof chain 6 — a larger-model non-Arm control tests the workload method without inflating the Arm claim
 
 #### Baseline
 
@@ -258,7 +304,7 @@ a basis for an Arm-versus-GPU ratio.
 `README.md`, capacity and soak summaries, request JSONL, telemetry, preflight receipts,
 `workflow-receipt.json`, and `sha256sums.txt`.
 
-### Proof chain 6 — the verifier is applied to this project's own claims
+### Proof chain 7 — the verifier is applied to this project's own claims
 
 #### Baseline
 
@@ -394,6 +440,41 @@ jq '{headSha, checks, contestMatrix}' validation-receipt.json
 
 Expected high-level result: 1,543 measured request rows, 11 warm-up rows, gate `PASS`, and the exact
 `false/false/true` claim boundary.
+
+### Inspect and verify long Arm64 campaign `31312723300`
+
+```bash
+cd results/production-readiness/arm64-campaign-31312308726-31312723300
+sha256sum -c package-sha256sums.txt
+jq '{source, checks, durations, totals, shards, boundary}' long-validation-receipt.json
+jq '{
+  actualProductionTraffic,
+  productionReady,
+  candidateOnly,
+  deploymentAuthorized,
+  tenantIsolationClaimed,
+  aggregateMeasuredSoakSeconds,
+  longestContinuousSoakSegmentSeconds,
+  shards
+}' long-aggregate-receipt.json
+```
+
+Expected high-level result: 79,684 measured requests, 0 measured failures, exact artifact/provenance
+checks true, 36,000 aggregate measured seconds, 9,000-second longest continuous segment, and both
+shards `PASS` / `KEEP_CANDIDATE`.
+
+To rerun the same long profile on a public fork's `main` branch:
+
+```bash
+gh workflow run verify-production-arm64.yml \
+  --repo OWNER/polygraph \
+  --ref main \
+  -f campaign_mode=long \
+  -f model_id=qwen2.5-1.5b-q4_0 \
+  -f matrix_shards=2 \
+  -f repetitions=0 \
+  -f soak_seconds_total=0
+```
 
 ### Re-run the free hosted Arm64 workflow
 
@@ -534,8 +615,11 @@ run: the hardware, model, runtime, output lengths, and concurrency plans differ.
 - Patch `0002`'s mechanism works in the tested grid, but its SME-cap thread heuristic missed the
   measured 1.5B optimum by about 17.5%.
 - Finding 3 is one gcc 13.3/Cortex-X925 build condition and does not affect stock releases.
-- The Arm64 readiness gate is synthetic, single-host, and short-duration; it is not a production
-  readiness or application-quality claim.
+- The Arm64 readiness gate is synthetic and single-host. The supplementary long campaign has 10
+  aggregate measured hours, but the longest continuous segment is 2.5 hours; neither is a
+  production-readiness or application-quality claim.
+- The long baseline/candidate labels use identical server and model artifacts, so their temporal
+  differences are not an optimization or uplift result.
 - The PRO 6000 control is x86_64/CUDA and cannot support an Arm contest claim.
 - The automated Spark workflow remains best-effort; the committed SVE2 dispatch confirmation came
   from a separate manual debugger measurement.
@@ -568,6 +652,10 @@ The rendered story uses this six-beat sequence:
 | 1:22–1:51 | What changed technically? | Separate build and runtime failures → separate build flags/workarounds plus reusable L1/L2/L3 CLI → explicit exit codes |
 | 1:51–2:22 | Is there Arm server evidence? | Prior microbenchmarks only → automated hosted Arm64 readiness harness → run `31294460364`, 1,543 requests, 0 failures |
 | 2:22–2:49 | Does the result overclaim? | Synthetic PASS could be misread → show exact boundary → `actualProductionTraffic:false`, `productionReady:false`, `candidateOnly:true`; PRO 6000 remains non-Arm |
+
+The rendered video was finalized before long run `31312723300` and correctly shows the earlier
+Arm64 readiness run `31294460364`. The long campaign is a post-video evidence addendum in the
+repository and immutable release; do not claim that the video depicts it.
 
 The final cut includes 20 seconds of the real, isolated `make demo` capture. Its capture receipt
 records a strict allowlisted environment, bounded process group and outputs, the exact capture
@@ -610,6 +698,12 @@ The repository is public and Apache-2.0 licensed. Its measurement artifacts, raw
 telemetry, workflow receipts, validation receipts, negative results, and claim checker are all
 committed for judges to inspect.
 
+The final evidence package also adds a same-artifact Arm64 temporal-control campaign: 79,684
+measured requests, 0 measured failures, 36,000 aggregate measured seconds across two shards, and a
+9,000-second longest continuous segment. Both shards passed the synthetic gate and rollback
+decision. Because the baseline and candidate artifacts are identical, this is evidence about the
+campaign machinery and longer aggregate exposure — not an optimization or uplift claim.
+
 ## Functionality / Output
 
 The primary interface is:
@@ -642,6 +736,12 @@ The complementary RTX PRO 6000 run `31289517517` retained 7,573 measured request
 on a larger model, but it is explicitly `armContestEvidence:false` and is included only as a
 non-Arm systems control.
 
+The supplementary Arm64 run `31312723300` used the exact same server/model artifacts for baseline
+and temporal-candidate labels. It retained 79,684 measured requests with 0 measured failures.
+Its 36,000 seconds are 10 aggregate measured hours across four independent segments on two shards;
+the longest continuous segment is 9,000 seconds (2.5 hours). Both shards returned `PASS` /
+`KEEP_CANDIDATE`, with `productionReady:false` and `deploymentAuthorized:false`.
+
 ## Setup Instructions
 
 Fastest path, with no Arm hardware and no model download:
@@ -657,6 +757,10 @@ To reproduce the contest's free Arm64 pipeline, fork the public repo and run
 `verify-free-arm64.yml` from GitHub Actions. The workflow uses GitHub's hosted
 `ubuntu-24.04-arm` runner, pins the `llama.cpp` revision and model hashes, runs the three-model
 dispatch/throughput matrix, and on manual dispatch runs the longer server-readiness job.
+
+The separate `verify-production-arm64.yml` manual workflow reproduces the same-artifact smoke/long
+campaign and is restricted to the fork's `main` branch. The exact long dispatch fields and
+receipt-verification commands are in `docs/CONTEST-EVIDENCE-MAP.md`.
 
 Exact local commands, checksum checks, workflow commands, and artifact inspection commands are in
 `docs/CONTEST-EVIDENCE-MAP.md`.
@@ -700,16 +804,21 @@ or a non-Arm control into a production or Arm claim.
 6. **Arm64 run `31294460364`:**
    `results/production-readiness/arm64-31294460364/summary.json`,
    `validation-receipt.json`, and `workflow-receipt.json`.
-7. **Non-Arm control `31289517517`:**
+7. **Long same-artifact Arm64 campaign `31312723300`:**
+   `results/production-readiness/arm64-campaign-31312308726-31312723300/long-validation-receipt.json`,
+   aggregate/shard receipts, and `package-sha256sums.txt`.
+8. **Immutable evidence release:** `arm-create-evidence-31312723300`, preserving original GitHub
+   artifact ZIPs, build provenance, campaign source, external validations, and the contest video.
+9. **Non-Arm control `31289517517`:**
    `results/production-readiness/pro6000-31289517517/aggregate.json` and `README.md`.
-8. **Negative results and corrections:** `results/REMEASURE-2026-08-04-QUIET.md`,
+10. **Negative results and corrections:** `results/REMEASURE-2026-08-04-QUIET.md`,
    `patches/README.md`, `results/GENERALIZATION.md`.
-9. **Claim integrity:** `docs/CLAIMS.md`, `tools/check_claims.py`, and
+11. **Claim integrity:** `docs/CLAIMS.md`, `tools/check_claims.py`, and
    `.github/workflows/claims.yml`.
-10. **Repository-native final video:** `demo/out/polygraph-contest-final.mp4`, captions in
+12. **Repository-native final video:** `demo/out/polygraph-contest-final.mp4`, captions in
     `demo/out/polygraph-contest-final.srt`, validation receipt in
     `demo/out/polygraph-contest-final.validation.json`, and checksum in
     `demo/out/polygraph-contest-final.sha256`. The final cut includes receipt-verified real
     `make demo` capture playback with normalized pauses, sanitized ephemeral capture-root paths,
     normalized line endings, and unchanged semantic output ordering.
-11. **Final submission check:** `docs/CONTEST-SUBMISSION-CHECKLIST.md`.
+13. **Final submission check:** `docs/CONTEST-SUBMISSION-CHECKLIST.md`.
