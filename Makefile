@@ -9,16 +9,25 @@
 
 .DEFAULT_GOAL := help
 
-.PHONY: help demo demo-clean
+.PHONY: help demo demo-clean test readiness-help
 
 help:
 	@echo "make demo        2-minute catch-a-liar demo -- no Arm hardware, no model download."
 	@echo "                 Compiles examples/catch-a-liar/liar.c both ways and runs"
 	@echo "                 tools/polygraph check against each. See docs/QUICKSTART.md."
 	@echo "make demo-clean  remove examples/catch-a-liar/build/ (compiled demo binaries)."
+	@echo "make test        run the stdlib-only unit suite and numeric-claims gate."
+	@echo "make readiness-help  show the Arm server-readiness evidence harness options."
 
 demo:
 	./examples/catch-a-liar/demo.sh
 
 demo-clean:
 	rm -rf examples/catch-a-liar/build
+
+test:
+	python3 -m unittest discover -s tests -p 'test_*.py' -v
+	python3 tools/check_claims.py
+
+readiness-help:
+	python3 tools/server_readiness.py --help

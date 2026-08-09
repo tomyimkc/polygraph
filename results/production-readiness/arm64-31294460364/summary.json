@@ -1,0 +1,275 @@
+{
+  "actualProductionTraffic": false,
+  "boundary": "Synthetic single-host Arm64 readiness evidence. A PASS does not establish actual-production traffic, multi-day availability, failover, multi-tenant isolation, or customer correctness.",
+  "candidateOnly": true,
+  "completedAtUtc": "2026-08-09T04:40:34.775493+00:00",
+  "contestEvidenceCandidate": true,
+  "gate": {
+    "checks": [
+      {
+        "limit": "aarch64 or arm64",
+        "name": "arm64-architecture",
+        "observed": "aarch64",
+        "passed": true
+      },
+      {
+        "limit": 50,
+        "name": "minimum-measured-requests",
+        "observed": 1543,
+        "passed": true
+      },
+      {
+        "limit": 0.0,
+        "name": "error-rate",
+        "observed": 0.0,
+        "passed": true
+      },
+      {
+        "limit": 0,
+        "name": "usage-accounting",
+        "observed": 0,
+        "passed": true
+      },
+      {
+        "limit": 0,
+        "name": "non-empty-output",
+        "observed": 0,
+        "passed": true
+      },
+      {
+        "limit": 5000.0,
+        "name": "soak-ttft-p99",
+        "observed": 748.4623799999999,
+        "passed": true
+      },
+      {
+        "limit": 30000.0,
+        "name": "soak-e2e-p99",
+        "observed": 1924.56635,
+        "passed": true
+      },
+      {
+        "limit": 0,
+        "name": "restart-success",
+        "observed": 0,
+        "passed": true
+      },
+      {
+        "limit": 120.0,
+        "name": "restart-recovery",
+        "observed": 1.5122710569999072,
+        "passed": true
+      },
+      {
+        "limit": 8192.0,
+        "name": "server-rss",
+        "observed": 1869.6875,
+        "passed": true
+      }
+    ],
+    "verdict": "PASS"
+  },
+  "hardware": {
+    "cpuCount": 4,
+    "cpuModel": null,
+    "gitSha": "97f1c210dc0e3435d04f8082a362e291d409a261",
+    "githubRunAttempt": "1",
+    "githubRunId": "31294460364",
+    "machine": "aarch64",
+    "platform": "Linux-6.17.0-1020-azure-aarch64-with-glibc2.39",
+    "python": "3.12.3"
+  },
+  "productionReady": false,
+  "restarts": [
+    {
+      "canary": {
+        "completionTokens": 24,
+        "concurrency": 1,
+        "e2eMs": 742.216,
+        "error": null,
+        "httpStatus": 200,
+        "outputCharacters": 155,
+        "phase": "restart-canary",
+        "promptTokens": 14,
+        "schema": "polygraph.server-readiness.request.v1",
+        "startedAtUtc": "2026-08-09T04:40:31.473847+00:00",
+        "status": "success",
+        "ttftMs": 98.777,
+        "workload": "short-chat"
+      },
+      "cycle": 1,
+      "error": null,
+      "readySeconds": 1.5122710569999072,
+      "stop": {
+        "exitCode": 0,
+        "forced": false
+      },
+      "success": true
+    },
+    {
+      "canary": {
+        "completionTokens": 24,
+        "concurrency": 1,
+        "e2eMs": 820.505,
+        "error": null,
+        "httpStatus": 200,
+        "outputCharacters": 126,
+        "phase": "restart-canary",
+        "promptTokens": 34,
+        "schema": "polygraph.server-readiness.request.v1",
+        "startedAtUtc": "2026-08-09T04:40:33.841248+00:00",
+        "status": "success",
+        "ttftMs": 169.079,
+        "workload": "rag-like"
+      },
+      "cycle": 2,
+      "error": null,
+      "readySeconds": 1.5110557559999052,
+      "stop": {
+        "exitCode": 0,
+        "forced": false
+      },
+      "success": true
+    }
+  ],
+  "results": [
+    {
+      "completionTokens": 840,
+      "concurrency": 1,
+      "durationSeconds": 30.489,
+      "e2eP50Ms": 827.029,
+      "e2eP95Ms": 1126.1274,
+      "e2eP99Ms": 1139.57604,
+      "emptyOutputRequests": 0,
+      "errorRate": 0.0,
+      "errors": 0,
+      "outputTokensPerSecond": 27.55076194737699,
+      "phase": "capacity",
+      "promptTokens": 1162,
+      "requests": 35,
+      "requestsPerSecond": 1.1479484144740413,
+      "successes": 35,
+      "ttftP50Ms": 168.825,
+      "ttftP95Ms": 450.2211,
+      "ttftP99Ms": 451.80302,
+      "usageMissingRequests": 0
+    },
+    {
+      "completionTokens": 960,
+      "concurrency": 2,
+      "durationSeconds": 31.153,
+      "e2eP50Ms": 1570.1015000000002,
+      "e2eP95Ms": 1958.49045,
+      "e2eP99Ms": 1964.69121,
+      "emptyOutputRequests": 0,
+      "errorRate": 0.0,
+      "errors": 0,
+      "outputTokensPerSecond": 30.81603230915221,
+      "phase": "capacity",
+      "promptTokens": 1328,
+      "requests": 40,
+      "requestsPerSecond": 1.2840013462146753,
+      "successes": 40,
+      "ttftP50Ms": 269.45349999999996,
+      "ttftP95Ms": 647.22365,
+      "ttftP99Ms": 649.4269899999999,
+      "usageMissingRequests": 0
+    },
+    {
+      "completionTokens": 1920,
+      "concurrency": 4,
+      "durationSeconds": 30.577,
+      "e2eP50Ms": 1547.4945,
+      "e2eP95Ms": 1738.5282000000002,
+      "e2eP99Ms": 1801.08439,
+      "emptyOutputRequests": 0,
+      "errorRate": 0.0,
+      "errors": 0,
+      "outputTokensPerSecond": 62.79161626625232,
+      "phase": "capacity",
+      "promptTokens": 2656,
+      "requests": 80,
+      "requestsPerSecond": 2.61631734442718,
+      "successes": 80,
+      "ttftP50Ms": 636.0005,
+      "ttftP95Ms": 812.228,
+      "ttftP99Ms": 929.90624,
+      "usageMissingRequests": 0
+    },
+    {
+      "completionTokens": 33312,
+      "concurrency": 4,
+      "durationSeconds": 600.78,
+      "e2eP50Ms": 1779.3485,
+      "e2eP95Ms": 1902.1796,
+      "e2eP99Ms": 1924.56635,
+      "emptyOutputRequests": 0,
+      "errorRate": 0.0,
+      "errors": 0,
+      "outputTokensPerSecond": 55.4479181768457,
+      "phase": "soak",
+      "promptTokens": 46080,
+      "requests": 1388,
+      "requestsPerSecond": 2.310329924035237,
+      "successes": 1388,
+      "ttftP50Ms": 363.0185,
+      "ttftP95Ms": 737.01585,
+      "ttftP99Ms": 748.4623799999999,
+      "usageMissingRequests": 0
+    }
+  ],
+  "schema": "polygraph.server-readiness.v1",
+  "server": {
+    "binary": "/home/runner/work/_temp/polygraph-readiness-cache/llama.cpp/build/bin/llama-server",
+    "coldReadySeconds": 1.5048724859999538,
+    "command": [
+      "/home/runner/work/_temp/polygraph-readiness-cache/llama.cpp/build/bin/llama-server",
+      "-m",
+      "/home/runner/work/_temp/polygraph-readiness-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf",
+      "-ngl",
+      "0",
+      "-c",
+      "2048",
+      "-np",
+      "4",
+      "-cb",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "18080",
+      "-t",
+      "4",
+      "-tb",
+      "4"
+    ],
+    "finalStop": {
+      "exitCode": 0,
+      "forced": false
+    },
+    "model": "/home/runner/work/_temp/polygraph-readiness-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf"
+  },
+  "startedAtUtc": "2026-08-09T04:28:50.370783+00:00",
+  "totals": {
+    "measuredFailures": 0,
+    "measuredRequests": 1543,
+    "measuredSuccesses": 1543,
+    "warmupErrors": 0,
+    "warmupRequests": 11
+  },
+  "workload": {
+    "capacityConcurrencies": [
+      1,
+      2,
+      4
+    ],
+    "capacitySecondsPerPoint": 30.0,
+    "maxTokens": 24,
+    "soakConcurrency": 4,
+    "soakSeconds": 600.0,
+    "trafficFamilies": [
+      "long-summary",
+      "rag-like",
+      "short-chat"
+    ]
+  }
+}

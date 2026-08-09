@@ -130,7 +130,8 @@ export HF_REPO HF_FILE HF_FILE_SHA256 MODEL_DIR MODEL_PATH
 
 LLAMA_CLI="$LLAMA_CPP_DIR/build/bin/llama-cli"
 LLAMA_BENCH="$LLAMA_CPP_DIR/build/bin/llama-bench"
-export LLAMA_CLI LLAMA_BENCH
+LLAMA_SERVER="$LLAMA_CPP_DIR/build/bin/llama-server"
+export LLAMA_CLI LLAMA_BENCH LLAMA_SERVER
 
 # ---------------------------------------------------------------------------
 # Logging

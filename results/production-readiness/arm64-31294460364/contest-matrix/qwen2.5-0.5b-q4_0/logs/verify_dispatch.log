@@ -1,0 +1,40 @@
+# verify_dispatch.py sweep -- linux-aarch64 / [unknown Linux CPU -- /proc/cpuinfo model name/Model not found]
+# binary=/home/runner/work/_temp/adl-cache/llama.cpp/build/bin/llama-cli
+# model=/home/runner/work/_temp/adl-cache/models/qwen2.5-0.5b-instruct-q4_0.gguf
+# cpu backend lib=/home/runner/work/_temp/adl-cache/llama.cpp/build/bin/libggml-cpu.so
+# threads=[1, 2, 4] workloads=['decode_short', 'prefill_long'] l3_debugger=gdb
+--- threads=1 workload=decode_short ---
+  L2: primary_kernel_feature={'q4': 'I8MM', 'q8': 'I8MM'} sme_enabled=False buffer_fallback=True
+  L3: debugger=gdb completed=True timed_out=False kernel_family_executed=dotprod total_hits=1014 (2.0s)
+  VERDICT: I8MM_HYBRID_DISPATCH
+--- threads=2 workload=decode_short ---
+  L2: primary_kernel_feature={'q4': 'I8MM', 'q8': 'I8MM'} sme_enabled=False buffer_fallback=True
+  L3: debugger=gdb completed=True timed_out=False kernel_family_executed=dotprod total_hits=8112 (2.5s)
+  VERDICT: I8MM_HYBRID_DISPATCH
+--- threads=4 workload=decode_short ---
+  L2: primary_kernel_feature={'q4': 'I8MM', 'q8': 'I8MM'} sme_enabled=False buffer_fallback=True
+  L3: debugger=gdb completed=True timed_out=False kernel_family_executed=dotprod total_hits=16224 (3.6s)
+  VERDICT: I8MM_HYBRID_DISPATCH
+--- threads=1 workload=prefill_long ---
+  L2: primary_kernel_feature={'q4': 'I8MM', 'q8': 'I8MM'} sme_enabled=False buffer_fallback=True
+  L3: debugger=gdb completed=True timed_out=False kernel_family_executed=i8mm total_hits=672 (13.2s)
+  VERDICT: I8MM_HYBRID_DISPATCH
+--- threads=2 workload=prefill_long ---
+  L2: primary_kernel_feature={'q4': 'I8MM', 'q8': 'I8MM'} sme_enabled=False buffer_fallback=True
+  L3: debugger=gdb completed=True timed_out=False kernel_family_executed=i8mm total_hits=5376 (8.3s)
+  VERDICT: I8MM_HYBRID_DISPATCH
+--- threads=4 workload=prefill_long ---
+  L2: primary_kernel_feature={'q4': 'I8MM', 'q8': 'I8MM'} sme_enabled=False buffer_fallback=True
+  L3: debugger=gdb completed=True timed_out=False kernel_family_executed=i8mm total_hits=10752 (6.3s)
+  VERDICT: I8MM_HYBRID_DISPATCH
+
+Wrote ledger: /home/runner/work/polygraph/polygraph/results/dispatch-ledger-Linux-aarch64.json
+
+| threads | workload | advertised (L2) | executed (L3) | hits (adv/other) | verdict |
+|---:|---|---|---|---|---|
+| 1 | decode_short | I8MM | dotprod | 495/519 | **I8MM_HYBRID_DISPATCH** |
+| 2 | decode_short | I8MM | dotprod | 3960/4152 | **I8MM_HYBRID_DISPATCH** |
+| 4 | decode_short | I8MM | dotprod | 7920/8304 | **I8MM_HYBRID_DISPATCH** |
+| 1 | prefill_long | I8MM | i8mm | 660/12 | **I8MM_HYBRID_DISPATCH** |
+| 2 | prefill_long | I8MM | i8mm | 5280/96 | **I8MM_HYBRID_DISPATCH** |
+| 4 | prefill_long | I8MM | i8mm | 10560/192 | **I8MM_HYBRID_DISPATCH** |

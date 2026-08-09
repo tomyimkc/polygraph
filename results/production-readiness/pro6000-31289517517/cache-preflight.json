@@ -1,0 +1,163 @@
+{
+  "actualProductionTraffic": false,
+  "armContestEvidence": false,
+  "boundary": "Read-only cached-asset readiness diagnostic. No model serving or benchmark traffic was run.",
+  "canClaimAGI": false,
+  "candidateOnly": true,
+  "generatedAt": "2026-08-09T02:03:23.185306Z",
+  "model": {
+    "cachedRevisions": [
+      "0d7cf23991f47feeb3a57ecb4c9cee8ea4a17bfe"
+    ],
+    "expectedRevision": "0d7cf23991f47feeb3a57ecb4c9cee8ea4a17bfe",
+    "hubCache": "/workspace/hf/hub",
+    "model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+    "ready": true,
+    "refsMain": {
+      "error": null,
+      "exists": false,
+      "path": "/workspace/hf/hub/models--Qwen--Qwen3-30B-A3B-Instruct-2507/refs/main",
+      "revision": null,
+      "valid": false
+    },
+    "repoExists": true,
+    "repoPath": "/workspace/hf/hub/models--Qwen--Qwen3-30B-A3B-Instruct-2507",
+    "repoSearchable": true,
+    "snapshot": {
+      "complete": true,
+      "configPresent": true,
+      "error": null,
+      "exists": true,
+      "missingWeightFiles": [],
+      "path": "/workspace/hf/hub/models--Qwen--Qwen3-30B-A3B-Instruct-2507/snapshots/0d7cf23991f47feeb3a57ecb4c9cee8ea4a17bfe",
+      "revision": "0d7cf23991f47feeb3a57ecb4c9cee8ea4a17bfe",
+      "tokenizerPresent": true,
+      "unsafeWeightFiles": [],
+      "weightBytes": 61066575656,
+      "weightFileCount": 16
+    }
+  },
+  "python": {
+    "candidates": [
+      {
+        "error": null,
+        "executable": true,
+        "path": "/workspace/venvs/sophia/bin/python",
+        "probe": {
+          "executable": "/workspace/venvs/sophia/bin/python",
+          "imports": {
+            "accelerate": {
+              "error": null,
+              "ok": true
+            },
+            "torch": {
+              "error": null,
+              "ok": true
+            },
+            "transformers": {
+              "error": null,
+              "ok": true
+            },
+            "vllm": {
+              "error": null,
+              "ok": true
+            }
+          },
+          "python": "3.12.3",
+          "versions": {
+            "accelerate": "1.14.0",
+            "torch": "2.11.0+cu130",
+            "transformers": "5.13.1",
+            "vllm": "0.25.1"
+          }
+        },
+        "ready": true,
+        "stderrTail": ""
+      },
+      {
+        "error": null,
+        "executable": true,
+        "path": "/home/user/.venvs/sophia-pro6000-rlvr/bin/python",
+        "probe": {
+          "executable": "/home/user/.venvs/sophia-pro6000-rlvr/bin/python",
+          "imports": {
+            "accelerate": {
+              "error": null,
+              "ok": true
+            },
+            "torch": {
+              "error": null,
+              "ok": true
+            },
+            "transformers": {
+              "error": null,
+              "ok": true
+            },
+            "vllm": {
+              "error": null,
+              "ok": true
+            }
+          },
+          "python": "3.12.3",
+          "versions": {
+            "accelerate": "1.14.0",
+            "torch": "2.11.0+cu128",
+            "transformers": "5.14.1",
+            "vllm": "0.25.1"
+          }
+        },
+        "ready": true,
+        "stderrTail": ""
+      },
+      {
+        "error": "requires vllm==0.25.1 and successful imports of vllm, torch, transformers, accelerate",
+        "executable": true,
+        "path": "/workspace/venvs/arc-calib/bin/python",
+        "probe": {
+          "executable": "/workspace/venvs/arc-calib/bin/python",
+          "imports": {
+            "accelerate": {
+              "error": null,
+              "ok": true
+            },
+            "torch": {
+              "error": null,
+              "ok": true
+            },
+            "transformers": {
+              "error": null,
+              "ok": true
+            },
+            "vllm": {
+              "error": "ModuleNotFoundError: No module named 'vllm'",
+              "ok": false
+            }
+          },
+          "python": "3.12.3",
+          "versions": {
+            "accelerate": "1.14.0",
+            "torch": "2.11.0+cu128",
+            "transformers": "5.14.1",
+            "vllm": null
+          }
+        },
+        "ready": false,
+        "stderrTail": ""
+      }
+    ],
+    "ready": true,
+    "requiredVllmVersion": "0.25.1",
+    "selectedPython": "/workspace/venvs/sophia/bin/python"
+  },
+  "ready": true,
+  "registeredResult": false,
+  "schemaVersion": 1,
+  "scratch": {
+    "error": null,
+    "freeGiB": 18.543,
+    "minimumFreeGiB": 4.0,
+    "path": "/home/user/actions-runner/_work/_temp",
+    "ready": true,
+    "writable": true
+  }
+}

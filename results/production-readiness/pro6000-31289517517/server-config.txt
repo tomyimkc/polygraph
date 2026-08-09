@@ -1,0 +1,4 @@
+tool_parser=hermes
+model_revision=0d7cf23991f47feeb3a57ecb4c9cee8ea4a17bfe
+model_load_path=/workspace/hf/hub/models--Qwen--Qwen3-30B-A3B-Instruct-2507/snapshots/0d7cf23991f47feeb3a57ecb4c9cee8ea4a17bfe
+gpu_memory_utilization=0.90

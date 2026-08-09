@@ -85,6 +85,7 @@ Every row below cites the raw JSON it came from — nothing here is estimated or
 | Cost of that gap — 7B model, token generation (decode) | **1.65x** slower (11.17 → 18.45 tok/s) | [`results/scale/scale-experiment.json`](results/scale/scale-experiment.json) |
 | A second, independent silent fallback: decode never dispatches SME2 above 2 threads | banner still says `SME2`; real dispatch is 0 SME2 hits vs 31,871 NEON hits (8 threads) | [`results/dispatch-ledger-darwin-arm64.json`](results/dispatch-ledger-darwin-arm64.json) |
 | What attaching a debugger to prove this actually costs | **3.63x** wall-clock overhead (1.2056s → 4.379s) for a dispatch count reproducible at 15,936 hits across all 5 runs | [`results/pmu/pmu-crosscheck.json`](results/pmu/pmu-crosscheck.json) |
+| Automated Arm64 server-readiness campaign | 1,543 measured requests, 0 failures, a 10-minute concurrency-4 soak, and 2 clean restart cycles; all 10 configured checks passed | [`results/production-readiness/arm64-31294460364/summary.json`](results/production-readiness/arm64-31294460364/summary.json) |
 | This project's own past mistake | a **+57.3%** win for a patch was published, then **publicly retracted** — it came from measuring baseline and patched configs in different, unevenly-contended time windows | [`results/REMEASURE-2026-08-04-QUIET.md`](results/REMEASURE-2026-08-04-QUIET.md) |
 
 The rest of this document is the full paper trail: how L1/L2/L3 verification works, every
@@ -129,7 +130,7 @@ about most of them.
 |---|---|---:|---|---|
 | Apple M4 Max (macOS) | Laptop/desktop SoC | 16 | SME2 | Finding 1, the Apple M4 Max measured results, the optimization + patch |
 | Cortex-X925 / DGX Spark | Server-class Arm, Armv9.2 | 20 | SVE2 (128-bit) → I8MM/DOTPROD | Finding 2 (now dispatch-confirmed), Finding 3, the Cloud AI server lane |
-| Neoverse-N2 | Free, judge-reproducible CI (`ubuntu-24.04-arm`) | `[not measured]` | SVE2 (128-bit) | Finding 2's zero-cost judge-reproducible lane: build + correctness tests, the L3 gdb ground-truth harness, a dispatch sweep, a reduced bench, and a dedicated cloud-throughput measurement (`.github/workflows/verify-free-arm64.yml`) |
+| Neoverse-N2 | Free, judge-reproducible CI (`ubuntu-24.04-arm`) | 4 | SVE2 (128-bit) → I8MM/DOTPROD | Finding 2's zero-cost judge-reproducible lane plus a mixed-traffic `llama-server` capacity sweep, 10-minute soak, and controlled restart evidence (`.github/workflows/verify-free-arm64.yml`) |
 
 ---
 
@@ -467,6 +468,29 @@ SVE2-capable hardware, the SVE kernel family is never entered, matching Finding 
 shape also inverts versus the M4 Max's single-user decode numbers earlier in this document:
 continuous batching turns GEMV into GEMM, so batched serving here is overwhelmingly `i8mm` (364,444
 calls) rather than the `dotprod`-leaning shape a GEMV workload would produce.
+
+### Automated Arm64 readiness gate: larger model, sustained load, and recovery
+
+The manual DGX Spark lane above establishes server-class throughput and live dispatch. A separate
+judge-reproducible lane now tests operational behavior on GitHub's free
+`ubuntu-24.04-arm` runner: pinned `llama-server`, CPU-only execution, continuous batching, a
+Qwen2.5 1.5B Q4_0 model, mixed short-chat/RAG/summary traffic, capacity at concurrency 1/2/4, a
+10-minute concurrency-4 soak, one-second RSS/load/thermal telemetry, and two controlled stop/start
+cycles.
+
+Run `31294460364` completed 1,543 measured requests with 0 failures. The sustained phase delivered
+55.45 output tok/s with TTFT p99 748.46 ms and end-to-end p99 1,924.57 ms. Maximum server RSS was
+1,869.69 MiB; the slower of the two restart-readiness measurements was 1.5123 seconds. All 10
+configured checks passed. Raw request rows, telemetry, server logs, restart canaries, checksums,
+the workflow receipt, and model-specific L1/L2/L3 contest artifacts are preserved under
+[`results/production-readiness/arm64-31294460364/`](results/production-readiness/arm64-31294460364/).
+
+That result is deliberately recorded as `actualProductionTraffic:false`,
+`productionReady:false`, and `candidateOnly:true`. It is a production-shaped Arm contest-evidence
+candidate, not a claim of multi-day availability, failover, tenant isolation, or customer
+correctness. The complementary 30B RTX PRO 6000 campaign is preserved beside it as larger-model
+systems evidence, explicitly marked as non-Arm:
+[`results/production-readiness/`](results/production-readiness/).
 
 ---
 
@@ -932,6 +956,11 @@ whose remaining numbers you can spend less time second-guessing.
   Finding 3 fix; TTFT and throughput at a larger model, a larger batch size, or another quantization
   are `[not yet measured]`. The `parallel=4` row's TTFT p99 (0.221s) is the least favorable point in
   the sweep and is not smoothed over in the readings above.
+- **The automated Arm64 readiness PASS is synthetic and single-host.** It adds a 1.5B model,
+  1,543 measured requests, a 10-minute sustained phase, explicit latency/RSS gates, and two clean
+  restart cycles on free hosted Arm64. It does not establish live production traffic, multi-day
+  availability, failover during faults, multi-tenant isolation, or application correctness; its
+  own `summary.json` therefore retains `productionReady:false`.
 - **Finding 3's build-flag diagnosis is one gcc/toolchain combination.** It was diagnosed and fixed
   against `gcc 13.3.0` on Ubuntu 24.04 aarch64 (`results/server/spark-provenance.txt`); whether the
   same `-mcpu=native+<feature>` probe failure reproduces on other gcc versions, `clang`, or other Arm

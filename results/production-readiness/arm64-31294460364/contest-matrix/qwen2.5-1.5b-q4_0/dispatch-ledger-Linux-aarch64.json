@@ -1,0 +1,743 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-08-09T04:27:02.931438+00:00",
+  "tool": "verify_dispatch.py",
+  "generator_argv": [
+    "/home/runner/work/polygraph/polygraph/tools/verify_dispatch.py",
+    "--binary",
+    "/home/runner/work/_temp/adl-cache/llama.cpp/build/bin/llama-cli",
+    "--model",
+    "/home/runner/work/_temp/adl-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf",
+    "--threads",
+    "1,2,4",
+    "--out",
+    "/home/runner/work/polygraph/polygraph/results/dispatch-ledger-Linux-aarch64.json"
+  ],
+  "binary": "/home/runner/work/_temp/adl-cache/llama.cpp/build/bin/llama-cli",
+  "cpu_backend_lib": "/home/runner/work/_temp/adl-cache/llama.cpp/build/bin/libggml-cpu.so",
+  "model": "/home/runner/work/_temp/adl-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf",
+  "model_sha256": "dcd819ff094852c38faba6873d8ff0c9d51eadb2844539e52042ae5d647bbfdb",
+  "model_bytes": 1066227232,
+  "configs": [
+    {
+      "platform": "linux-aarch64",
+      "cpu_brand": "[unknown Linux CPU -- /proc/cpuinfo model name/Model not found]",
+      "isa_features": {
+        "sve": true,
+        "sve2": true,
+        "i8mm": true,
+        "bf16": true,
+        "asimddp": true,
+        "sme": false,
+        "sme2": false,
+        "sve_vector_length_bits": "[not measured -- requires prctl(PR_SVE_GET_VL); not queried by this script]"
+      },
+      "model": "/home/runner/work/_temp/adl-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf",
+      "quant": "Q4_0",
+      "threads": 1,
+      "workload": "decode_short",
+      "workload_description": "short prompt, generation dominates -- exercises the decode-time (ne11 == 1) dispatch path",
+      "n_predict": 4,
+      "prompt_preview": "Hello.",
+      "env": {
+        "requested_env_overrides": {},
+        "kleidiai_related_env": {
+          "GGML_KLEIDIAI_SME": null,
+          "GGML_TOTAL_THREADS": null,
+          "GGML_KLEIDIAI_CHUNK_MULTIPLIER": null,
+          "OMP_NUM_THREADS": null
+        }
+      },
+      "l1": {
+        "lib_path": "/home/runner/work/_temp/adl-cache/llama.cpp/build/bin/libggml-cpu.so",
+        "tool_chain": "elf",
+        "available": true,
+        "error": null,
+        "kai_symbol_count": 149,
+        "kai_run_matmul_symbol_count": 10,
+        "kai_symbols_by_family": {
+          "dotprod": 6,
+          "i8mm": 2,
+          "sve": 2
+        },
+        "isa_mnemonic_counts": {
+          "sve_z_register_operands": 26629,
+          "smmla": 610,
+          "sdot": 1473
+        }
+      },
+      "l2": {
+        "available": true,
+        "command": [
+          "/home/runner/work/_temp/adl-cache/llama.cpp/build/bin/llama-cli",
+          "-m",
+          "/home/runner/work/_temp/adl-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf",
+          "-p",
+          "Hello.",
+          "-n",
+          "4",
+          "-no-cnv",
+          "-st",
+          "--simple-io",
+          "-t",
+          "1",
+          "--verbose"
+        ],
+        "returncode": 0,
+        "timed_out": false,
+        "error": null,
+        "primary_kernel_feature": {
+          "q4": "I8MM",
+          "q8": "I8MM"
+        },
+        "sme_enabled": false,
+        "sme_variant": null,
+        "sme_detail": null,
+        "buffer_type_fallback_seen": true,
+        "unsupported_tensor_types": [
+          "q6_K"
+        ],
+        "model_file_type": "Q4_0",
+        "system_info_line": "0.00.002.687 I cmn  common_param: system_info: n_threads = 1 (n_threads_batch = 1) / 4 | CPU : NEON = 1 | ARM_FMA = 1 | FP16_VA = 1 | MATMUL_INT8 = 1 | SVE = 1 | DOTPROD = 1 | SVE_CNT = 16 | OPENMP = 1 | KLEIDIAI = 1 | REPACK = 1 |",
+        "raw_kleidiai_lines": [
+          "0.00.002.687 I cmn  common_param: system_info: n_threads = 1 (n_threads_batch = 1) / 4 | CPU : NEON = 1 | ARM_FMA = 1 | FP16_VA = 1 | MATMUL_INT8 = 1 | SVE = 1 | DOTPROD = 1 | SVE_CNT = 16 | OPENMP = 1 | KLEIDIAI = 1 | REPACK = 1 | ",
+          "0.00.218.246 I kleidiai: primary q4 kernel feature I8MM",
+          "0.00.218.247 I kleidiai: primary q8 kernel feature I8MM",
+          "0.00.218.247 I kleidiai: no compatible f32 kernels found for CPU features mask 3",
+          "0.00.218.247 I kleidiai: SME disabled",
+          "0.00.221.307 D done_getting_tensors: tensor 'token_embd.weight' (q4_0) (and 142 others) cannot be used with preferred buffer type CPU_KLEIDIAI, using CPU instead",
+          "0.00.221.376 I load_tensors: CPU_KLEIDIAI model buffer size =     0.00 MiB",
+          "0.00.226.265 I common_memory_breakdown_print: |   - CPU_KLEIDIAI       |                  702 =   702 +       0 +       0                |",
+          "0.00.453.575 D done_getting_tensors: tensor 'token_embd.weight' (q4_0) (and 142 others) cannot be used with preferred buffer type CPU_KLEIDIAI, using CPU instead",
+          "0.00.483.567 I load_tensors: CPU_KLEIDIAI model buffer size =   702.86 MiB",
+          "0.01.138.752 W kleidiai: no kernel for tensor type q6_K, not accelerated by KleidiAI (kernels available for Q4_0 and Q8_0)",
+          "0.02.519.583 I common_memory_breakdown_print: |   - CPU_KLEIDIAI       |                  702 =   702 +       0 +       0                |"
+        ],
+        "wall_time_sec": 2.6435972040000024
+      },
+      "l3": {
+        "debugger": "gdb",
+        "available": true,
+        "completed": true,
+        "timed_out": false,
+        "error": null,
+        "dispatch_regex": "^kai_run_matmul",
+        "wall_time_sec": 2.93,
+        "kernel_family_executed": "dotprod",
+        "hits_by_symbol": {
+          "kai_run_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod": 597,
+          "kai_run_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm": 579
+        },
+        "hits_by_family": {
+          "dotprod": 597,
+          "i8mm": 579
+        },
+        "total_hits": 1176,
+        "breakpoints_requested": 10,
+        "breakpoints_created": 10
+      },
+      "advertised_family": "I8MM",
+      "verdict": "I8MM_HYBRID_DISPATCH"
+    },
+    {
+      "platform": "linux-aarch64",
+      "cpu_brand": "[unknown Linux CPU -- /proc/cpuinfo model name/Model not found]",
+      "isa_features": {
+        "sve": true,
+        "sve2": true,
+        "i8mm": true,
+        "bf16": true,
+        "asimddp": true,
+        "sme": false,
+        "sme2": false,
+        "sve_vector_length_bits": "[not measured -- requires prctl(PR_SVE_GET_VL); not queried by this script]"
+      },
+      "model": "/home/runner/work/_temp/adl-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf",
+      "quant": "Q4_0",
+      "threads": 2,
+      "workload": "decode_short",
+      "workload_description": "short prompt, generation dominates -- exercises the decode-time (ne11 == 1) dispatch path",
+      "n_predict": 4,
+      "prompt_preview": "Hello.",
+      "env": {
+        "requested_env_overrides": {},
+        "kleidiai_related_env": {
+          "GGML_KLEIDIAI_SME": null,
+          "GGML_TOTAL_THREADS": null,
+          "GGML_KLEIDIAI_CHUNK_MULTIPLIER": null,
+          "OMP_NUM_THREADS": null
+        }
+      },
+      "l1": {
+        "lib_path": "/home/runner/work/_temp/adl-cache/llama.cpp/build/bin/libggml-cpu.so",
+        "tool_chain": "elf",
+        "available": true,
+        "error": null,
+        "kai_symbol_count": 149,
+        "kai_run_matmul_symbol_count": 10,
+        "kai_symbols_by_family": {
+          "dotprod": 6,
+          "i8mm": 2,
+          "sve": 2
+        },
+        "isa_mnemonic_counts": {
+          "sve_z_register_operands": 26629,
+          "smmla": 610,
+          "sdot": 1473
+        }
+      },
+      "l2": {
+        "available": true,
+        "command": [
+          "/home/runner/work/_temp/adl-cache/llama.cpp/build/bin/llama-cli",
+          "-m",
+          "/home/runner/work/_temp/adl-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf",
+          "-p",
+          "Hello.",
+          "-n",
+          "4",
+          "-no-cnv",
+          "-st",
+          "--simple-io",
+          "-t",
+          "2",
+          "--verbose"
+        ],
+        "returncode": 0,
+        "timed_out": false,
+        "error": null,
+        "primary_kernel_feature": {
+          "q4": "I8MM",
+          "q8": "I8MM"
+        },
+        "sme_enabled": false,
+        "sme_variant": null,
+        "sme_detail": null,
+        "buffer_type_fallback_seen": true,
+        "unsupported_tensor_types": [
+          "q6_K"
+        ],
+        "model_file_type": "Q4_0",
+        "system_info_line": "0.00.002.596 I cmn  common_param: system_info: n_threads = 2 (n_threads_batch = 2) / 4 | CPU : NEON = 1 | ARM_FMA = 1 | FP16_VA = 1 | MATMUL_INT8 = 1 | SVE = 1 | DOTPROD = 1 | SVE_CNT = 16 | OPENMP = 1 | KLEIDIAI = 1 | REPACK = 1 |",
+        "raw_kleidiai_lines": [
+          "0.00.002.596 I cmn  common_param: system_info: n_threads = 2 (n_threads_batch = 2) / 4 | CPU : NEON = 1 | ARM_FMA = 1 | FP16_VA = 1 | MATMUL_INT8 = 1 | SVE = 1 | DOTPROD = 1 | SVE_CNT = 16 | OPENMP = 1 | KLEIDIAI = 1 | REPACK = 1 | ",
+          "0.00.224.793 I kleidiai: primary q4 kernel feature I8MM",
+          "0.00.224.793 I kleidiai: primary q8 kernel feature I8MM",
+          "0.00.224.793 I kleidiai: no compatible f32 kernels found for CPU features mask 3",
+          "0.00.224.794 I kleidiai: SME disabled",
+          "0.00.227.940 D done_getting_tensors: tensor 'token_embd.weight' (q4_0) (and 142 others) cannot be used with preferred buffer type CPU_KLEIDIAI, using CPU instead",
+          "0.00.228.019 I load_tensors: CPU_KLEIDIAI model buffer size =     0.00 MiB",
+          "0.00.233.106 I common_memory_breakdown_print: |   - CPU_KLEIDIAI       |                  702 =   702 +       0 +       0                |",
+          "0.00.470.489 D done_getting_tensors: tensor 'token_embd.weight' (q4_0) (and 142 others) cannot be used with preferred buffer type CPU_KLEIDIAI, using CPU instead",
+          "0.00.499.626 I load_tensors: CPU_KLEIDIAI model buffer size =   702.86 MiB",
+          "0.01.171.801 W kleidiai: no kernel for tensor type q6_K, not accelerated by KleidiAI (kernels available for Q4_0 and Q8_0)",
+          "0.01.885.180 I common_memory_breakdown_print: |   - CPU_KLEIDIAI       |                  702 =   702 +       0 +       0                |"
+        ],
+        "wall_time_sec": 2.0133028430000195
+      },
+      "l3": {
+        "debugger": "gdb",
+        "available": true,
+        "completed": true,
+        "timed_out": false,
+        "error": null,
+        "dispatch_regex": "^kai_run_matmul",
+        "wall_time_sec": 3.15,
+        "kernel_family_executed": "dotprod",
+        "hits_by_symbol": {
+          "kai_run_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod": 4776,
+          "kai_run_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm": 4632
+        },
+        "hits_by_family": {
+          "dotprod": 4776,
+          "i8mm": 4632
+        },
+        "total_hits": 9408,
+        "breakpoints_requested": 10,
+        "breakpoints_created": 10
+      },
+      "advertised_family": "I8MM",
+      "verdict": "I8MM_HYBRID_DISPATCH"
+    },
+    {
+      "platform": "linux-aarch64",
+      "cpu_brand": "[unknown Linux CPU -- /proc/cpuinfo model name/Model not found]",
+      "isa_features": {
+        "sve": true,
+        "sve2": true,
+        "i8mm": true,
+        "bf16": true,
+        "asimddp": true,
+        "sme": false,
+        "sme2": false,
+        "sve_vector_length_bits": "[not measured -- requires prctl(PR_SVE_GET_VL); not queried by this script]"
+      },
+      "model": "/home/runner/work/_temp/adl-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf",
+      "quant": "Q4_0",
+      "threads": 4,
+      "workload": "decode_short",
+      "workload_description": "short prompt, generation dominates -- exercises the decode-time (ne11 == 1) dispatch path",
+      "n_predict": 4,
+      "prompt_preview": "Hello.",
+      "env": {
+        "requested_env_overrides": {},
+        "kleidiai_related_env": {
+          "GGML_KLEIDIAI_SME": null,
+          "GGML_TOTAL_THREADS": null,
+          "GGML_KLEIDIAI_CHUNK_MULTIPLIER": null,
+          "OMP_NUM_THREADS": null
+        }
+      },
+      "l1": {
+        "lib_path": "/home/runner/work/_temp/adl-cache/llama.cpp/build/bin/libggml-cpu.so",
+        "tool_chain": "elf",
+        "available": true,
+        "error": null,
+        "kai_symbol_count": 149,
+        "kai_run_matmul_symbol_count": 10,
+        "kai_symbols_by_family": {
+          "dotprod": 6,
+          "i8mm": 2,
+          "sve": 2
+        },
+        "isa_mnemonic_counts": {
+          "sve_z_register_operands": 26629,
+          "smmla": 610,
+          "sdot": 1473
+        }
+      },
+      "l2": {
+        "available": true,
+        "command": [
+          "/home/runner/work/_temp/adl-cache/llama.cpp/build/bin/llama-cli",
+          "-m",
+          "/home/runner/work/_temp/adl-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf",
+          "-p",
+          "Hello.",
+          "-n",
+          "4",
+          "-no-cnv",
+          "-st",
+          "--simple-io",
+          "-t",
+          "4",
+          "--verbose"
+        ],
+        "returncode": 0,
+        "timed_out": false,
+        "error": null,
+        "primary_kernel_feature": {
+          "q4": "I8MM",
+          "q8": "I8MM"
+        },
+        "sme_enabled": false,
+        "sme_variant": null,
+        "sme_detail": null,
+        "buffer_type_fallback_seen": true,
+        "unsupported_tensor_types": [
+          "q6_K"
+        ],
+        "model_file_type": "Q4_0",
+        "system_info_line": "0.00.002.670 I cmn  common_param: system_info: n_threads = 4 (n_threads_batch = 4) / 4 | CPU : NEON = 1 | ARM_FMA = 1 | FP16_VA = 1 | MATMUL_INT8 = 1 | SVE = 1 | DOTPROD = 1 | SVE_CNT = 16 | OPENMP = 1 | KLEIDIAI = 1 | REPACK = 1 |",
+        "raw_kleidiai_lines": [
+          "0.00.002.670 I cmn  common_param: system_info: n_threads = 4 (n_threads_batch = 4) / 4 | CPU : NEON = 1 | ARM_FMA = 1 | FP16_VA = 1 | MATMUL_INT8 = 1 | SVE = 1 | DOTPROD = 1 | SVE_CNT = 16 | OPENMP = 1 | KLEIDIAI = 1 | REPACK = 1 | ",
+          "0.00.223.572 I kleidiai: primary q4 kernel feature I8MM",
+          "0.00.223.572 I kleidiai: primary q8 kernel feature I8MM",
+          "0.00.223.572 I kleidiai: no compatible f32 kernels found for CPU features mask 3",
+          "0.00.223.572 I kleidiai: SME disabled",
+          "0.00.226.777 D done_getting_tensors: tensor 'token_embd.weight' (q4_0) (and 142 others) cannot be used with preferred buffer type CPU_KLEIDIAI, using CPU instead",
+          "0.00.226.853 I load_tensors: CPU_KLEIDIAI model buffer size =     0.00 MiB",
+          "0.00.231.898 I common_memory_breakdown_print: |   - CPU_KLEIDIAI       |                  702 =   702 +       0 +       0                |",
+          "0.00.468.095 D done_getting_tensors: tensor 'token_embd.weight' (q4_0) (and 142 others) cannot be used with preferred buffer type CPU_KLEIDIAI, using CPU instead",
+          "0.00.496.915 I load_tensors: CPU_KLEIDIAI model buffer size =   702.86 MiB",
+          "0.01.178.429 W kleidiai: no kernel for tensor type q6_K, not accelerated by KleidiAI (kernels available for Q4_0 and Q8_0)",
+          "0.01.666.971 I common_memory_breakdown_print: |   - CPU_KLEIDIAI       |                  702 =   702 +       0 +       0                |"
+        ],
+        "wall_time_sec": 1.794101043000012
+      },
+      "l3": {
+        "debugger": "gdb",
+        "available": true,
+        "completed": true,
+        "timed_out": false,
+        "error": null,
+        "dispatch_regex": "^kai_run_matmul",
+        "wall_time_sec": 3.98,
+        "kernel_family_executed": "dotprod",
+        "hits_by_symbol": {
+          "kai_run_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod": 9552,
+          "kai_run_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm": 9264
+        },
+        "hits_by_family": {
+          "dotprod": 9552,
+          "i8mm": 9264
+        },
+        "total_hits": 18816,
+        "breakpoints_requested": 10,
+        "breakpoints_created": 10
+      },
+      "advertised_family": "I8MM",
+      "verdict": "I8MM_HYBRID_DISPATCH"
+    },
+    {
+      "platform": "linux-aarch64",
+      "cpu_brand": "[unknown Linux CPU -- /proc/cpuinfo model name/Model not found]",
+      "isa_features": {
+        "sve": true,
+        "sve2": true,
+        "i8mm": true,
+        "bf16": true,
+        "asimddp": true,
+        "sme": false,
+        "sme2": false,
+        "sve_vector_length_bits": "[not measured -- requires prctl(PR_SVE_GET_VL); not queried by this script]"
+      },
+      "model": "/home/runner/work/_temp/adl-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf",
+      "quant": "Q4_0",
+      "threads": 1,
+      "workload": "prefill_long",
+      "workload_description": "long synthetic prompt (~380 words), 1 generated token -- exercises the prefill-time (large ne11) dispatch path",
+      "n_predict": 1,
+      "prompt_preview": "The quick brown fox jumps over the lazy dog. The history of ...",
+      "env": {
+        "requested_env_overrides": {},
+        "kleidiai_related_env": {
+          "GGML_KLEIDIAI_SME": null,
+          "GGML_TOTAL_THREADS": null,
+          "GGML_KLEIDIAI_CHUNK_MULTIPLIER": null,
+          "OMP_NUM_THREADS": null
+        }
+      },
+      "l1": {
+        "lib_path": "/home/runner/work/_temp/adl-cache/llama.cpp/build/bin/libggml-cpu.so",
+        "tool_chain": "elf",
+        "available": true,
+        "error": null,
+        "kai_symbol_count": 149,
+        "kai_run_matmul_symbol_count": 10,
+        "kai_symbols_by_family": {
+          "dotprod": 6,
+          "i8mm": 2,
+          "sve": 2
+        },
+        "isa_mnemonic_counts": {
+          "sve_z_register_operands": 26629,
+          "smmla": 610,
+          "sdot": 1473
+        }
+      },
+      "l2": {
+        "available": true,
+        "command": [
+          "/home/runner/work/_temp/adl-cache/llama.cpp/build/bin/llama-cli",
+          "-m",
+          "/home/runner/work/_temp/adl-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf",
+          "-p",
+          "The quick brown fox jumps over the lazy dog. The history of artificial intelligence began in the mid twentieth century, when researchers started exploring how machines could simulate human reasoning and learning processes. Since then the field has expanded dramatically, encompassing machine learning, deep neural networks, natural language processing, computer vision, and robotics. Modern systems can now translate languages, recognize images, generate text, and even compose music with remarkable fluency. However, many open questions remain about how these systems generalize, reason, and represent knowledge internally. Researchers continue to study architectures, training methods, and evaluation benchmarks in order to better understand the capabilities and limitations of contemporary models. The quick brown fox jumps over the lazy dog. The history of artificial intelligence began in the mid twentieth century, when researchers started exploring how machines could simulate human reasoning and learning processes. Since then the field has expanded dramatically, encompassing machine learning, deep neural networks, natural language processing, computer vision, and robotics. Modern systems can now translate languages, recognize images, generate text, and even compose music with remarkable fluency. However, many open questions remain about how these systems generalize, reason, and represent knowledge internally. Researchers continue to study architectures, training methods, and evaluation benchmarks in order to better understand the capabilities and limitations of contemporary models. The quick brown fox jumps over the lazy dog. The history of artificial intelligence began in the mid twentieth century, when researchers started exploring how machines could simulate human reasoning and learning processes. Since then the field has expanded dramatically, encompassing machine learning, deep neural networks, natural language processing, computer vision, and robotics. Modern systems can now translate languages, recognize images, generate text, and even compose music with remarkable fluency. However, many open questions remain about how these systems generalize, reason, and represent knowledge internally. Researchers continue to study architectures, training methods, and evaluation benchmarks in order to better understand the capabilities and limitations of contemporary models. The quick brown fox jumps over the lazy dog. The history of artificial intelligence began in the mid twentieth century, when researchers started exploring how machines could simulate human reasoning and learning processes. Since then the field has expanded dramatically, encompassing machine learning, deep neural networks, natural language processing, computer vision, and robotics. Modern systems can now translate languages, recognize images, generate text, and even compose music with remarkable fluency. However, many open questions remain about how these systems generalize, reason, and represent knowledge internally. Researchers continue to study architectures, training methods, and evaluation benchmarks in order to better understand the capabilities and limitations of contemporary models. The quick brown fox jumps over the lazy dog. The history of artificial intelligence began in the mid twentieth century, when researchers started exploring how machines could simulate human reasoning and learning processes. Since then the field has expanded dramatically, encompassing machine learning, deep neural networks, natural language processing, computer vision, and robotics. Modern systems can now translate languages, recognize images, generate text, and even compose music with remarkable fluency. However, many open questions remain about how these systems generalize, reason, and represent knowledge internally. Researchers continue to study architectures, training methods, and evaluation benchmarks in order to better understand the capabilities and limitations of contemporary models. The quick brown fox jumps over the lazy dog. The history of artificial intelligence began in the mid twentieth century, when researchers started exploring how machines could simulate human reasoning and learning processes. Since then the field has expanded dramatically, encompassing machine learning, deep neural networks, natural language processing, computer vision, and robotics. Modern systems can now translate languages, recognize images, generate text, and even compose music with remarkable fluency. However, many open questions remain about how these systems generalize, reason, and represent knowledge internally. Researchers continue to study architectures, training methods, and evaluation benchmarks in order to better understand the capabilities and limitations of contemporary models.",
+          "-n",
+          "1",
+          "-no-cnv",
+          "-st",
+          "--simple-io",
+          "-t",
+          "1",
+          "--verbose"
+        ],
+        "returncode": 0,
+        "timed_out": false,
+        "error": null,
+        "primary_kernel_feature": {
+          "q4": "I8MM",
+          "q8": "I8MM"
+        },
+        "sme_enabled": false,
+        "sme_variant": null,
+        "sme_detail": null,
+        "buffer_type_fallback_seen": true,
+        "unsupported_tensor_types": [
+          "q6_K"
+        ],
+        "model_file_type": "Q4_0",
+        "system_info_line": "0.00.002.657 I cmn  common_param: system_info: n_threads = 1 (n_threads_batch = 1) / 4 | CPU : NEON = 1 | ARM_FMA = 1 | FP16_VA = 1 | MATMUL_INT8 = 1 | SVE = 1 | DOTPROD = 1 | SVE_CNT = 16 | OPENMP = 1 | KLEIDIAI = 1 | REPACK = 1 |",
+        "raw_kleidiai_lines": [
+          "0.00.002.657 I cmn  common_param: system_info: n_threads = 1 (n_threads_batch = 1) / 4 | CPU : NEON = 1 | ARM_FMA = 1 | FP16_VA = 1 | MATMUL_INT8 = 1 | SVE = 1 | DOTPROD = 1 | SVE_CNT = 16 | OPENMP = 1 | KLEIDIAI = 1 | REPACK = 1 | ",
+          "0.00.219.869 I kleidiai: primary q4 kernel feature I8MM",
+          "0.00.219.869 I kleidiai: primary q8 kernel feature I8MM",
+          "0.00.219.870 I kleidiai: no compatible f32 kernels found for CPU features mask 3",
+          "0.00.219.870 I kleidiai: SME disabled",
+          "0.00.223.036 D done_getting_tensors: tensor 'token_embd.weight' (q4_0) (and 142 others) cannot be used with preferred buffer type CPU_KLEIDIAI, using CPU instead",
+          "0.00.223.117 I load_tensors: CPU_KLEIDIAI model buffer size =     0.00 MiB",
+          "0.00.228.208 I common_memory_breakdown_print: |   - CPU_KLEIDIAI       |                  702 =   702 +       0 +       0                |",
+          "0.00.461.415 D done_getting_tensors: tensor 'token_embd.weight' (q4_0) (and 142 others) cannot be used with preferred buffer type CPU_KLEIDIAI, using CPU instead",
+          "0.00.491.033 I load_tensors: CPU_KLEIDIAI model buffer size =   702.86 MiB",
+          "0.01.155.533 W kleidiai: no kernel for tensor type q6_K, not accelerated by KleidiAI (kernels available for Q4_0 and Q8_0)",
+          "0.30.755.178 I common_memory_breakdown_print: |   - CPU_KLEIDIAI       |                  702 =   702 +       0 +       0                |"
+        ],
+        "wall_time_sec": 30.88813648200005
+      },
+      "l3": {
+        "debugger": "gdb",
+        "available": true,
+        "completed": true,
+        "timed_out": false,
+        "error": null,
+        "dispatch_regex": "^kai_run_matmul",
+        "wall_time_sec": 31.21,
+        "kernel_family_executed": "i8mm",
+        "hits_by_symbol": {
+          "kai_run_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod": 9,
+          "kai_run_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm": 772
+        },
+        "hits_by_family": {
+          "dotprod": 9,
+          "i8mm": 772
+        },
+        "total_hits": 781,
+        "breakpoints_requested": 10,
+        "breakpoints_created": 10
+      },
+      "advertised_family": "I8MM",
+      "verdict": "I8MM_HYBRID_DISPATCH"
+    },
+    {
+      "platform": "linux-aarch64",
+      "cpu_brand": "[unknown Linux CPU -- /proc/cpuinfo model name/Model not found]",
+      "isa_features": {
+        "sve": true,
+        "sve2": true,
+        "i8mm": true,
+        "bf16": true,
+        "asimddp": true,
+        "sme": false,
+        "sme2": false,
+        "sve_vector_length_bits": "[not measured -- requires prctl(PR_SVE_GET_VL); not queried by this script]"
+      },
+      "model": "/home/runner/work/_temp/adl-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf",
+      "quant": "Q4_0",
+      "threads": 2,
+      "workload": "prefill_long",
+      "workload_description": "long synthetic prompt (~380 words), 1 generated token -- exercises the prefill-time (large ne11) dispatch path",
+      "n_predict": 1,
+      "prompt_preview": "The quick brown fox jumps over the lazy dog. The history of ...",
+      "env": {
+        "requested_env_overrides": {},
+        "kleidiai_related_env": {
+          "GGML_KLEIDIAI_SME": null,
+          "GGML_TOTAL_THREADS": null,
+          "GGML_KLEIDIAI_CHUNK_MULTIPLIER": null,
+          "OMP_NUM_THREADS": null
+        }
+      },
+      "l1": {
+        "lib_path": "/home/runner/work/_temp/adl-cache/llama.cpp/build/bin/libggml-cpu.so",
+        "tool_chain": "elf",
+        "available": true,
+        "error": null,
+        "kai_symbol_count": 149,
+        "kai_run_matmul_symbol_count": 10,
+        "kai_symbols_by_family": {
+          "dotprod": 6,
+          "i8mm": 2,
+          "sve": 2
+        },
+        "isa_mnemonic_counts": {
+          "sve_z_register_operands": 26629,
+          "smmla": 610,
+          "sdot": 1473
+        }
+      },
+      "l2": {
+        "available": true,
+        "command": [
+          "/home/runner/work/_temp/adl-cache/llama.cpp/build/bin/llama-cli",
+          "-m",
+          "/home/runner/work/_temp/adl-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf",
+          "-p",
+          "The quick brown fox jumps over the lazy dog. The history of artificial intelligence began in the mid twentieth century, when researchers started exploring how machines could simulate human reasoning and learning processes. Since then the field has expanded dramatically, encompassing machine learning, deep neural networks, natural language processing, computer vision, and robotics. Modern systems can now translate languages, recognize images, generate text, and even compose music with remarkable fluency. However, many open questions remain about how these systems generalize, reason, and represent knowledge internally. Researchers continue to study architectures, training methods, and evaluation benchmarks in order to better understand the capabilities and limitations of contemporary models. The quick brown fox jumps over the lazy dog. The history of artificial intelligence began in the mid twentieth century, when researchers started exploring how machines could simulate human reasoning and learning processes. Since then the field has expanded dramatically, encompassing machine learning, deep neural networks, natural language processing, computer vision, and robotics. Modern systems can now translate languages, recognize images, generate text, and even compose music with remarkable fluency. However, many open questions remain about how these systems generalize, reason, and represent knowledge internally. Researchers continue to study architectures, training methods, and evaluation benchmarks in order to better understand the capabilities and limitations of contemporary models. The quick brown fox jumps over the lazy dog. The history of artificial intelligence began in the mid twentieth century, when researchers started exploring how machines could simulate human reasoning and learning processes. Since then the field has expanded dramatically, encompassing machine learning, deep neural networks, natural language processing, computer vision, and robotics. Modern systems can now translate languages, recognize images, generate text, and even compose music with remarkable fluency. However, many open questions remain about how these systems generalize, reason, and represent knowledge internally. Researchers continue to study architectures, training methods, and evaluation benchmarks in order to better understand the capabilities and limitations of contemporary models. The quick brown fox jumps over the lazy dog. The history of artificial intelligence began in the mid twentieth century, when researchers started exploring how machines could simulate human reasoning and learning processes. Since then the field has expanded dramatically, encompassing machine learning, deep neural networks, natural language processing, computer vision, and robotics. Modern systems can now translate languages, recognize images, generate text, and even compose music with remarkable fluency. However, many open questions remain about how these systems generalize, reason, and represent knowledge internally. Researchers continue to study architectures, training methods, and evaluation benchmarks in order to better understand the capabilities and limitations of contemporary models. The quick brown fox jumps over the lazy dog. The history of artificial intelligence began in the mid twentieth century, when researchers started exploring how machines could simulate human reasoning and learning processes. Since then the field has expanded dramatically, encompassing machine learning, deep neural networks, natural language processing, computer vision, and robotics. Modern systems can now translate languages, recognize images, generate text, and even compose music with remarkable fluency. However, many open questions remain about how these systems generalize, reason, and represent knowledge internally. Researchers continue to study architectures, training methods, and evaluation benchmarks in order to better understand the capabilities and limitations of contemporary models. The quick brown fox jumps over the lazy dog. The history of artificial intelligence began in the mid twentieth century, when researchers started exploring how machines could simulate human reasoning and learning processes. Since then the field has expanded dramatically, encompassing machine learning, deep neural networks, natural language processing, computer vision, and robotics. Modern systems can now translate languages, recognize images, generate text, and even compose music with remarkable fluency. However, many open questions remain about how these systems generalize, reason, and represent knowledge internally. Researchers continue to study architectures, training methods, and evaluation benchmarks in order to better understand the capabilities and limitations of contemporary models.",
+          "-n",
+          "1",
+          "-no-cnv",
+          "-st",
+          "--simple-io",
+          "-t",
+          "2",
+          "--verbose"
+        ],
+        "returncode": 0,
+        "timed_out": false,
+        "error": null,
+        "primary_kernel_feature": {
+          "q4": "I8MM",
+          "q8": "I8MM"
+        },
+        "sme_enabled": false,
+        "sme_variant": null,
+        "sme_detail": null,
+        "buffer_type_fallback_seen": true,
+        "unsupported_tensor_types": [
+          "q6_K"
+        ],
+        "model_file_type": "Q4_0",
+        "system_info_line": "0.00.002.706 I cmn  common_param: system_info: n_threads = 2 (n_threads_batch = 2) / 4 | CPU : NEON = 1 | ARM_FMA = 1 | FP16_VA = 1 | MATMUL_INT8 = 1 | SVE = 1 | DOTPROD = 1 | SVE_CNT = 16 | OPENMP = 1 | KLEIDIAI = 1 | REPACK = 1 |",
+        "raw_kleidiai_lines": [
+          "0.00.002.706 I cmn  common_param: system_info: n_threads = 2 (n_threads_batch = 2) / 4 | CPU : NEON = 1 | ARM_FMA = 1 | FP16_VA = 1 | MATMUL_INT8 = 1 | SVE = 1 | DOTPROD = 1 | SVE_CNT = 16 | OPENMP = 1 | KLEIDIAI = 1 | REPACK = 1 | ",
+          "0.00.228.625 I kleidiai: primary q4 kernel feature I8MM",
+          "0.00.228.625 I kleidiai: primary q8 kernel feature I8MM",
+          "0.00.228.625 I kleidiai: no compatible f32 kernels found for CPU features mask 3",
+          "0.00.228.626 I kleidiai: SME disabled",
+          "0.00.231.792 D done_getting_tensors: tensor 'token_embd.weight' (q4_0) (and 142 others) cannot be used with preferred buffer type CPU_KLEIDIAI, using CPU instead",
+          "0.00.231.881 I load_tensors: CPU_KLEIDIAI model buffer size =     0.00 MiB",
+          "0.00.237.206 I common_memory_breakdown_print: |   - CPU_KLEIDIAI       |                  702 =   702 +       0 +       0                |",
+          "0.00.483.280 D done_getting_tensors: tensor 'token_embd.weight' (q4_0) (and 142 others) cannot be used with preferred buffer type CPU_KLEIDIAI, using CPU instead",
+          "0.00.512.448 I load_tensors: CPU_KLEIDIAI model buffer size =   702.86 MiB",
+          "0.01.186.369 W kleidiai: no kernel for tensor type q6_K, not accelerated by KleidiAI (kernels available for Q4_0 and Q8_0)",
+          "0.17.517.618 I common_memory_breakdown_print: |   - CPU_KLEIDIAI       |                  702 =   702 +       0 +       0                |"
+        ],
+        "wall_time_sec": 17.648954576999927
+      },
+      "l3": {
+        "debugger": "gdb",
+        "available": true,
+        "completed": true,
+        "timed_out": false,
+        "error": null,
+        "dispatch_regex": "^kai_run_matmul",
+        "wall_time_sec": 18.55,
+        "kernel_family_executed": "i8mm",
+        "hits_by_symbol": {
+          "kai_run_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod": 72,
+          "kai_run_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm": 6176
+        },
+        "hits_by_family": {
+          "dotprod": 72,
+          "i8mm": 6176
+        },
+        "total_hits": 6248,
+        "breakpoints_requested": 10,
+        "breakpoints_created": 10
+      },
+      "advertised_family": "I8MM",
+      "verdict": "I8MM_HYBRID_DISPATCH"
+    },
+    {
+      "platform": "linux-aarch64",
+      "cpu_brand": "[unknown Linux CPU -- /proc/cpuinfo model name/Model not found]",
+      "isa_features": {
+        "sve": true,
+        "sve2": true,
+        "i8mm": true,
+        "bf16": true,
+        "asimddp": true,
+        "sme": false,
+        "sme2": false,
+        "sve_vector_length_bits": "[not measured -- requires prctl(PR_SVE_GET_VL); not queried by this script]"
+      },
+      "model": "/home/runner/work/_temp/adl-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf",
+      "quant": "Q4_0",
+      "threads": 4,
+      "workload": "prefill_long",
+      "workload_description": "long synthetic prompt (~380 words), 1 generated token -- exercises the prefill-time (large ne11) dispatch path",
+      "n_predict": 1,
+      "prompt_preview": "The quick brown fox jumps over the lazy dog. The history of ...",
+      "env": {
+        "requested_env_overrides": {},
+        "kleidiai_related_env": {
+          "GGML_KLEIDIAI_SME": null,
+          "GGML_TOTAL_THREADS": null,
+          "GGML_KLEIDIAI_CHUNK_MULTIPLIER": null,
+          "OMP_NUM_THREADS": null
+        }
+      },
+      "l1": {
+        "lib_path": "/home/runner/work/_temp/adl-cache/llama.cpp/build/bin/libggml-cpu.so",
+        "tool_chain": "elf",
+        "available": true,
+        "error": null,
+        "kai_symbol_count": 149,
+        "kai_run_matmul_symbol_count": 10,
+        "kai_symbols_by_family": {
+          "dotprod": 6,
+          "i8mm": 2,
+          "sve": 2
+        },
+        "isa_mnemonic_counts": {
+          "sve_z_register_operands": 26629,
+          "smmla": 610,
+          "sdot": 1473
+        }
+      },
+      "l2": {
+        "available": true,
+        "command": [
+          "/home/runner/work/_temp/adl-cache/llama.cpp/build/bin/llama-cli",
+          "-m",
+          "/home/runner/work/_temp/adl-cache/models/qwen2.5-1.5b-instruct-q4_0.gguf",
+          "-p",
+          "The quick brown fox jumps over the lazy dog. The history of artificial intelligence began in the mid twentieth century, when researchers started exploring how machines could simulate human reasoning and learning processes. Since then the field has expanded dramatically, encompassing machine learning, deep neural networks, natural language processing, computer vision, and robotics. Modern systems can now translate languages, recognize images, generate text, and even compose music with remarkable fluency. However, many open questions remain about how these systems generalize, reason, and represent knowledge internally. Researchers continue to study architectures, training methods, and evaluation benchmarks in order to better understand the capabilities and limitations of contemporary models. The quick brown fox jumps over the lazy dog. The history of artificial intelligence began in the mid twentieth century, when researchers started exploring how machines could simulate human reasoning and learning processes. Since then the field has expanded dramatically, encompassing machine learning, deep neural networks, natural language processing, computer vision, and robotics. Modern systems can now translate languages, recognize images, generate text, and even compose music with remarkable fluency. However, many open questions remain about how these systems generalize, reason, and represent knowledge internally. Researchers continue to study architectures, training methods, and evaluation benchmarks in order to better understand the capabilities and limitations of contemporary models. The quick brown fox jumps over the lazy dog. The history of artificial intelligence began in the mid twentieth century, when researchers started exploring how machines could simulate human reasoning and learning processes. Since then the field has expanded dramatically, encompassing machine learning, deep neural networks, natural language processing, computer vision, and robotics. Modern systems can now translate languages, recognize images, generate text, and even compose music with remarkable fluency. However, many open questions remain about how these systems generalize, reason, and represent knowledge internally. Researchers continue to study architectures, training methods, and evaluation benchmarks in order to better understand the capabilities and limitations of contemporary models. The quick brown fox jumps over the lazy dog. The history of artificial intelligence began in the mid twentieth century, when researchers started exploring how machines could simulate human reasoning and learning processes. Since then the field has expanded dramatically, encompassing machine learning, deep neural networks, natural language processing, computer vision, and robotics. Modern systems can now translate languages, recognize images, generate text, and even compose music with remarkable fluency. However, many open questions remain about how these systems generalize, reason, and represent knowledge internally. Researchers continue to study architectures, training methods, and evaluation benchmarks in order to better understand the capabilities and limitations of contemporary models. The quick brown fox jumps over the lazy dog. The history of artificial intelligence began in the mid twentieth century, when researchers started exploring how machines could simulate human reasoning and learning processes. Since then the field has expanded dramatically, encompassing machine learning, deep neural networks, natural language processing, computer vision, and robotics. Modern systems can now translate languages, recognize images, generate text, and even compose music with remarkable fluency. However, many open questions remain about how these systems generalize, reason, and represent knowledge internally. Researchers continue to study architectures, training methods, and evaluation benchmarks in order to better understand the capabilities and limitations of contemporary models. The quick brown fox jumps over the lazy dog. The history of artificial intelligence began in the mid twentieth century, when researchers started exploring how machines could simulate human reasoning and learning processes. Since then the field has expanded dramatically, encompassing machine learning, deep neural networks, natural language processing, computer vision, and robotics. Modern systems can now translate languages, recognize images, generate text, and even compose music with remarkable fluency. However, many open questions remain about how these systems generalize, reason, and represent knowledge internally. Researchers continue to study architectures, training methods, and evaluation benchmarks in order to better understand the capabilities and limitations of contemporary models.",
+          "-n",
+          "1",
+          "-no-cnv",
+          "-st",
+          "--simple-io",
+          "-t",
+          "4",
+          "--verbose"
+        ],
+        "returncode": 0,
+        "timed_out": false,
+        "error": null,
+        "primary_kernel_feature": {
+          "q4": "I8MM",
+          "q8": "I8MM"
+        },
+        "sme_enabled": false,
+        "sme_variant": null,
+        "sme_detail": null,
+        "buffer_type_fallback_seen": true,
+        "unsupported_tensor_types": [
+          "q6_K"
+        ],
+        "model_file_type": "Q4_0",
+        "system_info_line": "0.00.002.638 I cmn  common_param: system_info: n_threads = 4 (n_threads_batch = 4) / 4 | CPU : NEON = 1 | ARM_FMA = 1 | FP16_VA = 1 | MATMUL_INT8 = 1 | SVE = 1 | DOTPROD = 1 | SVE_CNT = 16 | OPENMP = 1 | KLEIDIAI = 1 | REPACK = 1 |",
+        "raw_kleidiai_lines": [
+          "0.00.002.638 I cmn  common_param: system_info: n_threads = 4 (n_threads_batch = 4) / 4 | CPU : NEON = 1 | ARM_FMA = 1 | FP16_VA = 1 | MATMUL_INT8 = 1 | SVE = 1 | DOTPROD = 1 | SVE_CNT = 16 | OPENMP = 1 | KLEIDIAI = 1 | REPACK = 1 | ",
+          "0.00.250.679 I kleidiai: primary q4 kernel feature I8MM",
+          "0.00.250.679 I kleidiai: primary q8 kernel feature I8MM",
+          "0.00.250.680 I kleidiai: no compatible f32 kernels found for CPU features mask 3",
+          "0.00.250.680 I kleidiai: SME disabled",
+          "0.00.253.810 D done_getting_tensors: tensor 'token_embd.weight' (q4_0) (and 142 others) cannot be used with preferred buffer type CPU_KLEIDIAI, using CPU instead",
+          "0.00.253.895 I load_tensors: CPU_KLEIDIAI model buffer size =     0.00 MiB",
+          "0.00.259.301 I common_memory_breakdown_print: |   - CPU_KLEIDIAI       |                  702 =   702 +       0 +       0                |",
+          "0.00.537.089 D done_getting_tensors: tensor 'token_embd.weight' (q4_0) (and 142 others) cannot be used with preferred buffer type CPU_KLEIDIAI, using CPU instead",
+          "0.00.566.003 I load_tensors: CPU_KLEIDIAI model buffer size =   702.86 MiB",
+          "0.01.245.032 W kleidiai: no kernel for tensor type q6_K, not accelerated by KleidiAI (kernels available for Q4_0 and Q8_0)",
+          "0.09.910.705 I common_memory_breakdown_print: |   - CPU_KLEIDIAI       |                  702 =   702 +       0 +       0                |"
+        ],
+        "wall_time_sec": 10.046574603999943
+      },
+      "l3": {
+        "debugger": "gdb",
+        "available": true,
+        "completed": true,
+        "timed_out": false,
+        "error": null,
+        "dispatch_regex": "^kai_run_matmul",
+        "wall_time_sec": 12.18,
+        "kernel_family_executed": "i8mm",
+        "hits_by_symbol": {
+          "kai_run_matmul_clamp_f32_qsi8d32p1x8_qsi4c32p4x8_1x4x32_neon_dotprod": 144,
+          "kai_run_matmul_clamp_f32_qsi8d32p4x8_qsi4c32p4x8_16x4_neon_i8mm": 12352
+        },
+        "hits_by_family": {
+          "dotprod": 144,
+          "i8mm": 12352
+        },
+        "total_hits": 12496,
+        "breakpoints_requested": 10,
+        "breakpoints_created": 10
+      },
+      "advertised_family": "I8MM",
+      "verdict": "I8MM_HYBRID_DISPATCH"
+    }
+  ]
+}

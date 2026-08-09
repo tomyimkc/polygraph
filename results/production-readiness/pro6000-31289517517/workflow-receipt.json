@@ -1,0 +1,17 @@
+{
+  "workflow": "skill-lift-pro6000",
+  "runId": "31289517517",
+  "runAttempt": "1",
+  "status": "success",
+  "mode": "polygraph-production",
+  "model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "tasks": "enterprise-information-search",
+  "trials": 1,
+  "concurrency": 4,
+  "skillsbenchSha": "9a1f4dd5f7659f75707435da3ce854b6e48321d1",
+  "modelRevision": "0d7cf23991f47feeb3a57ecb4c9cee8ea4a17bfe",
+  "candidateOnly": true,
+  "canClaimAGI": false,
+  "registeredResult": false,
+  "boundary": "Local public-corpus development receipt only. Not a contest result, not a promotion decision, and not evidence for an AGI claim."
+}

@@ -1,0 +1,99 @@
+{
+  "actualProductionTraffic": false,
+  "artifacts": [
+    {
+      "created_at": "2026-08-09T04:40:35Z",
+      "expired": false,
+      "expires_at": "2026-09-08T04:40:35Z",
+      "id": 9032667143,
+      "name": "polygraph-arm64-server-readiness-31294460364-1",
+      "size_in_bytes": 197418
+    },
+    {
+      "created_at": "2026-08-09T04:31:30Z",
+      "expired": false,
+      "expires_at": "2026-09-08T04:31:29Z",
+      "id": 9032561449,
+      "name": "polygraph-results-free-arm64-qwen2.5-1.5b-q4_0",
+      "size_in_bytes": 18577
+    },
+    {
+      "created_at": "2026-08-09T04:29:09Z",
+      "expired": false,
+      "expires_at": "2026-09-08T04:29:08Z",
+      "id": 9032533218,
+      "name": "polygraph-results-free-arm64-qwen2.5-0.5b-q8_0",
+      "size_in_bytes": 18485
+    },
+    {
+      "created_at": "2026-08-09T04:27:55Z",
+      "expired": false,
+      "expires_at": "2026-09-08T04:27:55Z",
+      "id": 9032519284,
+      "name": "polygraph-results-free-arm64-qwen2.5-0.5b-q4_0",
+      "size_in_bytes": 18482
+    }
+  ],
+  "candidateOnly": true,
+  "conclusion": "success",
+  "createdAt": "2026-08-09T04:23:30Z",
+  "event": "workflow_dispatch",
+  "headSha": "97f1c210dc0e3435d04f8082a362e291d409a261",
+  "jobs": [
+    {
+      "completedAt": "2026-08-09T04:23:40Z",
+      "conclusion": "success",
+      "databaseId": 93197146647,
+      "name": "Discover model matrix (scripts/models.txt)",
+      "startedAt": "2026-08-09T04:23:34Z",
+      "status": "completed",
+      "url": "https://github.com/tomyimkc/polygraph/actions/runs/31294460364/job/93197146647"
+    },
+    {
+      "completedAt": "2026-08-09T04:40:45Z",
+      "conclusion": "success",
+      "databaseId": 93197159620,
+      "name": "Production-readiness evidence (Arm64, 1.5B Q4_0)",
+      "startedAt": "2026-08-09T04:23:42Z",
+      "status": "completed",
+      "url": "https://github.com/tomyimkc/polygraph/actions/runs/31294460364/job/93197159620"
+    },
+    {
+      "completedAt": "2026-08-09T04:27:58Z",
+      "conclusion": "success",
+      "databaseId": 93197159636,
+      "name": "Build, verify dispatch, bench (Neoverse-N2, free hosted) [qwen2.5-0.5b-q4_0]",
+      "startedAt": "2026-08-09T04:23:42Z",
+      "status": "completed",
+      "url": "https://github.com/tomyimkc/polygraph/actions/runs/31294460364/job/93197159636"
+    },
+    {
+      "completedAt": "2026-08-09T04:31:34Z",
+      "conclusion": "success",
+      "databaseId": 93197159639,
+      "name": "Build, verify dispatch, bench (Neoverse-N2, free hosted) [qwen2.5-1.5b-q4_0]",
+      "startedAt": "2026-08-09T04:23:43Z",
+      "status": "completed",
+      "url": "https://github.com/tomyimkc/polygraph/actions/runs/31294460364/job/93197159639"
+    },
+    {
+      "completedAt": "2026-08-09T04:29:13Z",
+      "conclusion": "success",
+      "databaseId": 93197159642,
+      "name": "Build, verify dispatch, bench (Neoverse-N2, free hosted) [qwen2.5-0.5b-q8_0]",
+      "startedAt": "2026-08-09T04:23:43Z",
+      "status": "completed",
+      "url": "https://github.com/tomyimkc/polygraph/actions/runs/31294460364/job/93197159642"
+    }
+  ],
+  "productionReady": false,
+  "repository": "tomyimkc/polygraph",
+  "runAttempt": 1,
+  "runId": 31294460364,
+  "schema": "polygraph.github-actions-receipt.v1",
+  "startedAt": "2026-08-09T04:23:30Z",
+  "status": "completed",
+  "updatedAt": "2026-08-09T04:40:46Z",
+  "url": "https://github.com/tomyimkc/polygraph/actions/runs/31294460364",
+  "workflow": "verify-free-arm64.yml"
+}

@@ -366,3 +366,178 @@ jobs:
             !results/bench/*apple*
           if-no-files-found: error
           retention-days: 30
+
+  server-readiness:
+    name: "Production-readiness evidence (Arm64, 1.5B Q4_0)"
+    # This is intentionally manual-only. Push/PR verification remains the fast
+    # three-model dispatch matrix above; a readiness campaign is longer and is
+    # evidence collection, not a routine merge gate.
+    if: github.event_name == 'workflow_dispatch'
+    needs: discover-models
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    env:
+      READINESS_MODEL_ID: qwen2.5-1.5b-q4_0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake build-essential curl python3 gdb ca-certificates
+
+      - name: Resolve cache, model, and output paths
+        id: vars
+        run: |
+          export CACHE_DIR="${RUNNER_TEMP}/polygraph-readiness-cache"
+          echo "CACHE_DIR=$CACHE_DIR" >>"$GITHUB_ENV"
+          source scripts/common.sh
+          echo "llama_cpp_ref=${LLAMA_CPP_REF}" >>"$GITHUB_OUTPUT"
+
+          entry="$(awk -F'|' -v want="$READINESS_MODEL_ID" '
+              /^[[:space:]]*#/ { next }
+              /^[[:space:]]*$/ { next }
+              {
+                id = $1
+                gsub(/^[ \t]+|[ \t]+$/, "", id)
+                if (id == want) { print $2 "|" $3 "|" $4; found = 1; exit }
+              }
+              END { if (!found) exit 1 }
+            ' scripts/models.txt)"
+          if [[ -z "$entry" ]]; then
+            echo "::error::model id '$READINESS_MODEL_ID' not found" >&2
+            exit 1
+          fi
+          IFS='|' read -r model_repo model_file model_sha <<<"$entry"
+          {
+            echo "HF_REPO=$model_repo"
+            echo "HF_FILE=$model_file"
+            echo "HF_FILE_SHA256=$model_sha"
+            echo "MODEL_PATH=${RUNNER_TEMP}/polygraph-readiness-cache/models/$model_file"
+            echo "READINESS_OUT=${RUNNER_TEMP}/polygraph-readiness-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          } >>"$GITHUB_ENV"
+          echo "model_sha=$model_sha" >>"$GITHUB_OUTPUT"
+
+      - name: Cache pinned llama.cpp build
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/polygraph-readiness-cache/llama.cpp
+          key: polygraph-readiness-llamacpp-${{ runner.os }}-${{ runner.arch }}-${{ steps.vars.outputs.llama_cpp_ref }}-v1
+
+      - name: Cache pinned 1.5B model
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/polygraph-readiness-cache/models
+          key: polygraph-readiness-model-${{ env.READINESS_MODEL_ID }}-${{ steps.vars.outputs.model_sha }}-v1
+
+      - name: Build pinned llama.cpp clients and server
+        run: |
+          bash scripts/lib/build_llamacpp.sh
+          bash scripts/lib/build_llama_server.sh
+
+      - name: Download and verify pinned model
+        run: bash scripts/lib/fetch_model.sh
+
+      - name: Run Arm64 server-readiness campaign
+        run: |
+          source scripts/common.sh
+          python3 tools/server_readiness.py \
+            --server "$LLAMA_SERVER" \
+            --model "$MODEL_PATH" \
+            --out-dir "$READINESS_OUT" \
+            --threads "$(nproc)" \
+            --threads-batch "$(nproc)" \
+            --server-parallel 4 \
+            --capacity-concurrencies 1,2,4 \
+            --capacity-seconds 30 \
+            --soak-concurrency 4 \
+            --soak-seconds 600 \
+            --warmup-requests-per-worker 1 \
+            --restart-cycles 2 \
+            --max-tokens 24 \
+            --request-timeout 60 \
+            --ready-timeout 120 \
+            --min-measured-requests 50 \
+            --max-error-rate 0 \
+            --max-ttft-p99-ms 5000 \
+            --max-e2e-p99-ms 30000 \
+            --max-recovery-seconds 120 \
+            --max-rss-mib 8192
+
+      - name: Validate evidence boundary
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          out = Path(os.environ["READINESS_OUT"])
+          summary_path = out / "summary.json"
+          if not summary_path.is_file():
+              raise SystemExit("server-readiness summary missing")
+          summary = json.loads(summary_path.read_text())
+          assert summary["schema"] == "polygraph.server-readiness.v1"
+          assert summary["actualProductionTraffic"] is False
+          assert summary["productionReady"] is False
+          assert summary["candidateOnly"] is True
+          assert summary["hardware"]["machine"] in {"aarch64", "arm64"}
+          assert (out / "measured-requests.jsonl").is_file()
+          assert (out / "telemetry.csv").is_file()
+          assert (out / "sha256sums.txt").is_file()
+          print(
+              "POLYGRAPH_ARM_READINESS_BOUNDARY_OK",
+              summary["gate"]["verdict"],
+              summary["totals"]["measuredRequests"],
+          )
+          PY
+
+      - name: Write readiness summary
+        if: always()
+        run: |
+          if [[ -f "$READINESS_OUT/summary.json" ]]; then
+            python3 - <<'PY' >>"$GITHUB_STEP_SUMMARY"
+          import json
+          import os
+          from pathlib import Path
+
+          s = json.loads((Path(os.environ["READINESS_OUT"]) / "summary.json").read_text())
+          print("## Polygraph Arm64 production-readiness evidence")
+          print()
+          print(f"- Gate: **{s['gate']['verdict']}**")
+          print(f"- Hardware: `{s['hardware']['machine']}` / `{s['hardware'].get('cpuModel')}`")
+          print(f"- Measured requests: **{s['totals']['measuredRequests']}**")
+          print(f"- Measured failures: **{s['totals']['measuredFailures']}**")
+          print(f"- Cold readiness: **{s['server']['coldReadySeconds']:.2f}s**")
+          print()
+          print("| phase | concurrency | requests | errors | req/s | output tok/s | TTFT p99 | E2E p99 |")
+          print("|---|---:|---:|---:|---:|---:|---:|---:|")
+          for row in s["results"]:
+              print(
+                  f"| {row['phase']} | {row['concurrency']} | {row['requests']} | "
+                  f"{row['errors']} | {row['requestsPerSecond']:.3f} | "
+                  f"{row['outputTokensPerSecond']:.2f} | "
+                  f"{row['ttftP99Ms']:.2f} ms | {row['e2eP99Ms']:.2f} ms |"
+              )
+          print()
+          print(
+              "_Boundary: synthetic single-host Arm64 evidence; "
+              "actualProductionTraffic=false and productionReady=false._"
+          )
+          PY
+          else
+            echo "No readiness summary was produced." >>"$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload complete readiness evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: polygraph-arm64-server-readiness-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.READINESS_OUT }}
+          if-no-files-found: error
+          retention-days: 30
