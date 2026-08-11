@@ -1214,7 +1214,18 @@ def _readiness_args(
     profile: dict[str, Any],
     slo: dict[str, Any],
     soak_seconds: float,
+    server_thread_policy: str,
 ) -> list[str]:
+    if server_thread_policy == "explicit-host-count":
+        threads = str(max(1, os.cpu_count() or 1))
+        threads_batch = threads
+    elif server_thread_policy == "binary-default":
+        threads = "binary-default"
+        threads_batch = "binary-default"
+    else:
+        raise ConfigurationError(
+            f"unknown server thread policy: {server_thread_policy}"
+        )
     return [
         "--server",
         str(server),
@@ -1227,9 +1238,9 @@ def _readiness_args(
         "--port",
         str(port),
         "--threads",
-        str(max(1, os.cpu_count() or 1)),
+        threads,
         "--threads-batch",
-        str(max(1, os.cpu_count() or 1)),
+        threads_batch,
         "--server-parallel",
         str(
             max(
@@ -1280,6 +1291,7 @@ def run_readiness_measurement(
     profile: dict[str, Any],
     slo: dict[str, Any],
     soak_seconds: float,
+    server_thread_policy: str,
     artifact_guard: ArtifactDriftGuard,
 ) -> dict[str, Any]:
     readiness_out = out_dir / "readiness"
@@ -1292,6 +1304,7 @@ def run_readiness_measurement(
         profile=profile,
         slo=slo,
         soak_seconds=soak_seconds,
+        server_thread_policy=server_thread_policy,
     )
     stdout_path = out_dir / "server-readiness.stdout.json"
     stdout_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1352,6 +1365,7 @@ def run_readiness_measurement(
             "soakSeconds": soak_seconds,
             "soakConcurrency": profile["soakConcurrency"],
             "restartCycles": profile["readinessRestartCycles"],
+            "serverThreadPolicy": server_thread_policy,
         },
         "summaryPath": "readiness/summary.json",
         "summary": summary,
@@ -1372,17 +1386,28 @@ def run_replay_measurement(
     slo: dict[str, Any],
     traffic: dict[str, Any],
     trace: Sequence[TrafficItem],
+    server_thread_policy: str,
     artifact_guard: ArtifactDriftGuard,
 ) -> dict[str, Any]:
     replay_dir = out_dir / "replay"
     replay_dir.mkdir(parents=True, exist_ok=True)
+    if server_thread_policy == "explicit-host-count":
+        threads: int | None = max(1, os.cpu_count() or 1)
+        threads_batch: int | None = threads
+    elif server_thread_policy == "binary-default":
+        threads = None
+        threads_batch = None
+    else:
+        raise ConfigurationError(
+            f"unknown server thread policy: {server_thread_policy}"
+        )
     controller = readiness.ServerController(
         server=server,
         model=model,
         host=host,
         port=port,
-        threads=max(1, os.cpu_count() or 1),
-        threads_batch=max(1, os.cpu_count() or 1),
+        threads=threads,
+        threads_batch=threads_batch,
         parallel=max(1, int(profile["soakConcurrency"])),
         context_size=2048,
         ready_timeout=float(profile["readyTimeoutSeconds"]),
@@ -1580,6 +1605,46 @@ class ArtifactDriftGuard:
         }
 
 
+def readiness_measurement_is_valid(summary: dict[str, Any]) -> bool:
+    """Separate baseline measurement integrity from baseline SLO success.
+
+    A candidate is allowed to repair an absolute latency, recovery, or error
+    SLO that the baseline misses. The baseline still has to prove that the Arm
+    workload ran, produced accountable non-empty output, restarted, and
+    yielded process-memory telemetry; otherwise the comparison is
+    undetermined rather than a candidate win.
+    """
+
+    checks = {
+        row.get("name"): row.get("passed")
+        for row in summary.get("gate", {}).get("checks", [])
+        if isinstance(row, dict)
+    }
+    required = {
+        "arm64-architecture",
+        "minimum-measured-requests",
+        "usage-accounting",
+        "non-empty-output",
+        "restart-success",
+        "server-rss",
+    }
+    return all(checks.get(name) is True for name in required)
+
+
+def arm_execution_order(policy: str, repetition: int) -> tuple[str, str]:
+    if repetition <= 0:
+        raise ConfigurationError("repetition must be positive")
+    if policy == "baseline-first":
+        return ("baseline", "candidate")
+    if policy == "alternating":
+        return (
+            ("baseline", "candidate")
+            if repetition % 2 == 1
+            else ("candidate", "baseline")
+        )
+    raise ConfigurationError(f"unknown arm order policy: {policy}")
+
+
 def aggregate_arm(
     label: str, runs: Sequence[dict[str, Any]], repetitions: int
 ) -> dict[str, Any]:
@@ -1651,6 +1716,11 @@ def aggregate_arm(
         "completedRuns": len(runs),
         "expectedRuns": repetitions,
         "readinessSummaries": len(readiness_summaries),
+        "readinessMeasurementValidRuns": sum(
+            1
+            for summary in readiness_summaries
+            if readiness_measurement_is_valid(summary)
+        ),
         "readinessGatePasses": sum(
             1
             for summary in readiness_summaries
@@ -1762,9 +1832,9 @@ def compare_candidate(
             repetitions,
         ),
         _check(
-            "baseline-readiness-gates",
-            baseline["readinessGatePasses"] == repetitions,
-            baseline["readinessGatePasses"],
+            "baseline-readiness-measurements-valid",
+            baseline["readinessMeasurementValidRuns"] == repetitions,
+            baseline["readinessMeasurementValidRuns"],
             repetitions,
         ),
         _check(
@@ -1832,7 +1902,7 @@ def compare_candidate(
     )
     baseline_valid = (
         baseline["completedRuns"] == repetitions
-        and baseline["readinessGatePasses"] == repetitions
+        and baseline["readinessMeasurementValidRuns"] == repetitions
         and baseline["replayGatePasses"] == repetitions
         and not baseline["infrastructureErrors"]
     )
@@ -1861,8 +1931,11 @@ def compare_candidate(
         "deploymentAuthorized": False,
         "boundary": (
             "KEEP_CANDIDATE means only that this synthetic candidate gate did "
-            "not regress against its paired baseline. It is not deployment "
-            "authorization or evidence of production readiness."
+            "not regress against its paired baseline. A baseline may miss an "
+            "absolute SLO while remaining a valid measured comparator; the "
+            "candidate must still pass its own readiness and replay gates. "
+            "This is not deployment authorization or evidence of production "
+            "readiness."
         ),
         **CLAIM_FLAGS,
     }
@@ -1879,6 +1952,13 @@ def run_campaign(args: argparse.Namespace) -> int:
     try:
         if args.shard_id <= 0:
             raise ConfigurationError("shard id must be positive")
+        if args.server_thread_policy not in {
+            "explicit-host-count",
+            "binary-default",
+        }:
+            raise ConfigurationError(
+                f"unknown server thread policy: {args.server_thread_policy}"
+            )
         reviewed_llama_sha = validate_reviewed_llama_sha(args.llama_cpp_sha)
         resolved_llama_sha = validate_reviewed_llama_sha(
             args.resolved_llama_cpp_sha
@@ -2055,10 +2135,14 @@ def run_campaign(args: argparse.Namespace) -> int:
             },
         )
 
-        for arm_name, server, model in (
-            ("baseline", baseline_server, baseline_model),
-            ("candidate", candidate_server, candidate_model),
+        arm_specs = {
+            "baseline": (baseline_server, baseline_model),
+            "candidate": (candidate_server, candidate_model),
+        }
+        for execution_position, arm_name in enumerate(
+            arm_execution_order(args.arm_order_policy, repetition), start=1
         ):
+            server, model = arm_specs[arm_name]
             arm_dir = round_dir / arm_name
             artifact_guard = ArtifactDriftGuard(
                 server=server,
@@ -2076,6 +2160,7 @@ def run_campaign(args: argparse.Namespace) -> int:
                 profile=config["profile"],
                 slo=config["slo"],
                 soak_seconds=soak_per_arm_run,
+                server_thread_policy=args.server_thread_policy,
                 artifact_guard=artifact_guard,
             )
             replay_receipt = run_replay_measurement(
@@ -2088,6 +2173,7 @@ def run_campaign(args: argparse.Namespace) -> int:
                 slo=config["slo"],
                 traffic=config["syntheticTraffic"],
                 trace=trace,
+                server_thread_policy=args.server_thread_policy,
                 artifact_guard=artifact_guard,
             )
             artifact_guard.snapshot(f"{arm_name}-arm:after", fail=False)
@@ -2099,6 +2185,7 @@ def run_campaign(args: argparse.Namespace) -> int:
                     else args.candidate_label
                 ),
                 "repetition": repetition,
+                "executionPosition": execution_position,
                 "soakSeconds": soak_per_arm_run,
                 "traceDigest": digest,
                 "modelIdentity": model_identity,
@@ -2133,6 +2220,8 @@ def run_campaign(args: argparse.Namespace) -> int:
             "soakSecondsPerArmRun": soak_per_arm_run,
             "longestContinuousSoakSegmentSeconds": soak_per_arm_run,
             "aggregateMeasuredSoakSeconds": total_soak_seconds,
+            "serverThreadPolicy": args.server_thread_policy,
+            "armOrderPolicy": args.arm_order_policy,
             "trafficSource": "deterministic-generated-synthetic-only",
             "faultInjection": [
                 "controlled-process-restart",
@@ -2273,6 +2362,22 @@ def validate_full_receipt(
             and not isinstance(aggregate, bool)
             and float(aggregate) > 0,
             "aggregate soak must be positive",
+        )
+        # Receipts created before the binary-default differential mode landed
+        # omitted this additive field and always used the historical explicit
+        # host-count behavior. Keep those immutable receipts verifiable while
+        # requiring any newly stated value to be one of the two real policies.
+        server_thread_policy = campaign.get(
+            "serverThreadPolicy", "explicit-host-count"
+        )
+        require(
+            server_thread_policy in {"explicit-host-count", "binary-default"},
+            "campaign serverThreadPolicy is invalid",
+        )
+        arm_order_policy = campaign.get("armOrderPolicy", "baseline-first")
+        require(
+            arm_order_policy in {"baseline-first", "alternating"},
+            "campaign armOrderPolicy is invalid",
         )
         if (
             isinstance(repetitions, int)
@@ -2648,6 +2753,25 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--shard-id", type=int, default=1)
     run.add_argument("--repetitions", type=int)
     run.add_argument("--soak-seconds-total", type=float)
+    run.add_argument(
+        "--server-thread-policy",
+        choices=("explicit-host-count", "binary-default"),
+        default="explicit-host-count",
+        help=(
+            "explicit-host-count preserves the historical campaign behavior; "
+            "binary-default omits -t/-tb so distinct binaries can be compared "
+            "under their real no-flags thread defaults"
+        ),
+    )
+    run.add_argument(
+        "--arm-order-policy",
+        choices=("baseline-first", "alternating"),
+        default="baseline-first",
+        help=(
+            "baseline-first preserves historical execution order; alternating "
+            "uses AB/BA rounds to reduce monotonic host-load and thermal bias"
+        ),
+    )
     run.set_defaults(func=run_campaign)
 
     verify = subparsers.add_parser(

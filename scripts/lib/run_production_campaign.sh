@@ -21,6 +21,8 @@
 #   PRODUCTION_RESOLVED_LLAMA_CPP_SHA resolved build checkout commit
 #   PRODUCTION_HOSTED_WORKFLOW set to 1 only in the main-branch hosted lane
 #   PRODUCTION_HOST / PRODUCTION_PORT
+#   PRODUCTION_SERVER_THREAD_POLICY explicit-host-count (default) or binary-default
+#   PRODUCTION_ARM_ORDER_POLICY baseline-first (default) or alternating
 #   BASELINE_LABEL / CANDIDATE_LABEL
 set -euo pipefail
 
@@ -40,6 +42,8 @@ REPO_ROOT="$(cd "$LIB_DIR/../.." && pwd)"
 : "${PRODUCTION_SHARD_ID:=1}"
 : "${PRODUCTION_HOST:=127.0.0.1}"
 : "${PRODUCTION_PORT:=18081}"
+: "${PRODUCTION_SERVER_THREAD_POLICY:=explicit-host-count}"
+: "${PRODUCTION_ARM_ORDER_POLICY:=baseline-first}"
 : "${BASELINE_LABEL:=baseline}"
 : "${CANDIDATE_LABEL:=candidate}"
 
@@ -73,6 +77,12 @@ fail() {
     || fail "resolved llama.cpp SHA does not match the reviewed commit"
 [[ "$PRODUCTION_HOSTED_WORKFLOW" == "0" || "$PRODUCTION_HOSTED_WORKFLOW" == "1" ]] \
     || fail "PRODUCTION_HOSTED_WORKFLOW must be 0 or 1"
+[[ "$PRODUCTION_SERVER_THREAD_POLICY" == "explicit-host-count" \
+    || "$PRODUCTION_SERVER_THREAD_POLICY" == "binary-default" ]] \
+    || fail "PRODUCTION_SERVER_THREAD_POLICY must be explicit-host-count or binary-default"
+[[ "$PRODUCTION_ARM_ORDER_POLICY" == "baseline-first" \
+    || "$PRODUCTION_ARM_ORDER_POLICY" == "alternating" ]] \
+    || fail "PRODUCTION_ARM_ORDER_POLICY must be baseline-first or alternating"
 
 command=(
     python3 "$REPO_ROOT/tools/production_campaign.py" run
@@ -95,6 +105,8 @@ command=(
     --host "$PRODUCTION_HOST"
     --port "$PRODUCTION_PORT"
     --shard-id "$PRODUCTION_SHARD_ID"
+    --server-thread-policy "$PRODUCTION_SERVER_THREAD_POLICY"
+    --arm-order-policy "$PRODUCTION_ARM_ORDER_POLICY"
 )
 
 if [[ "$PRODUCTION_HOSTED_WORKFLOW" == "1" ]]; then

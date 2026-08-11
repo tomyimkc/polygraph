@@ -63,6 +63,7 @@ def _arm(
     ttft=100.0,
     e2e=500.0,
     error_rate=0.0,
+    measurement_valid_runs=1,
     readiness_passes=1,
     replay_passes=1,
     infrastructure_errors=None,
@@ -70,6 +71,7 @@ def _arm(
     return {
         "completedRuns": 1,
         "readinessSummaries": 1,
+        "readinessMeasurementValidRuns": measurement_valid_runs,
         "readinessGatePasses": readiness_passes,
         "replayGatePasses": replay_passes,
         "measuredErrorRate": error_rate,
@@ -171,6 +173,22 @@ class TestConfiguration(unittest.TestCase):
                         "ConfigurationError",
                         receipt["gate"]["infrastructureError"],
                     )
+
+    def test_arm_execution_order_supports_ab_ba_rounds(self):
+        self.assertEqual(
+            pc.arm_execution_order("alternating", 1),
+            ("baseline", "candidate"),
+        )
+        self.assertEqual(
+            pc.arm_execution_order("alternating", 2),
+            ("candidate", "baseline"),
+        )
+        self.assertEqual(
+            pc.arm_execution_order("baseline-first", 2),
+            ("baseline", "candidate"),
+        )
+        with self.assertRaises(pc.ConfigurationError):
+            pc.arm_execution_order("unknown", 1)
 
 
 class TestModelManifest(unittest.TestCase):
@@ -641,7 +659,7 @@ class TestRollbackVerdict(unittest.TestCase):
 
     def test_invalid_baseline_holds_undetermined(self):
         comparison = pc.compare_candidate(
-            _arm(readiness_passes=0),
+            _arm(readiness_passes=0, measurement_valid_runs=0),
             _arm(),
             repetitions=1,
             configured_total_soak_seconds=8,
@@ -650,6 +668,43 @@ class TestRollbackVerdict(unittest.TestCase):
         )
         self.assertEqual(comparison["rollbackVerdict"], "HOLD_UNDETERMINED")
         self.assertEqual(comparison["gateVerdict"], "UNDETERMINED")
+
+    def test_candidate_can_repair_a_validly_measured_baseline_slo_miss(self):
+        comparison = pc.compare_candidate(
+            _arm(readiness_passes=0, measurement_valid_runs=1),
+            _arm(),
+            repetitions=1,
+            configured_total_soak_seconds=8,
+            slo=_config()["slo"],
+            same_artifact_control=False,
+        )
+        self.assertEqual(comparison["rollbackVerdict"], "KEEP_CANDIDATE")
+        self.assertEqual(comparison["gateVerdict"], "PASS")
+        checks = {row["name"]: row for row in comparison["checks"]}
+        self.assertTrue(checks["baseline-readiness-measurements-valid"]["passed"])
+
+
+class TestReadinessMeasurementValidity(unittest.TestCase):
+    def test_only_integrity_checks_bind_baseline_measurement_validity(self):
+        checks = [
+            {"name": name, "passed": True}
+            for name in (
+                "arm64-architecture",
+                "minimum-measured-requests",
+                "usage-accounting",
+                "non-empty-output",
+                "restart-success",
+                "server-rss",
+            )
+        ]
+        checks.append({"name": "soak-e2e-p99", "passed": False})
+        self.assertTrue(
+            pc.readiness_measurement_is_valid({"gate": {"checks": checks}})
+        )
+        checks[0]["passed"] = False
+        self.assertFalse(
+            pc.readiness_measurement_is_valid({"gate": {"checks": checks}})
+        )
 
 
 class TestReceipts(unittest.TestCase):
@@ -775,6 +830,7 @@ class TestReceipts(unittest.TestCase):
                     profile=_config()["profile"],
                     slo=_config()["slo"],
                     soak_seconds=1,
+                    server_thread_policy="explicit-host-count",
                     artifact_guard=guard,
                 )
             labels = {row["label"] for row in guard.snapshots}
@@ -826,7 +882,20 @@ class TestReceipts(unittest.TestCase):
 
     def test_end_to_end_orchestration_with_pure_fakes(self):
         readiness_summary = {
-            "gate": {"verdict": "PASS"},
+            "gate": {
+                "verdict": "PASS",
+                "checks": [
+                    {"name": name, "passed": True}
+                    for name in (
+                        "arm64-architecture",
+                        "minimum-measured-requests",
+                        "usage-accounting",
+                        "non-empty-output",
+                        "restart-success",
+                        "server-rss",
+                    )
+                ],
+            },
             "totals": {"measuredRequests": 10, "measuredFailures": 0},
             "results": [
                 {
@@ -912,6 +981,14 @@ class TestReceipts(unittest.TestCase):
             self.assertTrue(receipt["modelIdentity"]["validated"])
             self.assertEqual(receipt["campaign"]["aggregateMeasuredSoakSeconds"], 8)
             self.assertEqual(
+                receipt["campaign"]["serverThreadPolicy"],
+                "explicit-host-count",
+            )
+            self.assertEqual(
+                receipt["campaign"]["armOrderPolicy"],
+                "baseline-first",
+            )
+            self.assertEqual(
                 receipt["campaign"]["longestContinuousSoakSegmentSeconds"], 4
             )
             self.assertTrue(pc.verify_checksums(out)["valid"])
@@ -920,6 +997,23 @@ class TestReceipts(unittest.TestCase):
                     pc.main(["verify", "--out-dir", str(out)]),
                     0,
                 )
+
+            # Historical immutable receipts predate the additive policy field;
+            # they always used explicit host-count threads and must remain
+            # verifiable under the unchanged receipt schema.
+            receipt["campaign"].pop("serverThreadPolicy")
+            receipt["campaign"].pop("armOrderPolicy")
+            (out / "receipt.json").write_text(
+                json.dumps(receipt, indent=2, sort_keys=True) + "\n"
+            )
+            pc.write_checksums(out)
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(
+                    pc.main(["verify", "--out-dir", str(out)]),
+                    0,
+                )
+            receipt["campaign"]["serverThreadPolicy"] = "explicit-host-count"
+            receipt["campaign"]["armOrderPolicy"] = "baseline-first"
 
             expected_repository = "tomyimkc/polygraph"
             expected_ref = "refs/heads/main"
@@ -981,6 +1075,113 @@ class TestReceipts(unittest.TestCase):
                     pc.main(["verify", "--out-dir", str(out)]),
                     1,
                 )
+
+    def test_binary_default_policy_is_forwarded_to_both_measurement_paths(self):
+        readiness_summary = {
+            "gate": {
+                "verdict": "PASS",
+                "checks": [
+                    {"name": name, "passed": True}
+                    for name in (
+                        "arm64-architecture",
+                        "minimum-measured-requests",
+                        "usage-accounting",
+                        "non-empty-output",
+                        "restart-success",
+                        "server-rss",
+                    )
+                ],
+            },
+            "totals": {"measuredRequests": 10, "measuredFailures": 0},
+            "results": [
+                {
+                    "phase": "soak",
+                    "ttftP99Ms": 100.0,
+                    "e2eP99Ms": 500.0,
+                    "outputTokensPerSecond": 10.0,
+                }
+            ],
+            "restarts": [{"readySeconds": 0.5, "success": True}],
+            **pc.CLAIM_FLAGS,
+        }
+        readiness_receipt = {
+            "exitCode": 0,
+            "error": None,
+            "summary": readiness_summary,
+            **pc.CLAIM_FLAGS,
+        }
+        replay_receipt = {
+            "verdict": "PASS",
+            "foreignSentinelLeaks": 0,
+            "unexpectedErrors": 0,
+            "expectedInjectedErrors": 1,
+            "observedInjectedErrors": 1,
+            "restartEvents": [{"readySeconds": 0.25, "success": True}],
+            **pc.CLAIM_FLAGS,
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            server = root / "llama-server"
+            server.write_text("#!/bin/sh\nexit 0\n")
+            server.chmod(0o755)
+            model = root / "model.gguf"
+            model.write_bytes(b"GGUF synthetic unit fixture")
+            model_sha = pc.sha256_file(model)
+            manifest = root / "models.txt"
+            manifest.write_text(
+                "synthetic-fixture|Example/Fixture|model.gguf|"
+                f"{model_sha}|apache-2.0|unit-only generated fixture\n"
+            )
+            out = root / "campaign"
+            with mock.patch.object(
+                pc, "run_readiness_measurement", return_value=readiness_receipt
+            ) as readiness_mock, mock.patch.object(
+                pc, "run_replay_measurement", return_value=replay_receipt
+            ) as replay_mock, contextlib.redirect_stdout(io.StringIO()):
+                rc = pc.main(
+                    [
+                        "run",
+                        "--config",
+                        str(CONFIG_PATH),
+                        "--profile",
+                        "smoke",
+                        "--baseline-server",
+                        str(server),
+                        "--baseline-model",
+                        str(model),
+                        "--model-id",
+                        "synthetic-fixture",
+                        "--model-manifest",
+                        str(manifest),
+                        "--llama-cpp-sha",
+                        pc.REVIEWED_LLAMA_CPP_SHA,
+                        "--resolved-llama-cpp-sha",
+                        pc.REVIEWED_LLAMA_CPP_SHA,
+                        "--server-thread-policy",
+                        "binary-default",
+                        "--out-dir",
+                        str(out),
+                    ]
+                )
+            self.assertEqual(rc, 0)
+            self.assertTrue(
+                all(
+                    call.kwargs["server_thread_policy"] == "binary-default"
+                    for call in readiness_mock.call_args_list
+                )
+            )
+            self.assertTrue(
+                all(
+                    call.kwargs["server_thread_policy"] == "binary-default"
+                    for call in replay_mock.call_args_list
+                )
+            )
+            receipt = json.loads((out / "receipt.json").read_text())
+            self.assertEqual(
+                receipt["campaign"]["serverThreadPolicy"],
+                "binary-default",
+            )
 
     def test_model_sha_mismatch_holds_before_measurement(self):
         with tempfile.TemporaryDirectory() as tmp:

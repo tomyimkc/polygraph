@@ -290,10 +290,30 @@ def _read_status_value(pid: int, key: str) -> str | None:
 
 def _rss_mib(pid: int) -> float | None:
     value = _read_status_value(pid, "VmRSS")
-    if not value:
+    if value:
+        try:
+            kib = float(value.split()[0])
+            return kib / 1024.0
+        except (ValueError, IndexError):
+            pass
+
+    # macOS has no /proc. POSIX ps reports RSS in KiB on both Darwin and
+    # procps-based Linux, so retain the fail-closed gate while allowing owned
+    # Arm Macs to produce a real process-memory observation.
+    try:
+        result = subprocess.run(
+            ["ps", "-o", "rss=", "-p", str(pid)],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=1,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if result.returncode != 0:
         return None
     try:
-        kib = float(value.split()[0])
+        kib = float(result.stdout.strip().splitlines()[0])
         return kib / 1024.0
     except (ValueError, IndexError):
         return None
@@ -569,8 +589,8 @@ class ServerController:
         model: Path,
         host: str,
         port: int,
-        threads: int,
-        threads_batch: int,
+        threads: int | None,
+        threads_batch: int | None,
         parallel: int,
         context_size: int,
         ready_timeout: float,
@@ -591,7 +611,7 @@ class ServerController:
 
     @property
     def command(self) -> list[str]:
-        return [
+        command = [
             str(self.server),
             "-m",
             str(self.model),
@@ -606,11 +626,12 @@ class ServerController:
             self.host,
             "--port",
             str(self.port),
-            "-t",
-            str(self.threads),
-            "-tb",
-            str(self.threads_batch),
         ]
+        if self.threads is not None:
+            command.extend(["-t", str(self.threads)])
+        if self.threads_batch is not None:
+            command.extend(["-tb", str(self.threads_batch)])
+        return command
 
     def start(self, label: str) -> float:
         self._log_handle = self.log_path.open("a", encoding="utf-8")
@@ -699,6 +720,21 @@ def parse_concurrencies(raw: str) -> list[int]:
     return values
 
 
+def parse_thread_count(raw: str) -> int | None:
+    normalized = raw.strip().lower()
+    if normalized in {"auto", "binary-default"}:
+        return None
+    try:
+        value = int(raw)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(
+            "thread count must be a positive integer or 'binary-default'"
+        ) from exc
+    if value <= 0:
+        raise argparse.ArgumentTypeError("thread count must be positive")
+    return value
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--server", type=Path, required=True)
@@ -706,8 +742,24 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=18080)
-    parser.add_argument("--threads", type=int, default=max(1, os.cpu_count() or 1))
-    parser.add_argument("--threads-batch", type=int, default=max(1, os.cpu_count() or 1))
+    parser.add_argument(
+        "--threads",
+        type=parse_thread_count,
+        default=max(1, os.cpu_count() or 1),
+        help=(
+            "generation threads, or 'binary-default' to omit -t and let the "
+            "measured server binary resolve its own no-flags default"
+        ),
+    )
+    parser.add_argument(
+        "--threads-batch",
+        type=parse_thread_count,
+        default=max(1, os.cpu_count() or 1),
+        help=(
+            "batch/prefill threads, or 'binary-default' to omit -tb and let "
+            "the measured server binary resolve its own no-flags default"
+        ),
+    )
     parser.add_argument("--server-parallel", type=int, default=4)
     parser.add_argument("--context-size", type=int, default=2048)
     parser.add_argument("--capacity-concurrencies", default="1,2,4")
