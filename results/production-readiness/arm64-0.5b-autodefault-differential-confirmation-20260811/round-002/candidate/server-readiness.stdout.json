@@ -1,0 +1,224 @@
+{
+  "actualProductionTraffic": false,
+  "boundary": "Synthetic single-host Arm64 readiness evidence. A PASS does not establish actual-production traffic, multi-day availability, failover, multi-tenant isolation, or customer correctness.",
+  "candidateOnly": true,
+  "completedAtUtc": "2026-08-11T15:35:07.096796+00:00",
+  "contestEvidenceCandidate": true,
+  "gate": {
+    "checks": [
+      {
+        "limit": "aarch64 or arm64",
+        "name": "arm64-architecture",
+        "observed": "arm64",
+        "passed": true
+      },
+      {
+        "limit": 1,
+        "name": "minimum-measured-requests",
+        "observed": 69,
+        "passed": true
+      },
+      {
+        "limit": 0.0,
+        "name": "error-rate",
+        "observed": 0.0,
+        "passed": true
+      },
+      {
+        "limit": 0,
+        "name": "usage-accounting",
+        "observed": 0,
+        "passed": true
+      },
+      {
+        "limit": 0,
+        "name": "non-empty-output",
+        "observed": 0,
+        "passed": true
+      },
+      {
+        "limit": 15000.0,
+        "name": "soak-ttft-p99",
+        "observed": 799.3368,
+        "passed": true
+      },
+      {
+        "limit": 60000.0,
+        "name": "soak-e2e-p99",
+        "observed": 2010.30868,
+        "passed": true
+      },
+      {
+        "limit": 0,
+        "name": "restart-success",
+        "observed": 0,
+        "passed": true
+      },
+      {
+        "limit": 120.0,
+        "name": "restart-recovery",
+        "observed": 1.0077159590437077,
+        "passed": true
+      },
+      {
+        "limit": 8192.0,
+        "name": "server-rss",
+        "observed": 1160.84375,
+        "passed": true
+      }
+    ],
+    "verdict": "PASS"
+  },
+  "hardware": {
+    "cpuCount": 16,
+    "cpuModel": null,
+    "gitSha": null,
+    "githubRunAttempt": null,
+    "githubRunId": null,
+    "machine": "arm64",
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python": "3.14.6"
+  },
+  "productionReady": false,
+  "restarts": [
+    {
+      "canary": {
+        "completionTokens": 12,
+        "concurrency": 1,
+        "e2eMs": 86.831,
+        "error": null,
+        "httpStatus": 200,
+        "outputCharacters": 70,
+        "phase": "restart-canary",
+        "promptTokens": 14,
+        "schema": "polygraph.server-readiness.request.v1",
+        "startedAtUtc": "2026-08-11T15:35:06.506627+00:00",
+        "status": "success",
+        "ttftMs": 30.331,
+        "workload": "short-chat"
+      },
+      "cycle": 1,
+      "error": null,
+      "readySeconds": 1.0077159590437077,
+      "stop": {
+        "exitCode": 0,
+        "forced": false
+      },
+      "success": true
+    }
+  ],
+  "results": [
+    {
+      "completionTokens": 108,
+      "concurrency": 1,
+      "durationSeconds": 1.257,
+      "e2eP50Ms": 119.649,
+      "e2eP95Ms": 273.53259999999995,
+      "e2eP99Ms": 330.98411999999996,
+      "emptyOutputRequests": 0,
+      "errorRate": 0.0,
+      "errors": 0,
+      "outputTokensPerSecond": 85.94983485052903,
+      "phase": "capacity",
+      "promptTokens": 314,
+      "requests": 9,
+      "requestsPerSecond": 7.162486237544086,
+      "successes": 9,
+      "ttftP50Ms": 43.145,
+      "ttftP95Ms": 202.55439999999996,
+      "ttftP99Ms": 260.72368,
+      "usageMissingRequests": 0
+    },
+    {
+      "completionTokens": 24,
+      "concurrency": 2,
+      "durationSeconds": 1.044,
+      "e2eP50Ms": 1043.3725,
+      "e2eP95Ms": 1043.57905,
+      "e2eP99Ms": 1043.59741,
+      "emptyOutputRequests": 0,
+      "errorRate": 0.0,
+      "errors": 0,
+      "outputTokensPerSecond": 22.988890172379364,
+      "phase": "capacity",
+      "promptTokens": 68,
+      "requests": 2,
+      "requestsPerSecond": 1.9157408476982802,
+      "successes": 2,
+      "ttftP50Ms": 161.6855,
+      "ttftP95Ms": 161.83085,
+      "ttftP99Ms": 161.84377,
+      "usageMissingRequests": 0
+    },
+    {
+      "completionTokens": 696,
+      "concurrency": 2,
+      "durationSeconds": 30.477,
+      "e2eP50Ms": 962.356,
+      "e2eP95Ms": 1599.84545,
+      "e2eP99Ms": 2010.30868,
+      "emptyOutputRequests": 0,
+      "errorRate": 0.0,
+      "errors": 0,
+      "outputTokensPerSecond": 22.83725366494088,
+      "phase": "soak",
+      "promptTokens": 1960,
+      "requests": 58,
+      "requestsPerSecond": 1.9031044720784067,
+      "successes": 58,
+      "ttftP50Ms": 222.4185,
+      "ttftP95Ms": 562.0077999999999,
+      "ttftP99Ms": 799.3368,
+      "usageMissingRequests": 0
+    }
+  ],
+  "schema": "polygraph.server-readiness.v1",
+  "server": {
+    "binary": "/private/tmp/polygraph-arm-diff-cache/llama-candidate/build-candidate/bin/llama-server",
+    "coldReadySeconds": 1.0075505829881877,
+    "command": [
+      "/private/tmp/polygraph-arm-diff-cache/llama-candidate/build-candidate/bin/llama-server",
+      "-m",
+      "/private/tmp/polygraph-arm-diff-cache/models/qwen2.5-0.5b-instruct-q4_0.gguf",
+      "-ngl",
+      "0",
+      "-c",
+      "2048",
+      "-np",
+      "2",
+      "-cb",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "18096"
+    ],
+    "finalStop": {
+      "exitCode": 0,
+      "forced": false
+    },
+    "model": "/private/tmp/polygraph-arm-diff-cache/models/qwen2.5-0.5b-instruct-q4_0.gguf"
+  },
+  "startedAtUtc": "2026-08-11T15:34:28.496414+00:00",
+  "totals": {
+    "measuredFailures": 0,
+    "measuredRequests": 69,
+    "measuredSuccesses": 69,
+    "warmupErrors": 0,
+    "warmupRequests": 5
+  },
+  "workload": {
+    "capacityConcurrencies": [
+      1,
+      2
+    ],
+    "capacitySecondsPerPoint": 1.0,
+    "maxTokens": 12,
+    "soakConcurrency": 2,
+    "soakSeconds": 30.0,
+    "trafficFamilies": [
+      "long-summary",
+      "rag-like",
+      "short-chat"
+    ]
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "claims": {
+    "actualProductionTraffic": false,
+    "candidateOnly": true,
+    "productionReady": false
+  },
+  "configSha256": "78709bb54f0bb199f7c9b2b450c9978e3c5af837852cc65e61c94ad9238b5022",
+  "modelIdentity": {
+    "hfFile": "qwen2.5-0.5b-instruct-q4_0.gguf",
+    "hfRepo": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+    "license": "apache-2.0",
+    "manifestLine": 37,
+    "manifestPath": "/private/tmp/polygraph-arm-differential-evidence-20260811/scripts/models.txt",
+    "manifestSha256": "09f82fb662f2196e65594c9ebde1d1e42fe74f684076ce07a4e5050342dfa996",
+    "modelId": "qwen2.5-0.5b-q4_0",
+    "sha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed"
+  },
+  "profile": {
+    "capacityConcurrencies": [
+      1,
+      2
+    ],
+    "capacitySecondsPerPoint": 1,
+    "maxTokens": 12,
+    "minMeasuredRequestsPerArmRun": 1,
+    "readinessRestartCycles": 1,
+    "readyTimeoutSeconds": 120,
+    "repetitions": 3,
+    "replayMaxTokens": 64,
+    "replayRequestsPerArm": 8,
+    "replayRestartCycles": 1,
+    "requestTimeoutSeconds": 60,
+    "soakConcurrency": 2,
+    "soakSecondsTotal": 180.0,
+    "warmupRequestsPerWorker": 1
+  },
+  "profileName": "smoke",
+  "schema": "polygraph.production-readiness-config.v1",
+  "slo": {
+    "maxCandidateE2eRatio": 10.0,
+    "maxCandidateErrorRateDelta": 0.0,
+    "maxCandidateTtftRatio": 10.0,
+    "maxE2eP99Ms": 60000,
+    "maxForeignSentinelLeaks": 0,
+    "maxReadinessErrorRate": 0.0,
+    "maxRecoverySeconds": 120,
+    "maxReplayE2eP99Ms": 60000,
+    "maxReplayUnexpectedErrorRate": 0.0,
+    "maxRssMiB": 8192,
+    "maxTtftP99Ms": 15000,
+    "minCandidateThroughputRatio": 0.1
+  },
+  "source": "configs/production-readiness.json",
+  "syntheticTraffic": {
+    "delayEveryRequests": 3,
+    "delayMilliseconds": 25,
+    "errorEveryRequests": 5,
+    "errorHttpStatus": 503,
+    "seed": 20260809,
+    "tenantLabels": [
+      "synthetic-tenant-alpha",
+      "synthetic-tenant-beta",
+      "synthetic-tenant-gamma"
+    ]
+  }
+}

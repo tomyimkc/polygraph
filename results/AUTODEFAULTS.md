@@ -1,14 +1,24 @@
 # Auto-defaults patch measurement — `0002-kleidiai-sme-aware-thread-default.patch`
 
+> **2026-08-11 production-shaped follow-up:** this page remains the authoritative record of the
+> original isolated `llama-cli` experiment, but its positive result did **not** survive the
+> stricter distinct-binary server confirmation. A three-round AB/BA campaign with real binary
+> defaults, identical synthetic traces, controlled restarts, a required throughput uplift, and
+> median within-round ratios measured candidate throughput at `0.9330x` baseline, E2E p99 at
+> `1.2464x`, and TTFT p99 at `1.7081x`. The gate returned
+> `FAIL / ROLLBACK_TO_BASELINE`. Patch `0002` is therefore an experimental workload-specific
+> heuristic, not a promoted production default. See
+> `results/production-readiness/arm64-0.5b-autodefault-differential-confirmation-20260811/`.
+
 Fixes Defect A: the one thing this repo *built* (`0001-kleidiai-phase-aware-dispatch.patch`) was
 a measured regression, and the one positive number (3.43x decode) came entirely from flags
 `llama.cpp` already ships (`-t 2`), not from anything we wrote. This patch closes that gap: it
 makes the `-t 2`-equivalent decode win happen **automatically, with zero flags**, without the
 prefill regression that naively recommending `-t 2` would cause.
 
-**Verdict: the patch works, is honest, and beats the naive alternative. Read the whole page
-before citing a number — the methodology had to change mid-flight (see §2) and that matters for
-how to read §4.**
+**Isolated-microbenchmark verdict:** the patch executes as designed and beat the naive alternative
+in this recorded workload. This is not the final promotion verdict; read the 2026-08-11 follow-up
+above before citing the result.
 
 ## 0. Setup
 

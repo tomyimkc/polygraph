@@ -78,6 +78,9 @@ For every judge-facing proof chain, verify all three parts are present.
   batch/prefill and explicit choices.
 - [ ] **Measured impact:** 67.8 → 145.9 tok/s decode, 2.15x; prefill -3.0% within noise.
 - [ ] **Negative result:** the fixed cap misses the measured 1.5B optimum by about 17.5%.
+- [ ] **Promotion gate:** three-round distinct-binary server confirmation returned
+  `ROLLBACK_TO_BASELINE` at 0.9330x median paired throughput; present patch `0002` as experimental,
+  not promoted.
 
 ### CUDA-host-buffer dispatch mismatch
 

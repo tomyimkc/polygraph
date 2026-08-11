@@ -150,12 +150,21 @@ With no flags, the patched binary recorded **145.9 tok/s decode**, a **2.15x** i
 1,779.8 tok/s, **-3.0% and within the measured noise band**, rather than the 47% regression caused
 by the naive one-flag workaround.
 
-The limitation stays visible: the mechanism generalizes across the tested configurations, but the
-fixed SME-cap heuristic is not the true optimum for every model. In the measured 1.5B Q4_0 sweep,
-the cap-selected thread count missed the best measured decode point by about 17.5%.
+The stronger follow-up is deliberately unflattering. In a three-round distinct-binary
+`llama-server` campaign, the harness omitted `-t`/`-tb`, alternated AB/BA order, replayed identical
+synthetic traces, retained controlled-restart evidence, and required median paired throughput of
+at least `1.0x`. Patch `0002` produced `0.9330x` throughput, `1.2464x` E2E p99, and `1.7081x`
+TTFT p99, winning throughput in only one of three rounds. The strict verdict was
+`FAIL / ROLLBACK_TO_BASELINE`.
+
+The claim is therefore two-part: the patch is a real implementation that produced the recorded
+isolated win, but the fixed SME-cap heuristic is not robust enough to promote as a production
+server default. The measured 1.5B sweep also found that the cap-selected thread count missed the
+best measured decode point by about 17.5%.
 
 **Evidence:** `patches/0002-kleidiai-sme-aware-thread-default.patch`,
-`results/AUTODEFAULTS.md`, `results/GENERALIZATION.md`.
+`results/AUTODEFAULTS.md`, `results/GENERALIZATION.md`,
+`results/production-readiness/arm64-0.5b-autodefault-differential-confirmation-20260811/`.
 
 ### Proof chain 3 — L1 and L2 can both agree while execution still silently falls back
 
@@ -693,6 +702,9 @@ We also built a real optimization: patch `0002` changes only the default generat
 to KleidiAI's runtime-detected SME2 cap while preserving the batch/prefill default. In the measured
 Apple M4 Max run, no-flags decode moved from 67.8 to 145.9 tok/s, or 2.15x, while prefill changed
 by -3.0% within noise. The tempting alternative, manually passing `-t 2`, cut prefill by 47%.
+We then tested the same change as a distinct `llama-server` binary under a stricter three-round
+paired gate; median throughput was 0.9330x and the result was `ROLLBACK_TO_BASELINE`. We keep the
+patch as an experimental result, not a promoted default.
 
 The repository is public and Apache-2.0 licensed. Its measurement artifacts, raw request rows,
 telemetry, workflow receipts, validation receipts, negative results, and claim checker are all

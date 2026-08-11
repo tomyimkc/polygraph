@@ -1,0 +1,57 @@
+{
+  "artifacts": {
+    "baselineServer": {
+      "sha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+      "sizeBytes": 15821792
+    },
+    "candidateServer": {
+      "sha256": "c383a672c5fb427281b93483f0bdbc14a6f612af38cb2b7637ba6a2148395363",
+      "sizeBytes": 15822144
+    },
+    "model": {
+      "id": "qwen2.5-0.5b-q4_0",
+      "sha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+      "sizeBytes": 428730208
+    }
+  },
+  "build": {
+    "baselineBuildDirectory": "build-baseline",
+    "candidateBuildDirectory": "build-candidate",
+    "cmake": "4.4.2",
+    "cmakeSettings": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "GGML_CPU_ARM_ARCH": "",
+      "GGML_CPU_KLEIDIAI": true,
+      "GGML_METAL": false,
+      "GGML_NATIVE": true
+    },
+    "compiler": "Apple clang 21.0.0 (clang-2100.3.23.3)",
+    "dynamicDependencyBoundary": "Both server binaries link only system frameworks/libraries and Homebrew OpenSSL; neither links a build-tree llama or ggml dylib."
+  },
+  "candidate": {
+    "functionalSourceDiffSha256": "000bca26573cb06238de12f54205ff95f36aac24fdbb33fb57c69bcf6f5d3c06",
+    "patchPath": "patches/0002-kleidiai-sme-aware-thread-default.patch",
+    "patchSha256AtBuild": "10de2c208f34b129ab963c2da826e0b9ba99b207a629e3c19825683eb303c480"
+  },
+  "claims": {
+    "actualProductionTraffic": false,
+    "candidateOnly": true,
+    "productionReady": false
+  },
+  "host": {
+    "architecture": "arm64",
+    "logicalCpuCount": 16,
+    "machine": "Mac16,5",
+    "operatingSystem": "macOS 27.0 build 26A5378n",
+    "performanceCoreCount": 12,
+    "physicalCpuCount": 16
+  },
+  "provenanceBoundary": "Local single-host build and measurement. Paths are intentionally omitted because they are machine-local; identities are bound by source and artifact digests.",
+  "schema": "polygraph.local-differential-build-provenance.v1",
+  "source": {
+    "campaignRepository": "tomyimkc/polygraph",
+    "campaignSha": "92267687b1d999c68c209d66ddd4bde74f570cec",
+    "llamaCppResolvedSha": "dbadb68eecdfb3ab0e86872d011738fc937f0364",
+    "llamaCppReviewedSha": "dbadb68eecdfb3ab0e86872d011738fc937f0364"
+  }
+}

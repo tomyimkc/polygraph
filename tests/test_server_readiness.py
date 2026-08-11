@@ -14,6 +14,7 @@ import time
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from unittest import mock
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -152,6 +153,73 @@ class TestParsing(unittest.TestCase):
         self.assertEqual(sr.parse_concurrencies("1,2,2,4"), [1, 2, 4])
         with self.assertRaises(Exception):
             sr.parse_concurrencies("0")
+
+    def test_thread_count_accepts_explicit_or_binary_default(self):
+        self.assertEqual(sr.parse_thread_count("4"), 4)
+        self.assertIsNone(sr.parse_thread_count("binary-default"))
+        self.assertIsNone(sr.parse_thread_count("auto"))
+        with self.assertRaises(Exception):
+            sr.parse_thread_count("0")
+        with self.assertRaises(Exception):
+            sr.parse_thread_count("many")
+
+
+class TestTelemetry(unittest.TestCase):
+    def test_rss_uses_ps_fallback_when_proc_is_unavailable(self):
+        completed = mock.Mock(returncode=0, stdout=" 524288\n")
+        with (
+            mock.patch.object(sr, "_read_status_value", return_value=None),
+            mock.patch.object(sr.subprocess, "run", return_value=completed) as run,
+        ):
+            self.assertEqual(sr._rss_mib(1234), 512.0)
+        run.assert_called_once_with(
+            ["ps", "-o", "rss=", "-p", "1234"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=1,
+        )
+
+    def test_rss_ps_fallback_fails_closed(self):
+        completed = mock.Mock(returncode=1, stdout="")
+        with (
+            mock.patch.object(sr, "_read_status_value", return_value=None),
+            mock.patch.object(sr.subprocess, "run", return_value=completed),
+        ):
+            self.assertIsNone(sr._rss_mib(1234))
+
+
+class TestServerCommand(unittest.TestCase):
+    def test_binary_default_omits_thread_flags(self):
+        controller = sr.ServerController(
+            server=Path("/tmp/llama-server"),
+            model=Path("/tmp/model.gguf"),
+            host="127.0.0.1",
+            port=18080,
+            threads=None,
+            threads_batch=None,
+            parallel=1,
+            context_size=2048,
+            ready_timeout=30,
+            log_path=Path("/tmp/server.log"),
+        )
+        self.assertNotIn("-t", controller.command)
+        self.assertNotIn("-tb", controller.command)
+
+    def test_explicit_threads_remain_in_command(self):
+        controller = sr.ServerController(
+            server=Path("/tmp/llama-server"),
+            model=Path("/tmp/model.gguf"),
+            host="127.0.0.1",
+            port=18080,
+            threads=4,
+            threads_batch=8,
+            parallel=1,
+            context_size=2048,
+            ready_timeout=30,
+            log_path=Path("/tmp/server.log"),
+        )
+        self.assertEqual(controller.command[-4:], ["-t", "4", "-tb", "8"])
 
 
 class TestStreamingIntegration(unittest.TestCase):

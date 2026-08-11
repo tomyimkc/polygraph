@@ -121,6 +121,8 @@ not Arm contest evidence and not a cross-hardware benchmark baseline.
 - Patched no-flags decode matches the hand-tuned ceiling within measurement noise.
 - Negative result: at the measured 1.5B Q4_0 configuration, the SME-cap heuristic misses the
   best measured decode thread count by about 17.5%.
+- Stricter server confirmation: median paired throughput `0.9330x`, E2E p99 `1.2464x`, and TTFT
+  p99 `1.7081x` across three AB/BA rounds; verdict `FAIL / ROLLBACK_TO_BASELINE`.
 
 **Authoritative paths**
 
@@ -128,11 +130,13 @@ not Arm contest evidence and not a cross-hardware benchmark baseline.
 - `patches/README.md`
 - `results/AUTODEFAULTS.md`
 - `results/GENERALIZATION.md`
+- `results/production-readiness/arm64-0.5b-autodefault-differential-confirmation-20260811/`
 
 **Do not claim**
 
 - that 2.15x is universal;
 - that the fixed cap is a per-model optimum; or
+- that patch `0002` is promoted or production-ready; or
 - that patch `0001` is part of this positive result.
 
 ### E3 — CUDA host buffer hides real KleidiAI dispatch
