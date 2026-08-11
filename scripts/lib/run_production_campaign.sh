@@ -23,6 +23,7 @@
 #   PRODUCTION_HOST / PRODUCTION_PORT
 #   PRODUCTION_SERVER_THREAD_POLICY explicit-host-count (default) or binary-default
 #   PRODUCTION_ARM_ORDER_POLICY baseline-first (default) or alternating
+#   PRODUCTION_REQUIRE_THROUGHPUT_UPLIFT 1 to bind promotion to paired throughput
 #   BASELINE_LABEL / CANDIDATE_LABEL
 set -euo pipefail
 
@@ -44,6 +45,7 @@ REPO_ROOT="$(cd "$LIB_DIR/../.." && pwd)"
 : "${PRODUCTION_PORT:=18081}"
 : "${PRODUCTION_SERVER_THREAD_POLICY:=explicit-host-count}"
 : "${PRODUCTION_ARM_ORDER_POLICY:=baseline-first}"
+: "${PRODUCTION_REQUIRE_THROUGHPUT_UPLIFT:=0}"
 : "${BASELINE_LABEL:=baseline}"
 : "${CANDIDATE_LABEL:=candidate}"
 
@@ -83,6 +85,9 @@ fail() {
 [[ "$PRODUCTION_ARM_ORDER_POLICY" == "baseline-first" \
     || "$PRODUCTION_ARM_ORDER_POLICY" == "alternating" ]] \
     || fail "PRODUCTION_ARM_ORDER_POLICY must be baseline-first or alternating"
+[[ "$PRODUCTION_REQUIRE_THROUGHPUT_UPLIFT" == "0" \
+    || "$PRODUCTION_REQUIRE_THROUGHPUT_UPLIFT" == "1" ]] \
+    || fail "PRODUCTION_REQUIRE_THROUGHPUT_UPLIFT must be 0 or 1"
 
 command=(
     python3 "$REPO_ROOT/tools/production_campaign.py" run
@@ -111,6 +116,10 @@ command=(
 
 if [[ "$PRODUCTION_HOSTED_WORKFLOW" == "1" ]]; then
     command+=(--hosted-workflow)
+fi
+
+if [[ "$PRODUCTION_REQUIRE_THROUGHPUT_UPLIFT" == "1" ]]; then
+    command+=(--require-throughput-uplift)
 fi
 
 if [[ -n "${PRODUCTION_REPETITIONS:-}" ]]; then

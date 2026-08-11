@@ -65,6 +65,7 @@ def _arm(
     error_rate=0.0,
     measurement_valid_runs=1,
     readiness_passes=1,
+    replay_measurement_valid_runs=1,
     replay_passes=1,
     infrastructure_errors=None,
 ):
@@ -73,12 +74,24 @@ def _arm(
         "readinessSummaries": 1,
         "readinessMeasurementValidRuns": measurement_valid_runs,
         "readinessGatePasses": readiness_passes,
+        "replayMeasurementValidRuns": replay_measurement_valid_runs,
         "replayGatePasses": replay_passes,
         "measuredErrorRate": error_rate,
         "soakTtftP99WorstMs": ttft,
         "soakE2eP99WorstMs": e2e,
         "soakOutputTokensPerSecondMedian": throughput,
         "traceDigests": ["paired-trace"],
+        "runMetrics": [
+            {
+                "repetition": 1,
+                "executionPosition": 1,
+                "traceDigest": "paired-trace",
+                "measuredErrorRate": error_rate,
+                "soakTtftP99WorstMs": ttft,
+                "soakE2eP99WorstMs": e2e,
+                "soakOutputTokensPerSecondMedian": throughput,
+            }
+        ],
         "configuredSoakSeconds": 4.0,
         "infrastructureErrors": infrastructure_errors or [],
     }
@@ -640,6 +653,7 @@ class TestRollbackVerdict(unittest.TestCase):
             configured_total_soak_seconds=8,
             slo=_config()["slo"],
             same_artifact_control=False,
+            require_throughput_uplift=False,
         )
         self.assertEqual(comparison["rollbackVerdict"], "KEEP_CANDIDATE")
         self.assertEqual(comparison["gateVerdict"], "PASS")
@@ -653,6 +667,7 @@ class TestRollbackVerdict(unittest.TestCase):
             configured_total_soak_seconds=8,
             slo=_config()["slo"],
             same_artifact_control=False,
+            require_throughput_uplift=False,
         )
         self.assertEqual(comparison["rollbackVerdict"], "ROLLBACK_TO_BASELINE")
         self.assertEqual(comparison["gateVerdict"], "FAIL")
@@ -665,6 +680,7 @@ class TestRollbackVerdict(unittest.TestCase):
             configured_total_soak_seconds=8,
             slo=_config()["slo"],
             same_artifact_control=False,
+            require_throughput_uplift=False,
         )
         self.assertEqual(comparison["rollbackVerdict"], "HOLD_UNDETERMINED")
         self.assertEqual(comparison["gateVerdict"], "UNDETERMINED")
@@ -677,11 +693,28 @@ class TestRollbackVerdict(unittest.TestCase):
             configured_total_soak_seconds=8,
             slo=_config()["slo"],
             same_artifact_control=False,
+            require_throughput_uplift=False,
         )
         self.assertEqual(comparison["rollbackVerdict"], "KEEP_CANDIDATE")
         self.assertEqual(comparison["gateVerdict"], "PASS")
         checks = {row["name"]: row for row in comparison["checks"]}
         self.assertTrue(checks["baseline-readiness-measurements-valid"]["passed"])
+
+    def test_promotion_mode_requires_paired_throughput_uplift(self):
+        comparison = pc.compare_candidate(
+            _arm(),
+            _arm(throughput=9.9),
+            repetitions=1,
+            configured_total_soak_seconds=8,
+            slo=_config()["slo"],
+            same_artifact_control=False,
+            require_throughput_uplift=True,
+        )
+        self.assertEqual(comparison["gateVerdict"], "FAIL")
+        self.assertEqual(
+            comparison["metrics"]["ratioAggregation"],
+            "median-of-within-round-paired-ratios",
+        )
 
 
 class TestReadinessMeasurementValidity(unittest.TestCase):
@@ -921,6 +954,18 @@ class TestReceipts(unittest.TestCase):
             "expectedInjectedErrors": 1,
             "observedInjectedErrors": 1,
             "restartEvents": [{"readySeconds": 0.25, "success": True}],
+            "checks": [
+                {"name": name, "passed": True}
+                for name in (
+                    "expected-load-generator-errors-observed",
+                    "replay-unexpected-error-rate",
+                    "synthetic-tenant-foreign-sentinel-leaks",
+                    "synthetic-sentinel-response-contract",
+                    "synthetic-tenant-own-sentinel-present",
+                    "process-model-restart-count",
+                    "process-model-restarts-success",
+                )
+            ],
             **pc.CLAIM_FLAGS,
         }
 
@@ -1117,6 +1162,18 @@ class TestReceipts(unittest.TestCase):
             "expectedInjectedErrors": 1,
             "observedInjectedErrors": 1,
             "restartEvents": [{"readySeconds": 0.25, "success": True}],
+            "checks": [
+                {"name": name, "passed": True}
+                for name in (
+                    "expected-load-generator-errors-observed",
+                    "replay-unexpected-error-rate",
+                    "synthetic-tenant-foreign-sentinel-leaks",
+                    "synthetic-sentinel-response-contract",
+                    "synthetic-tenant-own-sentinel-present",
+                    "process-model-restart-count",
+                    "process-model-restarts-success",
+                )
+            ],
             **pc.CLAIM_FLAGS,
         }
 

@@ -1631,6 +1631,26 @@ def readiness_measurement_is_valid(summary: dict[str, Any]) -> bool:
     return all(checks.get(name) is True for name in required)
 
 
+def replay_measurement_is_valid(summary: dict[str, Any]) -> bool:
+    """Require replay integrity while allowing a measured baseline SLO miss."""
+
+    checks = {
+        row.get("name"): row.get("passed")
+        for row in summary.get("checks", [])
+        if isinstance(row, dict)
+    }
+    required = {
+        "expected-load-generator-errors-observed",
+        "replay-unexpected-error-rate",
+        "synthetic-tenant-foreign-sentinel-leaks",
+        "synthetic-sentinel-response-contract",
+        "synthetic-tenant-own-sentinel-present",
+        "process-model-restart-count",
+        "process-model-restarts-success",
+    }
+    return all(checks.get(name) is True for name in required)
+
+
 def arm_execution_order(policy: str, repetition: int) -> tuple[str, str]:
     if repetition <= 0:
         raise ConfigurationError("repetition must be positive")
@@ -1711,6 +1731,56 @@ def aggregate_arm(
         for error in run.get("artifactIntegrity", {}).get("errors", [])
         if error
     )
+    run_metrics = []
+    for run in runs:
+        summary = run["readiness"].get("summary")
+        if not isinstance(summary, dict):
+            continue
+        soak = [
+            row
+            for row in summary.get("results", [])
+            if row.get("phase") == "soak"
+        ]
+        throughput_values = [
+            float(row["outputTokensPerSecond"])
+            for row in soak
+            if row.get("outputTokensPerSecond") is not None
+        ]
+        ttft_values = [
+            float(row["ttftP99Ms"])
+            for row in soak
+            if row.get("ttftP99Ms") is not None
+        ]
+        e2e_values = [
+            float(row["e2eP99Ms"])
+            for row in soak
+            if row.get("e2eP99Ms") is not None
+        ]
+        measured_requests = int(
+            summary.get("totals", {}).get("measuredRequests", 0)
+        )
+        measured_failures = int(
+            summary.get("totals", {}).get("measuredFailures", 0)
+        )
+        run_metrics.append(
+            {
+                "repetition": run["repetition"],
+                "executionPosition": run.get("executionPosition"),
+                "traceDigest": run["traceDigest"],
+                "measuredErrorRate": (
+                    measured_failures / measured_requests
+                    if measured_requests
+                    else None
+                ),
+                "soakTtftP99WorstMs": max(ttft_values) if ttft_values else None,
+                "soakE2eP99WorstMs": max(e2e_values) if e2e_values else None,
+                "soakOutputTokensPerSecondMedian": (
+                    readiness.percentile(throughput_values, 50)
+                    if throughput_values
+                    else None
+                ),
+            }
+        )
     return {
         "label": label,
         "completedRuns": len(runs),
@@ -1728,6 +1798,9 @@ def aggregate_arm(
         ),
         "replayGatePasses": sum(
             1 for summary in replay_summaries if summary.get("verdict") == "PASS"
+        ),
+        "replayMeasurementValidRuns": sum(
+            1 for summary in replay_summaries if replay_measurement_is_valid(summary)
         ),
         "measuredRequests": total_requests,
         "measuredFailures": total_failures,
@@ -1767,6 +1840,7 @@ def aggregate_arm(
         ),
         "traceDigests": [run["traceDigest"] for run in runs],
         "configuredSoakSeconds": sum(float(run["soakSeconds"]) for run in runs),
+        "runMetrics": run_metrics,
         "infrastructureErrors": infrastructure_errors,
         "tenantIsolationClaimed": False,
         **CLAIM_FLAGS,
@@ -1782,6 +1856,57 @@ def _ratio(numerator: Any, denominator: Any) -> float | None:
     return float(numerator) / denominator_f
 
 
+def paired_run_metrics(
+    baseline: dict[str, Any],
+    candidate: dict[str, Any],
+    repetitions: int,
+) -> list[dict[str, Any]]:
+    baseline_runs = {
+        int(row["repetition"]): row for row in baseline.get("runMetrics", [])
+    }
+    candidate_runs = {
+        int(row["repetition"]): row for row in candidate.get("runMetrics", [])
+    }
+    pairs = []
+    for repetition in range(1, repetitions + 1):
+        baseline_row = baseline_runs.get(repetition)
+        candidate_row = candidate_runs.get(repetition)
+        if baseline_row is None or candidate_row is None:
+            continue
+        if baseline_row.get("traceDigest") != candidate_row.get("traceDigest"):
+            continue
+        pairs.append(
+            {
+                "repetition": repetition,
+                "traceDigest": baseline_row["traceDigest"],
+                "baselineExecutionPosition": baseline_row.get(
+                    "executionPosition"
+                ),
+                "candidateExecutionPosition": candidate_row.get(
+                    "executionPosition"
+                ),
+                "candidateThroughputRatio": _ratio(
+                    candidate_row.get("soakOutputTokensPerSecondMedian"),
+                    baseline_row.get("soakOutputTokensPerSecondMedian"),
+                ),
+                "candidateTtftRatio": _ratio(
+                    candidate_row.get("soakTtftP99WorstMs"),
+                    baseline_row.get("soakTtftP99WorstMs"),
+                ),
+                "candidateE2eRatio": _ratio(
+                    candidate_row.get("soakE2eP99WorstMs"),
+                    baseline_row.get("soakE2eP99WorstMs"),
+                ),
+            }
+        )
+    return pairs
+
+
+def _paired_median(rows: Sequence[dict[str, Any]], key: str) -> float | None:
+    values = [float(row[key]) for row in rows if row.get(key) is not None]
+    return readiness.percentile(values, 50) if values else None
+
+
 def compare_candidate(
     baseline: dict[str, Any],
     candidate: dict[str, Any],
@@ -1790,6 +1915,7 @@ def compare_candidate(
     configured_total_soak_seconds: float,
     slo: dict[str, Any],
     same_artifact_control: bool,
+    require_throughput_uplift: bool,
 ) -> dict[str, Any]:
     error_delta = (
         float(candidate["measuredErrorRate"]) - float(baseline["measuredErrorRate"])
@@ -1797,15 +1923,15 @@ def compare_candidate(
         and baseline["measuredErrorRate"] is not None
         else None
     )
-    ttft_ratio = _ratio(
-        candidate["soakTtftP99WorstMs"], baseline["soakTtftP99WorstMs"]
+    paired_metrics = paired_run_metrics(baseline, candidate, repetitions)
+    ttft_ratio = _paired_median(paired_metrics, "candidateTtftRatio")
+    e2e_ratio = _paired_median(paired_metrics, "candidateE2eRatio")
+    throughput_ratio = _paired_median(
+        paired_metrics, "candidateThroughputRatio"
     )
-    e2e_ratio = _ratio(
-        candidate["soakE2eP99WorstMs"], baseline["soakE2eP99WorstMs"]
-    )
-    throughput_ratio = _ratio(
-        candidate["soakOutputTokensPerSecondMedian"],
-        baseline["soakOutputTokensPerSecondMedian"],
+    throughput_limit = max(
+        float(slo["minCandidateThroughputRatio"]),
+        1.0 if require_throughput_uplift else 0.0,
     )
     paired_traces = (
         len(baseline["traceDigests"]) == repetitions
@@ -1845,8 +1971,8 @@ def compare_candidate(
         ),
         _check(
             "baseline-replay-gates",
-            baseline["replayGatePasses"] == repetitions,
-            baseline["replayGatePasses"],
+            baseline["replayMeasurementValidRuns"] == repetitions,
+            baseline["replayMeasurementValidRuns"],
             repetitions,
         ),
         _check(
@@ -1891,9 +2017,9 @@ def compare_candidate(
         _check(
             "candidate-throughput-ratio",
             throughput_ratio is not None
-            and throughput_ratio >= float(slo["minCandidateThroughputRatio"]),
+            and throughput_ratio >= throughput_limit,
             throughput_ratio,
-            slo["minCandidateThroughputRatio"],
+            throughput_limit,
         ),
     ]
     infrastructure_errors = (
@@ -1903,7 +2029,7 @@ def compare_candidate(
     baseline_valid = (
         baseline["completedRuns"] == repetitions
         and baseline["readinessMeasurementValidRuns"] == repetitions
-        and baseline["replayGatePasses"] == repetitions
+        and baseline["replayMeasurementValidRuns"] == repetitions
         and not baseline["infrastructureErrors"]
     )
     all_passed = all(check["passed"] for check in checks)
@@ -1925,6 +2051,8 @@ def compare_candidate(
             "candidateTtftRatio": ttft_ratio,
             "candidateE2eRatio": e2e_ratio,
             "candidateThroughputRatio": throughput_ratio,
+            "pairedRounds": paired_metrics,
+            "ratioAggregation": "median-of-within-round-paired-ratios",
         },
         "sameArtifactControl": same_artifact_control,
         "infrastructureErrors": infrastructure_errors,
@@ -2207,6 +2335,7 @@ def run_campaign(args: argparse.Namespace) -> int:
         configured_total_soak_seconds=total_soak_seconds,
         slo=config["slo"],
         same_artifact_control=same_artifact_control,
+        require_throughput_uplift=args.require_throughput_uplift,
     )
     receipt = {
         "schema": SCHEMA,
@@ -2222,6 +2351,7 @@ def run_campaign(args: argparse.Namespace) -> int:
             "aggregateMeasuredSoakSeconds": total_soak_seconds,
             "serverThreadPolicy": args.server_thread_policy,
             "armOrderPolicy": args.arm_order_policy,
+            "requireThroughputUplift": args.require_throughput_uplift,
             "trafficSource": "deterministic-generated-synthetic-only",
             "faultInjection": [
                 "controlled-process-restart",
@@ -2378,6 +2508,10 @@ def validate_full_receipt(
         require(
             arm_order_policy in {"baseline-first", "alternating"},
             "campaign armOrderPolicy is invalid",
+        )
+        require(
+            isinstance(campaign.get("requireThroughputUplift", False), bool),
+            "campaign requireThroughputUplift must be boolean",
         )
         if (
             isinstance(repetitions, int)
@@ -2770,6 +2904,14 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "baseline-first preserves historical execution order; alternating "
             "uses AB/BA rounds to reduce monotonic host-load and thermal bias"
+        ),
+    )
+    run.add_argument(
+        "--require-throughput-uplift",
+        action="store_true",
+        help=(
+            "require the median within-round candidate throughput ratio to be "
+            "at least 1.0; intended for promotion evidence, not temporal controls"
         ),
     )
     run.set_defaults(func=run_campaign)
