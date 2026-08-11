@@ -186,6 +186,36 @@ If baseline and candidate artifact hashes are identical, the receipt marks
 machinery and temporal variability, but it is not evidence about a distinct
 candidate.
 
+## Distinct-artifact promotion controls
+
+The historical campaign behavior remains unchanged by default:
+
+- `serverThreadPolicy=explicit-host-count` passes the host CPU count as both
+  `-t` and `-tb`;
+- `armOrderPolicy=baseline-first` runs each baseline before its candidate; and
+- the configured throughput floor can tolerate a bounded regression when the
+  campaign is being used as a temporal control rather than promotion evidence.
+
+For a real no-flags differential candidate, use all three stricter controls:
+
+- `serverThreadPolicy=binary-default` omits `-t` and `-tb` from both readiness
+  and replay, so each executable resolves its own defaults;
+- `armOrderPolicy=alternating` runs AB/BA across repetitions, reducing bias from
+  monotonic host load or thermal drift; and
+- `requireThroughputUplift=true` raises the paired throughput floor to `1.0`.
+
+Candidate latency and throughput are scored as the median of **within-round**
+candidate/baseline ratios. The tool does not divide a candidate aggregate
+extreme by a baseline aggregate extreme from another repetition. Every paired
+round, trace digest, and execution position is retained in
+`gate.metrics.pairedRounds`.
+
+Baseline validity is also distinct from baseline SLO success. A candidate may
+repair an absolute baseline latency or recovery SLO miss, but only when the
+baseline still proves that the Arm workload ran, produced accountable non-empty
+output, restarted, emitted process RSS, and completed replay integrity checks.
+An invalid baseline remains `HOLD_UNDETERMINED`.
+
 ## Run locally
 
 Build or provide executable baseline and candidate `llama-server` binaries plus
@@ -210,6 +240,9 @@ PRODUCTION_REPETITIONS=2 \
 PRODUCTION_SOAK_SECONDS_TOTAL=120 \
 PRODUCTION_SHARD_ID=1 \
 PRODUCTION_MODEL_ID=qwen2.5-1.5b-q4_0 \
+PRODUCTION_SERVER_THREAD_POLICY=binary-default \
+PRODUCTION_ARM_ORDER_POLICY=alternating \
+PRODUCTION_REQUIRE_THROUGHPUT_UPLIFT=1 \
 BASELINE_SERVER=/path/to/baseline/llama-server \
 BASELINE_MODEL=/path/to/qwen2.5-1.5b-instruct-q4_0.gguf \
 CANDIDATE_SERVER=/path/to/candidate/llama-server \
@@ -225,9 +258,11 @@ python3 tools/production_campaign.py verify \
   --out-dir /tmp/polygraph-production-local
 ```
 
-Exit status is `0` only for a complete passing comparison, `1` for a measured
-rollback/hold verdict, and `2` for infrastructure or configuration that
-prevented valid evidence.
+For `run`, exit status is `0` for `KEEP_CANDIDATE`, `1` for a measured
+`ROLLBACK_TO_BASELINE`, and `2` for `HOLD_UNDETERMINED` or infrastructure/configuration failure.
+For `verify`, exit status is `0` whenever the checksum set and receipt contract are valid,
+including a valid measured rollback receipt; inspect `gate.gateVerdict` and
+`gate.rollbackVerdict` for the decision.
 
 ## GitHub-hosted Arm64 workflow
 

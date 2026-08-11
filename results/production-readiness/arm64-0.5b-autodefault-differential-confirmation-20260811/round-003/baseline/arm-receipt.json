@@ -1,0 +1,611 @@
+{
+  "actualProductionTraffic": false,
+  "arm": "baseline",
+  "artifactIntegrity": {
+    "errors": [],
+    "expected": {
+      "model": {
+        "sha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "sizeBytes": 428730208
+      },
+      "server": {
+        "sha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "sizeBytes": 15821792
+      }
+    },
+    "snapshots": [
+      {
+        "errors": [],
+        "label": "baseline-arm:before",
+        "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "modelSizeBytes": 428730208,
+        "passed": true,
+        "serverSha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "serverSizeBytes": 15821792,
+        "timestampUtc": "2026-08-11T15:36:20.567524+00:00"
+      },
+      {
+        "errors": [],
+        "label": "readiness-arm:before",
+        "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "modelSizeBytes": 428730208,
+        "passed": true,
+        "serverSha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "serverSizeBytes": 15821792,
+        "timestampUtc": "2026-08-11T15:36:20.801506+00:00"
+      },
+      {
+        "errors": [],
+        "label": "readiness:cold-start:before-start",
+        "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "modelSizeBytes": 428730208,
+        "passed": true,
+        "serverSha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "serverSizeBytes": 15821792,
+        "timestampUtc": "2026-08-11T15:36:21.037666+00:00"
+      },
+      {
+        "errors": [],
+        "label": "readiness:cold-start:after-start",
+        "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "modelSizeBytes": 428730208,
+        "passed": true,
+        "serverSha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "serverSizeBytes": 15821792,
+        "timestampUtc": "2026-08-11T15:36:22.291295+00:00"
+      },
+      {
+        "errors": [],
+        "label": "readiness:before-stop",
+        "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "modelSizeBytes": 428730208,
+        "passed": true,
+        "serverSha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "serverSizeBytes": 15821792,
+        "timestampUtc": "2026-08-11T15:36:58.092193+00:00"
+      },
+      {
+        "errors": [],
+        "label": "readiness:after-stop",
+        "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "modelSizeBytes": 428730208,
+        "passed": true,
+        "serverSha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "serverSizeBytes": 15821792,
+        "timestampUtc": "2026-08-11T15:36:58.360096+00:00"
+      },
+      {
+        "errors": [],
+        "label": "readiness:restart-1:before-start",
+        "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "modelSizeBytes": 428730208,
+        "passed": true,
+        "serverSha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "serverSizeBytes": 15821792,
+        "timestampUtc": "2026-08-11T15:36:58.593108+00:00"
+      },
+      {
+        "errors": [],
+        "label": "readiness:restart-1:after-start",
+        "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "modelSizeBytes": 428730208,
+        "passed": true,
+        "serverSha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "serverSizeBytes": 15821792,
+        "timestampUtc": "2026-08-11T15:37:00.346796+00:00"
+      },
+      {
+        "errors": [],
+        "label": "readiness:before-stop",
+        "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "modelSizeBytes": 428730208,
+        "passed": true,
+        "serverSha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "serverSizeBytes": 15821792,
+        "timestampUtc": "2026-08-11T15:37:01.085583+00:00"
+      },
+      {
+        "errors": [],
+        "label": "readiness:after-stop",
+        "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "modelSizeBytes": 428730208,
+        "passed": true,
+        "serverSha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "serverSizeBytes": 15821792,
+        "timestampUtc": "2026-08-11T15:37:01.352467+00:00"
+      },
+      {
+        "errors": [],
+        "label": "readiness-arm:after",
+        "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "modelSizeBytes": 428730208,
+        "passed": true,
+        "serverSha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "serverSizeBytes": 15821792,
+        "timestampUtc": "2026-08-11T15:37:01.586445+00:00"
+      },
+      {
+        "errors": [],
+        "label": "replay-arm:before",
+        "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "modelSizeBytes": 428730208,
+        "passed": true,
+        "serverSha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "serverSizeBytes": 15821792,
+        "timestampUtc": "2026-08-11T15:37:01.819716+00:00"
+      },
+      {
+        "errors": [],
+        "label": "replay:cold-start:before",
+        "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "modelSizeBytes": 428730208,
+        "passed": true,
+        "serverSha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "serverSizeBytes": 15821792,
+        "timestampUtc": "2026-08-11T15:37:02.052909+00:00"
+      },
+      {
+        "errors": [],
+        "label": "replay:cold-start:after",
+        "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "modelSizeBytes": 428730208,
+        "passed": true,
+        "serverSha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "serverSizeBytes": 15821792,
+        "timestampUtc": "2026-08-11T15:37:03.292327+00:00"
+      },
+      {
+        "errors": [],
+        "label": "replay:restart-q4:before-stop",
+        "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "modelSizeBytes": 428730208,
+        "passed": true,
+        "serverSha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "serverSizeBytes": 15821792,
+        "timestampUtc": "2026-08-11T15:37:15.840623+00:00"
+      },
+      {
+        "errors": [],
+        "label": "replay:restart-q4:after-stop",
+        "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "modelSizeBytes": 428730208,
+        "passed": true,
+        "serverSha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "serverSizeBytes": 15821792,
+        "timestampUtc": "2026-08-11T15:37:16.152431+00:00"
+      },
+      {
+        "errors": [],
+        "label": "replay:restart-q4:before-start",
+        "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "modelSizeBytes": 428730208,
+        "passed": true,
+        "serverSha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "serverSizeBytes": 15821792,
+        "timestampUtc": "2026-08-11T15:37:16.427507+00:00"
+      },
+      {
+        "errors": [],
+        "label": "replay:restart-q4:after-start",
+        "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "modelSizeBytes": 428730208,
+        "passed": true,
+        "serverSha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "serverSizeBytes": 15821792,
+        "timestampUtc": "2026-08-11T15:37:18.180494+00:00"
+      },
+      {
+        "errors": [],
+        "label": "replay:final-stop:before",
+        "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "modelSizeBytes": 428730208,
+        "passed": true,
+        "serverSha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "serverSizeBytes": 15821792,
+        "timestampUtc": "2026-08-11T15:37:37.110667+00:00"
+      },
+      {
+        "errors": [],
+        "label": "replay:final-stop:after",
+        "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "modelSizeBytes": 428730208,
+        "passed": true,
+        "serverSha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "serverSizeBytes": 15821792,
+        "timestampUtc": "2026-08-11T15:37:37.410441+00:00"
+      },
+      {
+        "errors": [],
+        "label": "replay-arm:after",
+        "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "modelSizeBytes": 428730208,
+        "passed": true,
+        "serverSha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "serverSizeBytes": 15821792,
+        "timestampUtc": "2026-08-11T15:37:37.678876+00:00"
+      },
+      {
+        "errors": [],
+        "label": "baseline-arm:after",
+        "modelSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+        "modelSizeBytes": 428730208,
+        "passed": true,
+        "serverSha256": "af24708d50178d2b6713756f0189b08b4431bc20e5facbce1b82cf5ee4336186",
+        "serverSizeBytes": 15821792,
+        "timestampUtc": "2026-08-11T15:37:37.912037+00:00"
+      }
+    ],
+    "verdict": "PASS"
+  },
+  "candidateOnly": true,
+  "executionPosition": 1,
+  "label": "unmodified-no-flags",
+  "modelIdentity": {
+    "baselineActualSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+    "baselineFileNameMatchesManifest": true,
+    "baselinePath": "/private/tmp/polygraph-arm-diff-cache/models/qwen2.5-0.5b-instruct-q4_0.gguf",
+    "candidateActualSha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+    "candidateFileNameMatchesManifest": true,
+    "candidatePath": "/private/tmp/polygraph-arm-diff-cache/models/qwen2.5-0.5b-instruct-q4_0.gguf",
+    "hfFile": "qwen2.5-0.5b-instruct-q4_0.gguf",
+    "hfRepo": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+    "license": "apache-2.0",
+    "manifestLine": 37,
+    "manifestPath": "/private/tmp/polygraph-arm-differential-evidence-20260811/scripts/models.txt",
+    "manifestSha256": "09f82fb662f2196e65594c9ebde1d1e42fe74f684076ce07a4e5050342dfa996",
+    "modelId": "qwen2.5-0.5b-q4_0",
+    "sha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed",
+    "validated": true
+  },
+  "productionReady": false,
+  "provenance": {
+    "campaignSource": {
+      "hostedWorkflow": false,
+      "ref": "refs/heads/feat/arm-differential-evidence-20260811",
+      "repository": "tomyimkc/polygraph",
+      "sha": "92267687b1d999c68c209d66ddd4bde74f570cec"
+    },
+    "llamaCpp": {
+      "allowlistedShas": [
+        "dbadb68eecdfb3ab0e86872d011738fc937f0364"
+      ],
+      "mutableRefAccepted": false,
+      "resolvedSha": "dbadb68eecdfb3ab0e86872d011738fc937f0364",
+      "reviewedSha": "dbadb68eecdfb3ab0e86872d011738fc937f0364"
+    }
+  },
+  "readiness": {
+    "actualProductionTraffic": false,
+    "candidateOnly": true,
+    "configuration": {
+      "host": "127.0.0.1",
+      "port": 18096,
+      "restartCycles": 1,
+      "serverThreadPolicy": "binary-default",
+      "soakConcurrency": 2,
+      "soakSeconds": 30.0
+    },
+    "error": null,
+    "exitCode": 0,
+    "productionReady": false,
+    "summary": {
+      "actualProductionTraffic": false,
+      "boundary": "Synthetic single-host Arm64 readiness evidence. A PASS does not establish actual-production traffic, multi-day availability, failover, multi-tenant isolation, or customer correctness.",
+      "candidateOnly": true,
+      "completedAtUtc": "2026-08-11T15:37:01.352519+00:00",
+      "contestEvidenceCandidate": true,
+      "gate": {
+        "checks": [
+          {
+            "limit": "aarch64 or arm64",
+            "name": "arm64-architecture",
+            "observed": "arm64",
+            "passed": true
+          },
+          {
+            "limit": 1,
+            "name": "minimum-measured-requests",
+            "observed": 68,
+            "passed": true
+          },
+          {
+            "limit": 0.0,
+            "name": "error-rate",
+            "observed": 0.0,
+            "passed": true
+          },
+          {
+            "limit": 0,
+            "name": "usage-accounting",
+            "observed": 0,
+            "passed": true
+          },
+          {
+            "limit": 0,
+            "name": "non-empty-output",
+            "observed": 0,
+            "passed": true
+          },
+          {
+            "limit": 15000.0,
+            "name": "soak-ttft-p99",
+            "observed": 551.14837,
+            "passed": true
+          },
+          {
+            "limit": 60000.0,
+            "name": "soak-e2e-p99",
+            "observed": 2449.6193300000004,
+            "passed": true
+          },
+          {
+            "limit": 0,
+            "name": "restart-success",
+            "observed": 0,
+            "passed": true
+          },
+          {
+            "limit": 120.0,
+            "name": "restart-recovery",
+            "observed": 1.5150532079860568,
+            "passed": true
+          },
+          {
+            "limit": 8192.0,
+            "name": "server-rss",
+            "observed": 1161.546875,
+            "passed": true
+          }
+        ],
+        "verdict": "PASS"
+      },
+      "hardware": {
+        "cpuCount": 16,
+        "cpuModel": null,
+        "gitSha": null,
+        "githubRunAttempt": null,
+        "githubRunId": null,
+        "machine": "arm64",
+        "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+        "python": "3.14.6"
+      },
+      "productionReady": false,
+      "restarts": [
+        {
+          "canary": {
+            "completionTokens": 12,
+            "concurrency": 1,
+            "e2eMs": 493.021,
+            "error": null,
+            "httpStatus": 200,
+            "outputCharacters": 70,
+            "phase": "restart-canary",
+            "promptTokens": 14,
+            "schema": "polygraph.server-readiness.request.v1",
+            "startedAtUtc": "2026-08-11T15:37:00.346827+00:00",
+            "status": "success",
+            "ttftMs": 30.776,
+            "workload": "short-chat"
+          },
+          "cycle": 1,
+          "error": null,
+          "readySeconds": 1.5150532079860568,
+          "stop": {
+            "exitCode": 0,
+            "forced": false
+          },
+          "success": true
+        }
+      ],
+      "results": [
+        {
+          "completionTokens": 24,
+          "concurrency": 1,
+          "durationSeconds": 1.426,
+          "e2eP50Ms": 712.721,
+          "e2eP95Ms": 728.1425,
+          "e2eP99Ms": 729.5133000000001,
+          "emptyOutputRequests": 0,
+          "errorRate": 0.0,
+          "errors": 0,
+          "outputTokensPerSecond": 16.83206655927393,
+          "phase": "capacity",
+          "promptTokens": 48,
+          "requests": 2,
+          "requestsPerSecond": 1.4026722132728275,
+          "successes": 2,
+          "ttftP50Ms": 134.121,
+          "ttftP95Ms": 155.41500000000002,
+          "ttftP99Ms": 157.30780000000001,
+          "usageMissingRequests": 0
+        },
+        {
+          "completionTokens": 48,
+          "concurrency": 2,
+          "durationSeconds": 1.401,
+          "e2eP50Ms": 700.2460000000001,
+          "e2eP95Ms": 779.77215,
+          "e2eP99Ms": 779.80803,
+          "emptyOutputRequests": 0,
+          "errorRate": 0.0,
+          "errors": 0,
+          "outputTokensPerSecond": 34.263368671914755,
+          "phase": "capacity",
+          "promptTokens": 152,
+          "requests": 4,
+          "requestsPerSecond": 2.855280722659563,
+          "successes": 4,
+          "ttftP50Ms": 178.993,
+          "ttftP95Ms": 215.019,
+          "ttftP99Ms": 215.0694,
+          "usageMissingRequests": 0
+        },
+        {
+          "completionTokens": 744,
+          "concurrency": 2,
+          "durationSeconds": 30.931,
+          "e2eP50Ms": 927.4304999999999,
+          "e2eP95Ms": 1675.4240499999987,
+          "e2eP99Ms": 2449.6193300000004,
+          "emptyOutputRequests": 0,
+          "errorRate": 0.0,
+          "errors": 0,
+          "outputTokensPerSecond": 24.053370225400098,
+          "phase": "soak",
+          "promptTokens": 2060,
+          "requests": 62,
+          "requestsPerSecond": 2.0044475187833415,
+          "successes": 62,
+          "ttftP50Ms": 239.167,
+          "ttftP95Ms": 450.3058,
+          "ttftP99Ms": 551.14837,
+          "usageMissingRequests": 0
+        }
+      ],
+      "schema": "polygraph.server-readiness.v1",
+      "server": {
+        "binary": "/private/tmp/polygraph-arm-diff-cache/llama.cpp/build-baseline/bin/llama-server",
+        "coldReadySeconds": 1.0025236250367016,
+        "command": [
+          "/private/tmp/polygraph-arm-diff-cache/llama.cpp/build-baseline/bin/llama-server",
+          "-m",
+          "/private/tmp/polygraph-arm-diff-cache/models/qwen2.5-0.5b-instruct-q4_0.gguf",
+          "-ngl",
+          "0",
+          "-c",
+          "2048",
+          "-np",
+          "2",
+          "-cb",
+          "--host",
+          "127.0.0.1",
+          "--port",
+          "18096"
+        ],
+        "finalStop": {
+          "exitCode": 0,
+          "forced": false
+        },
+        "model": "/private/tmp/polygraph-arm-diff-cache/models/qwen2.5-0.5b-instruct-q4_0.gguf"
+      },
+      "startedAtUtc": "2026-08-11T15:36:20.802254+00:00",
+      "totals": {
+        "measuredFailures": 0,
+        "measuredRequests": 68,
+        "measuredSuccesses": 68,
+        "warmupErrors": 0,
+        "warmupRequests": 5
+      },
+      "workload": {
+        "capacityConcurrencies": [
+          1,
+          2
+        ],
+        "capacitySecondsPerPoint": 1.0,
+        "maxTokens": 12,
+        "soakConcurrency": 2,
+        "soakSeconds": 30.0,
+        "trafficFamilies": [
+          "long-summary",
+          "rag-like",
+          "short-chat"
+        ]
+      }
+    },
+    "summaryPath": "readiness/summary.json"
+  },
+  "repetition": 3,
+  "replay": {
+    "actualProductionTraffic": false,
+    "boundary": "Foreign-sentinel checks cover only this generated trace and do not establish real multi-tenant isolation.",
+    "candidateOnly": true,
+    "checks": [
+      {
+        "limit": 1,
+        "name": "expected-load-generator-errors-observed",
+        "observed": 1,
+        "passed": true
+      },
+      {
+        "limit": 0.0,
+        "name": "replay-unexpected-error-rate",
+        "observed": 0.0,
+        "passed": true
+      },
+      {
+        "limit": 60000,
+        "name": "replay-e2e-p99",
+        "observed": 9120.43024,
+        "passed": true
+      },
+      {
+        "limit": 0,
+        "name": "synthetic-tenant-foreign-sentinel-leaks",
+        "observed": 0,
+        "passed": true
+      },
+      {
+        "limit": 0,
+        "name": "synthetic-sentinel-response-contract",
+        "observed": 0,
+        "passed": true
+      },
+      {
+        "limit": 0,
+        "name": "synthetic-tenant-own-sentinel-present",
+        "observed": 0,
+        "passed": true
+      },
+      {
+        "limit": 1,
+        "name": "process-model-restart-count",
+        "observed": 1,
+        "passed": true
+      },
+      {
+        "limit": 0,
+        "name": "process-model-restarts-success",
+        "observed": 0,
+        "passed": true
+      }
+    ],
+    "coldReadySeconds": 1.002734582987614,
+    "containsPii": false,
+    "expectedInjectedErrors": 1,
+    "finalStop": {
+      "exitCode": 0,
+      "forced": false
+    },
+    "foreignSentinelLeaks": 0,
+    "loadGeneratorE2eP99Ms": 9120.43024,
+    "observedInjectedErrors": 1,
+    "ownSentinelMissingSuccesses": 0,
+    "productionReady": false,
+    "requests": 8,
+    "requestsSentToServer": 7,
+    "responseContractInvalidSuccesses": 0,
+    "restartEvents": [
+      {
+        "beforeSequence": 4,
+        "error": null,
+        "faultType": "process-model-restart",
+        "modelReloaded": true,
+        "readySeconds": 1.5173817919567227,
+        "stop": {
+          "exitCode": 0,
+          "forced": false
+        },
+        "success": true
+      }
+    ],
+    "successes": 7,
+    "syntheticTrafficOnly": true,
+    "tenantIsolationClaimed": false,
+    "traceDigest": "02eb5d2d37c3c5360bc91211eaf80354f5516e2e87cfeb22e4785badd189f373",
+    "unexpectedErrorRate": 0.0,
+    "unexpectedErrors": 0,
+    "verdict": "PASS"
+  },
+  "soakSeconds": 30.0,
+  "traceDigest": "02eb5d2d37c3c5360bc91211eaf80354f5516e2e87cfeb22e4785badd189f373"
+}

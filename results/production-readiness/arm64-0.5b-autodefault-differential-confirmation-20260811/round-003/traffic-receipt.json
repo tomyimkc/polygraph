@@ -1,0 +1,15 @@
+{
+  "actualProductionTraffic": false,
+  "campaignShard": 1,
+  "containsPii": false,
+  "repetition": 3,
+  "requests": 8,
+  "schema": "polygraph.production-campaign.synthetic-trace.v1",
+  "syntheticTenantLabels": [
+    "synthetic-tenant-alpha",
+    "synthetic-tenant-beta",
+    "synthetic-tenant-gamma"
+  ],
+  "tenantIsolationClaimed": false,
+  "traceDigest": "02eb5d2d37c3c5360bc91211eaf80354f5516e2e87cfeb22e4785badd189f373"
+}

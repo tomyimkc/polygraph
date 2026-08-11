@@ -173,7 +173,11 @@ GGML_KLEIDIAI_SME=2 GGML_KLEIDIAI_PHASE_AWARE=1 ./build/bin/llama-cli -m model.g
 
 **Target:** `ggml-org/llama.cpp` at `dbadb68` (`common/`, `ggml/include/ggml-cpu.h`,
 `ggml/src/ggml-cpu/ggml-cpu.cpp`, `ggml/src/ggml-cpu/kleidiai/kleidiai.{h,cpp}`).
-**Status:** local, on by default, measured (see `results/AUTODEFAULTS.md`).
+**Status:** local experimental candidate, functionally verified, **not promoted**. The original
+isolated `llama-cli` result is in `results/AUTODEFAULTS.md`; the stricter, distinct-binary
+production-shaped confirmation in
+`results/production-readiness/arm64-0.5b-autodefault-differential-confirmation-20260811/`
+returned `ROLLBACK_TO_BASELINE`.
 
 ## License / attribution
 
@@ -184,13 +188,12 @@ only, never a vendored copy of the touched files.
 ## The problem this answers (Defect A)
 
 `0001` and this repo's own measurements (`results/REMEASURE-2026-08-04-QUIET.md`) establish that
-on an SME2 CPU, decode throughput is **~2-3x higher at `n_threads == sme_thread_cap`** (2 on an
-Apple M4 Max) than at the stock default (the physical/P-core count, 12 here) — because above the
-cap, KleidiAI's SME2 GEMV kernels can't dispatch and silently fall back to slower NEON. That win
-is real, but it requires the user to already know `sme_thread_cap`, know it applies specifically
-to *generation* threads, and pass `-t 2` themselves. Nothing in the codebase does this
-automatically, so out of the box, on stock `llama.cpp`, KleidiAI-capable SME2 hardware runs
-decode at roughly a third of its achievable throughput, silently.
+on the first isolated Apple M4 Max microbenchmark, decode throughput was **~2-3x higher at
+`n_threads == sme_thread_cap`** (2 here) than at the stock default (the physical/P-core count,
+12) — because above the cap, KleidiAI's SME2 GEMV kernels cannot dispatch and silently fall back
+to NEON. That isolated win is real for the recorded workload, but later generalization and
+server-campaign evidence show that the fixed cap is not a universal end-to-end optimum. The patch
+therefore remains an experimental heuristic, not a production default recommendation.
 
 Worse: the "obvious" hand-tuned fix (just pass `-t 2`) is a trap. Passing `-t 2` alone with no
 `-tb` also caps **prefill/batch** threads at 2 (llama.cpp's stock `-tb` default is "same as
@@ -270,6 +273,10 @@ was cross-checked to agree with the `llama-cli` numbers within noise.
   M4 Max, `sme_thread_cap=2`); the mechanism generalizes (it reads the cap from KleidiAI's own
   runtime detection, not a hardcoded constant), but the *speedup magnitude* was only measured on
   this machine.
+- It does not claim the SME2 cap is a robust server default even on that machine. In the
+  2026-08-11 three-round, no-flags, distinct-binary server confirmation, the median within-round
+  throughput ratio was `0.9330`, with only one of three rounds above `1.0`; the strict gate
+  returned `FAIL / ROLLBACK_TO_BASELINE`.
 
 ## How to apply
 

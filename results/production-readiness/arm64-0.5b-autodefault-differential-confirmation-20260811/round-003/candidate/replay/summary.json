@@ -1,0 +1,91 @@
+{
+  "actualProductionTraffic": false,
+  "boundary": "Foreign-sentinel checks cover only this generated trace and do not establish real multi-tenant isolation.",
+  "candidateOnly": true,
+  "checks": [
+    {
+      "limit": 1,
+      "name": "expected-load-generator-errors-observed",
+      "observed": 1,
+      "passed": true
+    },
+    {
+      "limit": 0.0,
+      "name": "replay-unexpected-error-rate",
+      "observed": 0.0,
+      "passed": true
+    },
+    {
+      "limit": 60000,
+      "name": "replay-e2e-p99",
+      "observed": 3313.5085599999993,
+      "passed": true
+    },
+    {
+      "limit": 0,
+      "name": "synthetic-tenant-foreign-sentinel-leaks",
+      "observed": 0,
+      "passed": true
+    },
+    {
+      "limit": 0,
+      "name": "synthetic-sentinel-response-contract",
+      "observed": 0,
+      "passed": true
+    },
+    {
+      "limit": 0,
+      "name": "synthetic-tenant-own-sentinel-present",
+      "observed": 0,
+      "passed": true
+    },
+    {
+      "limit": 1,
+      "name": "process-model-restart-count",
+      "observed": 1,
+      "passed": true
+    },
+    {
+      "limit": 0,
+      "name": "process-model-restarts-success",
+      "observed": 0,
+      "passed": true
+    }
+  ],
+  "coldReadySeconds": 1.5085958749987185,
+  "containsPii": false,
+  "expectedInjectedErrors": 1,
+  "finalStop": {
+    "exitCode": 0,
+    "forced": false
+  },
+  "foreignSentinelLeaks": 0,
+  "loadGeneratorE2eP99Ms": 3313.5085599999993,
+  "observedInjectedErrors": 1,
+  "ownSentinelMissingSuccesses": 0,
+  "productionReady": false,
+  "requests": 8,
+  "requestsSentToServer": 7,
+  "responseContractInvalidSuccesses": 0,
+  "restartEvents": [
+    {
+      "beforeSequence": 4,
+      "error": null,
+      "faultType": "process-model-restart",
+      "modelReloaded": true,
+      "readySeconds": 6.044085250003263,
+      "stop": {
+        "exitCode": 0,
+        "forced": false
+      },
+      "success": true
+    }
+  ],
+  "successes": 7,
+  "syntheticTrafficOnly": true,
+  "tenantIsolationClaimed": false,
+  "traceDigest": "02eb5d2d37c3c5360bc91211eaf80354f5516e2e87cfeb22e4785badd189f373",
+  "unexpectedErrorRate": 0.0,
+  "unexpectedErrors": 0,
+  "verdict": "PASS"
+}

@@ -1,0 +1,240 @@
+{
+  "actualProductionTraffic": false,
+  "candidateOnly": true,
+  "configuration": {
+    "host": "127.0.0.1",
+    "port": 18096,
+    "restartCycles": 1,
+    "serverThreadPolicy": "binary-default",
+    "soakConcurrency": 2,
+    "soakSeconds": 30.0
+  },
+  "error": null,
+  "exitCode": 0,
+  "productionReady": false,
+  "summary": {
+    "actualProductionTraffic": false,
+    "boundary": "Synthetic single-host Arm64 readiness evidence. A PASS does not establish actual-production traffic, multi-day availability, failover, multi-tenant isolation, or customer correctness.",
+    "candidateOnly": true,
+    "completedAtUtc": "2026-08-11T15:37:01.352519+00:00",
+    "contestEvidenceCandidate": true,
+    "gate": {
+      "checks": [
+        {
+          "limit": "aarch64 or arm64",
+          "name": "arm64-architecture",
+          "observed": "arm64",
+          "passed": true
+        },
+        {
+          "limit": 1,
+          "name": "minimum-measured-requests",
+          "observed": 68,
+          "passed": true
+        },
+        {
+          "limit": 0.0,
+          "name": "error-rate",
+          "observed": 0.0,
+          "passed": true
+        },
+        {
+          "limit": 0,
+          "name": "usage-accounting",
+          "observed": 0,
+          "passed": true
+        },
+        {
+          "limit": 0,
+          "name": "non-empty-output",
+          "observed": 0,
+          "passed": true
+        },
+        {
+          "limit": 15000.0,
+          "name": "soak-ttft-p99",
+          "observed": 551.14837,
+          "passed": true
+        },
+        {
+          "limit": 60000.0,
+          "name": "soak-e2e-p99",
+          "observed": 2449.6193300000004,
+          "passed": true
+        },
+        {
+          "limit": 0,
+          "name": "restart-success",
+          "observed": 0,
+          "passed": true
+        },
+        {
+          "limit": 120.0,
+          "name": "restart-recovery",
+          "observed": 1.5150532079860568,
+          "passed": true
+        },
+        {
+          "limit": 8192.0,
+          "name": "server-rss",
+          "observed": 1161.546875,
+          "passed": true
+        }
+      ],
+      "verdict": "PASS"
+    },
+    "hardware": {
+      "cpuCount": 16,
+      "cpuModel": null,
+      "gitSha": null,
+      "githubRunAttempt": null,
+      "githubRunId": null,
+      "machine": "arm64",
+      "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+      "python": "3.14.6"
+    },
+    "productionReady": false,
+    "restarts": [
+      {
+        "canary": {
+          "completionTokens": 12,
+          "concurrency": 1,
+          "e2eMs": 493.021,
+          "error": null,
+          "httpStatus": 200,
+          "outputCharacters": 70,
+          "phase": "restart-canary",
+          "promptTokens": 14,
+          "schema": "polygraph.server-readiness.request.v1",
+          "startedAtUtc": "2026-08-11T15:37:00.346827+00:00",
+          "status": "success",
+          "ttftMs": 30.776,
+          "workload": "short-chat"
+        },
+        "cycle": 1,
+        "error": null,
+        "readySeconds": 1.5150532079860568,
+        "stop": {
+          "exitCode": 0,
+          "forced": false
+        },
+        "success": true
+      }
+    ],
+    "results": [
+      {
+        "completionTokens": 24,
+        "concurrency": 1,
+        "durationSeconds": 1.426,
+        "e2eP50Ms": 712.721,
+        "e2eP95Ms": 728.1425,
+        "e2eP99Ms": 729.5133000000001,
+        "emptyOutputRequests": 0,
+        "errorRate": 0.0,
+        "errors": 0,
+        "outputTokensPerSecond": 16.83206655927393,
+        "phase": "capacity",
+        "promptTokens": 48,
+        "requests": 2,
+        "requestsPerSecond": 1.4026722132728275,
+        "successes": 2,
+        "ttftP50Ms": 134.121,
+        "ttftP95Ms": 155.41500000000002,
+        "ttftP99Ms": 157.30780000000001,
+        "usageMissingRequests": 0
+      },
+      {
+        "completionTokens": 48,
+        "concurrency": 2,
+        "durationSeconds": 1.401,
+        "e2eP50Ms": 700.2460000000001,
+        "e2eP95Ms": 779.77215,
+        "e2eP99Ms": 779.80803,
+        "emptyOutputRequests": 0,
+        "errorRate": 0.0,
+        "errors": 0,
+        "outputTokensPerSecond": 34.263368671914755,
+        "phase": "capacity",
+        "promptTokens": 152,
+        "requests": 4,
+        "requestsPerSecond": 2.855280722659563,
+        "successes": 4,
+        "ttftP50Ms": 178.993,
+        "ttftP95Ms": 215.019,
+        "ttftP99Ms": 215.0694,
+        "usageMissingRequests": 0
+      },
+      {
+        "completionTokens": 744,
+        "concurrency": 2,
+        "durationSeconds": 30.931,
+        "e2eP50Ms": 927.4304999999999,
+        "e2eP95Ms": 1675.4240499999987,
+        "e2eP99Ms": 2449.6193300000004,
+        "emptyOutputRequests": 0,
+        "errorRate": 0.0,
+        "errors": 0,
+        "outputTokensPerSecond": 24.053370225400098,
+        "phase": "soak",
+        "promptTokens": 2060,
+        "requests": 62,
+        "requestsPerSecond": 2.0044475187833415,
+        "successes": 62,
+        "ttftP50Ms": 239.167,
+        "ttftP95Ms": 450.3058,
+        "ttftP99Ms": 551.14837,
+        "usageMissingRequests": 0
+      }
+    ],
+    "schema": "polygraph.server-readiness.v1",
+    "server": {
+      "binary": "/private/tmp/polygraph-arm-diff-cache/llama.cpp/build-baseline/bin/llama-server",
+      "coldReadySeconds": 1.0025236250367016,
+      "command": [
+        "/private/tmp/polygraph-arm-diff-cache/llama.cpp/build-baseline/bin/llama-server",
+        "-m",
+        "/private/tmp/polygraph-arm-diff-cache/models/qwen2.5-0.5b-instruct-q4_0.gguf",
+        "-ngl",
+        "0",
+        "-c",
+        "2048",
+        "-np",
+        "2",
+        "-cb",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "18096"
+      ],
+      "finalStop": {
+        "exitCode": 0,
+        "forced": false
+      },
+      "model": "/private/tmp/polygraph-arm-diff-cache/models/qwen2.5-0.5b-instruct-q4_0.gguf"
+    },
+    "startedAtUtc": "2026-08-11T15:36:20.802254+00:00",
+    "totals": {
+      "measuredFailures": 0,
+      "measuredRequests": 68,
+      "measuredSuccesses": 68,
+      "warmupErrors": 0,
+      "warmupRequests": 5
+    },
+    "workload": {
+      "capacityConcurrencies": [
+        1,
+        2
+      ],
+      "capacitySecondsPerPoint": 1.0,
+      "maxTokens": 12,
+      "soakConcurrency": 2,
+      "soakSeconds": 30.0,
+      "trafficFamilies": [
+        "long-summary",
+        "rag-like",
+        "short-chat"
+      ]
+    }
+  },
+  "summaryPath": "readiness/summary.json"
+}

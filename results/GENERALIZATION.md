@@ -12,10 +12,20 @@ SPDX-FileCopyrightText: 2026 Arm Dispatch Ledger contributors
 > still substantially beats the naive no-flags default in every model/quant tested
 > (1.47x–3.00x decode), and it still reaches its *own* target (`-t <cap>`) within
 > measurement noise in every case — so it is not broken and not a regression anywhere
-> tested. But "default generation threads to the SME cap" is a fixed hardware-derived
+> tested **by the isolated `llama-cli` protocol in this document**. But "default generation
+> threads to the SME cap" is a fixed hardware-derived
 > heuristic, not a per-model-tuned one, and this session's data shows it leaving real
 > throughput on the table as the model gets bigger. That is the one finding here worth
 > a reviewer's attention above all others.
+
+> **2026-08-11 server-campaign update:** the stronger production-shaped protocol did observe a
+> regression. A three-round distinct-binary AB/BA run on the 0.5B Q4_0 model, with no `-t`/`-tb`
+> flags and a required paired throughput uplift, produced a median within-round throughput ratio
+> of `0.9330`, E2E p99 ratio `1.2464`, and TTFT p99 ratio `1.7081`. The candidate won only one of
+> three throughput rounds and the gate returned `FAIL / ROLLBACK_TO_BASELINE`. This does not
+> invalidate the isolated tables below; it narrows their scope and rejects the fixed-cap patch as
+> a robust server default. See
+> `results/production-readiness/arm64-0.5b-autodefault-differential-confirmation-20260811/`.
 
 ## 0. Setup
 
