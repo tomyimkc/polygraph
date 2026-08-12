@@ -1,0 +1,72 @@
+name: Independent reproduction
+description: Publish an outside reproduction of the two-minute Polygraph demo or the full Arm verifier.
+title: "[Independent reproduction] "
+labels:
+  - reproduction
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for testing Polygraph independently. Passes, failures, and unclear results are all useful. Do not upload models, secrets, private logs, or other restricted data.
+  - type: input
+    id: commit
+    attributes:
+      label: Polygraph commit
+      description: Paste the full output of `git rev-parse HEAD`.
+      placeholder: 40-character Git commit SHA
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system, version, CPU, and architecture.
+      placeholder: Ubuntu 24.04, Arm64, Neoverse N2
+    validations:
+      required: true
+  - type: textarea
+    id: tools
+    attributes:
+      label: Tool versions
+      description: Compiler and debugger versions used for the run.
+      placeholder: |
+        cc --version:
+        gdb --version or lldb --version:
+    validations:
+      required: true
+  - type: dropdown
+    id: path
+    attributes:
+      label: Reproduction path
+      options:
+        - Two-minute catch-a-liar demo
+        - Full Arm / llama.cpp verifier
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: Result
+      options:
+        - Passed as documented
+        - Failed
+        - Could not determine
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Complete command output
+      description: Paste the terminal output. Redact only secrets or private paths and state what was redacted.
+      render: shell
+    validations:
+      required: true
+  - type: checkboxes
+    id: independence
+    attributes:
+      label: Independence disclosure
+      options:
+        - label: I am not a Polygraph code or evidence contributor.
+          required: true
+        - label: I confirm this report contains no secrets, private data, or restricted model files.
+          required: true

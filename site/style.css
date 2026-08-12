@@ -210,6 +210,39 @@ a:hover, a:focus {
   font-size: 1.02rem;
 }
 
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.65rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.button:hover,
+.button:focus {
+  border-color: var(--accent);
+}
+
+.button-primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
 .theme-toggle {
   flex: 0 0 auto;
   background: var(--bg-elevated);
@@ -315,8 +348,16 @@ main {
   font-variant-numeric: tabular-nums;
 }
 
-.headline-card-decode .headline-value { color: var(--match-fg); }
-.headline-card-prefill .headline-value { color: var(--accent); }
+.headline-card-proof {
+  border-color: var(--match-border);
+}
+
+.headline-card-rollback {
+  border-color: var(--mismatch-border);
+}
+
+.headline-card-proof .headline-value { color: var(--match-fg); }
+.headline-card-rollback .headline-value { color: var(--mismatch-fg); }
 
 .headline-detail {
   margin: 0 0 0.3rem;
@@ -331,21 +372,21 @@ main {
   color: var(--text-muted);
 }
 
-.headline-contrast {
+.headline-boundary {
   margin-top: 1.4rem;
   padding-top: 1.2rem;
   border-top: 1px solid var(--border);
 }
 
-.headline-contrast h3 {
+.headline-boundary h3 {
   font-size: 1.05rem;
   margin: 0 0 0.5rem;
 }
 
-.headline-contrast-intro {
+.headline-boundary p {
   color: var(--text-muted);
   max-width: 74ch;
-  margin: 0 0 1rem;
+  margin: 0;
   font-size: 0.94rem;
 }
 
