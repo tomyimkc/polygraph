@@ -1,5 +1,29 @@
 # Polygraph
 
+## 30-second judge summary
+
+**Track: Cloud AI.** Polygraph is an open-source lie detector for AI acceleration. It checks
+whether fast kernels were built, whether the runtime selected them, and whether those kernels
+actually executed.
+
+On one tested Arm system, it found a `llama.cpp` build that printed `KLEIDIAI = 1` but contained
+zero usable accelerated matmul entry points. Correcting that specific broken build moved measured
+Qwen2.5-7B prefill from 48.64 to 222.14 tok/s, a 4.57x comparison. Later, Polygraph's stricter
+paired gate rejected our own optimization candidate at 0.9330x baseline throughput and returned
+`ROLLBACK_TO_BASELINE`. That is the product promise: **prove what ran, and reject a speedup when
+the evidence does not hold.**
+
+```bash
+git clone https://github.com/tomyimkc/polygraph && cd polygraph
+make demo
+```
+
+The demo takes about two minutes, downloads no model, and needs no Arm hardware. Judges can then
+follow the source-backed proof chain in
+[`docs/CONTEST-EVIDENCE-MAP.md`](docs/CONTEST-EVIDENCE-MAP.md), inspect the
+[immutable evidence release](https://github.com/tomyimkc/polygraph/releases/tag/arm-create-evidence-31312723300),
+or use the [independent reproduction form](docs/INDEPENDENT-REPRODUCTION.md).
+
 **On one DGX Spark/Cortex-X925 with gcc 13.3, `llama.cpp`'s documented KleidiAI build command
 exited `0` and printed `KLEIDIAI = 1`, while the resulting binary contained zero usable
 `kai_run_matmul` entry points. Correcting that specific broken native-build configuration improved

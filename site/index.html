@@ -28,16 +28,19 @@
     <div class="hero-inner">
       <div class="hero-text">
         <p class="brand-mark">Polygraph <span class="brand-tagline">&mdash; does your software actually do what it says?</span></p>
-        <p class="eyebrow">Arm Create: AI Optimization Challenge &middot; Track 2 (Cloud AI)</p>
-        <h1>A kernel can be advertised and never execute once.</h1>
+        <p class="eyebrow">Arm Create: AI Optimization Challenge &middot; Cloud AI track</p>
+        <h1>Polygraph checks whether AI acceleration really ran.</h1>
         <p class="hero-sub">
-          This dashboard renders a <strong>dispatch ledger</strong> for <code>llama.cpp</code>'s
-          KleidiAI CPU backend on Arm: what the startup banner <em>advertises</em>, versus what
-          <code>lldb</code>/<code>gdb</code> breakpoints on the real <code>kai_run_matmul_*</code>
-          kernel entry points prove actually <em>executed</em>. Every number below comes from a
-          JSON file committed to this repository's <code>results/</code> directory &mdash; nothing
-          on this page is invented, interpolated, or fetched from elsewhere.
+          Fast mode can be switched on while the fast code never runs. Polygraph checks the built
+          binary, reads the runtime's own choice, and then counts the real accelerated functions
+          as inference happens. That turns a hopeful banner into evidence a developer can test,
+          review, and use in CI.
         </p>
+        <nav class="hero-actions" aria-label="Judge shortcuts">
+          <a class="button button-primary" href="https://github.com/tomyimkc/polygraph#see-it-catch-one-in-two-minutes-on-your-own-laptop">Run the two-minute demo</a>
+          <a class="button" href="https://github.com/tomyimkc/polygraph/blob/main/docs/CONTEST-EVIDENCE-MAP.md">Open the evidence map</a>
+          <a class="button" href="https://github.com/tomyimkc/polygraph/releases/tag/arm-create-evidence-31312723300">View immutable release</a>
+        </nav>
       </div>
       <button id="theme-toggle" type="button" class="theme-toggle" aria-pressed="false">
         <span aria-hidden="true" class="theme-toggle-icon">&#9788;</span>
@@ -57,49 +60,43 @@
 
   <main id="main">
     <section class="panel headline-band" id="headline-band" aria-labelledby="headline-heading">
-      <h2 id="headline-heading">The measured optimization</h2>
+      <h2 id="headline-heading">What Polygraph proved &mdash; and what it rejected</h2>
       <p class="panel-intro">
-        <code>patches/0002-kleidiai-sme-aware-thread-default.patch</code> &mdash; one measured,
-        round-robin-interleaved session (<code>llama-cli</code>, n=9 per config), decode and
-        prefill reported separately. Every number below is read live from
-        <a href="data/results/headline.json">results/headline.json</a>; nothing here is typed
-        into this page by hand.
+        A useful verifier must catch other software's mistakes and its own. These cards are read
+        from the committed measurement JSON: the tested broken-build correction on one Arm system,
+        and the later optimization candidate that a stricter paired gate refused to promote.
       </p>
 
       <p class="headline-empty" id="headline-empty" hidden>
-        No <code>results/headline.json</code> was found under <code>results/</code> at publish
-        time &mdash; this band has nothing honest to show yet.
+        The source measurement JSON was not found at publish time &mdash; this band has nothing
+        honest to show yet.
       </p>
 
       <div class="headline-grid" id="headline-grid">
-        <div class="headline-card headline-card-decode">
-          <p class="headline-eyebrow">Decode &mdash; zero flags</p>
-          <p class="headline-value" id="headline-decode-ratio">&ndash;</p>
-          <p class="headline-detail" id="headline-decode-detail">Loading&hellip;</p>
-          <p class="headline-note" id="headline-decode-note"></p>
+        <div class="headline-card headline-card-proof">
+          <p class="headline-eyebrow">Caught a broken Arm build</p>
+          <p class="headline-value" id="headline-proof-ratio">&ndash;</p>
+          <p class="headline-detail" id="headline-proof-detail">Loading&hellip;</p>
+          <p class="headline-note" id="headline-proof-note"></p>
         </div>
-        <div class="headline-card headline-card-prefill">
-          <p class="headline-eyebrow">Prefill &mdash; same patch, same run</p>
-          <p class="headline-value" id="headline-prefill-ratio">&ndash;</p>
-          <p class="headline-detail" id="headline-prefill-detail">Loading&hellip;</p>
-          <p class="headline-note" id="headline-prefill-note"></p>
+        <div class="headline-card headline-card-rollback">
+          <p class="headline-eyebrow">Rejected our own candidate</p>
+          <p class="headline-value" id="headline-rollback-ratio">&ndash;</p>
+          <p class="headline-detail" id="headline-rollback-detail">Loading&hellip;</p>
+          <p class="headline-note" id="headline-rollback-note"></p>
         </div>
       </div>
 
-      <div class="headline-contrast">
-        <h3 id="headline-contrast-heading">
-          Why a phase-aware patch, and not just &ldquo;pass <code>-t 2</code>&rdquo;
-        </h3>
-        <p class="headline-contrast-intro" id="headline-contrast-intro">Loading&hellip;</p>
-        <div class="headline-bars" id="headline-bars" aria-labelledby="headline-contrast-heading"></div>
+      <div class="headline-boundary" id="headline-boundary">
+        <h3>Claim boundary</h3>
+        <p id="headline-boundary-text">Loading the authoritative gate boundary&hellip;</p>
       </div>
 
       <div class="headline-honesty" id="headline-honesty">
         <p>
           <span class="headline-honesty-icon" aria-hidden="true">&#9432;</span>
-          <strong>Honesty check &mdash; how much of this is SME2, and how much is generic thread
-          tuning:</strong>
-          <span id="headline-honesty-text">Loading decomposition data&hellip;</span>
+          <strong>Scope:</strong>
+          <span id="headline-honesty-text">Loading source scope&hellip;</span>
         </p>
       </div>
     </section>
