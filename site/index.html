@@ -17,8 +17,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light dark" />
-  <title>Polygraph -- advertised vs. executed</title>
-  <meta name="description" content="Advertised-vs-executed kernel dispatch ledger for llama.cpp's KleidiAI CPU backend on Arm, verified with lldb/gdb breakpoints on real kernel entry points." />
+  <title>Polygraph -- Arm64 cloud inference verification gate</title>
+  <meta name="description" content="Fail-closed Arm64 cloud inference verification: prove CPU kernel dispatch, measure performance separately, and keep or roll back candidates from committed evidence." />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -27,19 +27,21 @@
   <header class="hero">
     <div class="hero-inner">
       <div class="hero-text">
-        <p class="brand-mark">Polygraph <span class="brand-tagline">&mdash; does your software actually do what it says?</span></p>
+        <p class="brand-mark">Polygraph <span class="brand-tagline">&mdash; prove the path before trusting the benchmark</span></p>
         <p class="eyebrow">Arm Create: AI Optimization Challenge &middot; Cloud AI track</p>
-        <h1>Polygraph checks whether AI acceleration really ran.</h1>
+        <h1>A fail-closed verification gate for Arm64 cloud inference.</h1>
         <p class="hero-sub">
-          Fast mode can be switched on while the fast code never runs. Polygraph checks the built
-          binary, reads the runtime's own choice, and then counts the real accelerated functions
-          as inference happens. That turns a hopeful banner into evidence a developer can test,
-          review, and use in CI.
+          Software can report acceleration while the intended path never runs. Polygraph checks
+          the built binary, reads the runtime's own choice, and counts real Arm CPU kernel entries
+          during inference. It then treats performance and promotion as separate controlled
+          questions, turning a hopeful banner into evidence a cloud team can test, review, and use
+          in CI.
         </p>
         <nav class="hero-actions" aria-label="Judge shortcuts">
           <a class="button button-primary" href="https://github.com/tomyimkc/polygraph#see-it-catch-one-in-two-minutes-on-your-own-laptop">Run the two-minute demo</a>
           <a class="button" href="https://github.com/tomyimkc/polygraph/blob/main/docs/CONTEST-EVIDENCE-MAP.md">Open the evidence map</a>
           <a class="button" href="https://github.com/tomyimkc/polygraph/releases/tag/arm-create-evidence-31312723300">View immutable release</a>
+          <a class="button" href="https://github.com/tomyimkc/polygraph/blob/main/docs/JUDGE-FAQ.md">Read judge FAQ</a>
         </nav>
       </div>
       <button id="theme-toggle" type="button" class="theme-toggle" aria-pressed="false">
@@ -65,6 +67,11 @@
         A useful verifier must catch other software's mistakes and its own. These cards are read
         from the committed measurement JSON: the tested broken-build correction on one Arm system,
         and the later optimization candidate that a stricter paired gate refused to promote.
+      </p>
+      <p class="panel-intro">
+        The Arm CPU is not the source of the claim: build/runtime software is. The first card is a
+        broken-versus-corrected build comparison, not a new Polygraph kernel or universal speedup.
+        The second shows why confirmed dispatch does not by itself prove better performance.
       </p>
 
       <p class="headline-empty" id="headline-empty" hidden>
@@ -187,7 +194,9 @@
         A timing-only benchmark cannot see a silent fallback: the run still completes, still
         prints a plausible tok/s number, and the banner still says the accelerator is enabled.
         This project's verifier (<code>tools/verify_dispatch.py</code>) never trusts fewer than
-        three independent evidence layers:
+        three independent evidence layers. Those layers prove execution provenance for the
+        measured workload; throughput, latency, memory, recovery, and deployment readiness remain
+        separate gates:
       </p>
       <dl class="method-list">
         <div>

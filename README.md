@@ -2,27 +2,47 @@
 
 ## 30-second judge summary
 
-**Track: Cloud AI.** Polygraph is an open-source lie detector for AI acceleration. It checks
-whether fast kernels were built, whether the runtime selected them, and whether those kernels
-actually executed.
+**Track: Cloud AI.** Polygraph is a fail-closed verification and deployment gate for Arm64 cloud
+inference. It checks whether accelerated kernels were built, whether the runtime selected them,
+whether those kernels actually executed, and whether a candidate still passes controlled
+throughput, latency, memory, and recovery gates before promotion.
+
+**The Arm CPU is not "lying."** A misleading signal can come from the software build, feature
+probe, startup banner, dispatcher, or benchmark interpretation. Polygraph locates that mismatch
+and keeps two different claims separate:
+
+| Evidence | What it proves | What it does **not** prove |
+|---|---|---|
+| L1 symbols + L2 selection + L3 dispatch | The measured workload entered the accelerated code path | That the path was faster, optimal, or production-ready |
+| Controlled paired server benchmark | The measured candidate met or missed configured throughput, latency, memory, and recovery gates | A universal speedup, customer-traffic reliability, or deployment authorization |
 
 On one tested Arm system, it found a `llama.cpp` build that printed `KLEIDIAI = 1` but contained
 zero usable accelerated matmul entry points. Correcting that specific broken build moved measured
 Qwen2.5-7B prefill from 48.64 to 222.14 tok/s, a 4.57x comparison. Later, Polygraph's stricter
 paired gate rejected our own optimization candidate at 0.9330x baseline throughput and returned
 `ROLLBACK_TO_BASELINE`. That is the product promise: **prove what ran, and reject a speedup when
-the evidence does not hold.**
+the evidence does not hold.** The 4.57x result is a broken-versus-corrected build comparison on
+one configuration—not a new kernel invented by this project, not a universal Arm speedup, and not
+evidence that stock `llama.cpp` releases are affected.
+
+That is a Cloud AI problem because silent fallback changes capacity planning, latency budgets,
+memory-per-instance assumptions, and rollout safety across an inference fleet. Polygraph turns
+the failure into a machine-readable CI/pre-deployment decision instead of leaving operators to
+trust a banner or an isolated timing result.
 
 ```bash
 git clone https://github.com/tomyimkc/polygraph && cd polygraph
 make demo
 ```
 
-The demo takes about two minutes, downloads no model, and needs no Arm hardware. Judges can then
-follow the source-backed proof chain in
+The demo takes about two minutes, downloads no model, and needs no Arm hardware. It demonstrates
+the verifier's behavior; it is not the Arm benchmark. The contest evidence comes from committed
+Arm64 build, dispatch, server, and readiness receipts. Judges can follow the source-backed proof
+chain in
 [`docs/CONTEST-EVIDENCE-MAP.md`](docs/CONTEST-EVIDENCE-MAP.md), inspect the
 [immutable evidence release](https://github.com/tomyimkc/polygraph/releases/tag/arm-create-evidence-31312723300),
-or use the [independent reproduction form](docs/INDEPENDENT-REPRODUCTION.md).
+read the [judge FAQ](docs/JUDGE-FAQ.md), or use the
+[independent reproduction form](docs/INDEPENDENT-REPRODUCTION.md).
 
 **On one DGX Spark/Cortex-X925 with gcc 13.3, `llama.cpp`'s documented KleidiAI build command
 exited `0` and printed `KLEIDIAI = 1`, while the resulting binary contained zero usable
@@ -33,7 +53,8 @@ KleidiAI multiple and does not affect stock releases.**
 Polygraph asks that question generically: does software's own claim about the hardware
 acceleration it uses match what actually happened? It answers by counting — compiled-in kernel
 symbols, the runtime's own selection log, and (with a non-halting debugger breakpoint) real
-kernel dispatch hit counts — never by trusting a startup banner. The finding above is
+kernel dispatch hit counts — never by trusting a startup banner. Dispatch is execution evidence,
+not a speed claim; performance is evaluated separately with controlled benchmarks. The finding above is
 `llama.cpp`'s KleidiAI CPU backend on Arm, filed upstream as
 [ggml-org/llama.cpp#26630](https://github.com/ggml-org/llama.cpp/issues/26630); everything below
 is the receipt.
@@ -85,7 +106,9 @@ Exit codes are contractual, so CI can depend on them: **`0`** what was advertise
 4. Inspect the same-artifact long campaign
    [`long-validation-receipt.json`](results/production-readiness/arm64-campaign-31312308726-31312723300/long-validation-receipt.json)
    and its aggregate/shard receipts.
-5. Run `python3 tools/check_claims.py` to verify that judge-facing numbers still resolve to their
+5. Read [`docs/JUDGE-FAQ.md`](docs/JUDGE-FAQ.md) for the direct answers to likely scope,
+   attribution, Cloud AI, CPU/GPU, dispatch, and benchmark objections.
+6. Run `python3 tools/check_claims.py` to verify that judge-facing numbers still resolve to their
    committed evidence.
 
 The Arm64 server result is a contest-ready, production-shaped **synthetic evidence candidate**.
@@ -360,16 +383,17 @@ rebuild above, at two model sizes:
 ("large" = `Qwen2.5-7B-Instruct-Q4_0`, "small" = `Qwen2.5-0.5B-Instruct-Q4_0`, both Apache-2.0,
 licence verified live via the HuggingFace API.)
 
-This is the largest speedup anywhere in this project that comes from fixing a single build-time
-defect rather than tuning a runtime knob — and unlike every thread-tuning multiple in this document
+This is the largest broken-versus-corrected build difference measured in this project rather than
+a runtime-tuning result — and unlike every thread-tuning multiple in this document
 (see "Does the 3.43x decode-tuning win generalize to a bigger model?" under "The optimization,"
 below), it gets **bigger**, not smaller, on a realistic model size: 4.57x prefill / 1.65x decode at
 7B, versus a barely-there 1.42x prefill and *no effect at all* (0.99x) on decode at 0.5B — the two
 results generalize in opposite directions, and neither should be read off the other. Read together
 with the thread-tuning collapse below, the honest picture is: at a toy 0.5B model, thread tuning
 looks dramatic and this build defect looks almost invisible; at a 7B model people actually run, that
-relationship inverts. **Polygraph detects the broken build; fixing it is the 4.57x.** The
-verification tool and the "make it faster" outcome are, here, the same thing.
+relationship inverts. **Polygraph detects and verifies the broken build; the corrected build is
+the measured 4.57x comparison.** The verifier did not create a new kernel, and detection must not
+be conflated with the performance result of correcting this particular configuration.
 
 **One caveat that must travel with this number:** it is specific to a build where feature detection
 collapsed *entirely* — the broken banner above shows no `DOTPROD`, no `MATMUL_INT8`, and no `SVE`

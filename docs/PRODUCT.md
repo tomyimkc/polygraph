@@ -5,6 +5,27 @@ different, and the difference was settled by measurement, not opinion. It is a d
 not a pitch deck: it states the framing the data rules out, the framing it supports, what that
 means for positioning, and what is still unknown.
 
+## Current position — verifier and performance gate, not "the chip is lying"
+
+The current judge-facing position is narrower than some historical shorthand later in this
+document:
+
+> Polygraph is a fail-closed verification and deployment gate for Arm64 cloud inference. It proves
+> whether an advertised accelerated path was compiled, selected, and executed, then measures
+> performance separately before a candidate can be promoted.
+
+The Arm CPU is not the source of a misleading statement; the relevant signal comes from software
+feature detection, build configuration, runtime reporting, dispatch, or benchmark interpretation.
+Likewise, the phrase "the verifier is the accelerator" is retained below only as the historical
+name of a product-framing experiment. The evidence supports a verifier that can expose a costly
+broken build, not a claim that verification itself creates speed.
+
+The 4.57x result is a broken-versus-corrected source-build comparison on one measured system. It
+is not a new Polygraph kernel, a universal Arm/KleidiAI speedup, or headroom available to stock
+`llama.cpp` users. The relevant Cloud AI contribution is the CI/pre-deployment workflow that
+separates dispatch proof from controlled throughput, latency, memory, recovery, and rollback
+evidence.
+
 The evidence behind every number below is `results/scale/scale-experiment.json` — a DGX Spark
 (GB10, 20-core Armv9.2, Cortex-X925 + Cortex-A725, 121 GiB, gcc 13.3.0) run of `llama.cpp` @
 `dbadb68`, `llama-bench -p 128 -n 32`, 5 repetitions, round-robin interleaved across configs so
@@ -51,7 +72,7 @@ depends on picking a small enough model to demo, and that is precisely the kind 
 project's own prior retraction (`docs/CLAIMS.md`) exists to make impossible to get away with
 twice.
 
-## The framing the data supports: the verifier is the accelerator
+## Historical framing experiment: "the verifier is the accelerator"
 
 Run a second experiment against the same two models: build `llama.cpp` with its own documented
 KleidiAI command, and compare that build against a build where feature detection worked. This is
@@ -77,27 +98,22 @@ grows. On the toy model the defect barely registers (1.42x on prefill, no measur
 on decode) — which is exactly why a team validating their build on a small model for a quick
 sanity check would never catch it.
 
-This is why the verifier is the accelerator, not a separate feature bolted onto one: the largest
-measured speedup available anywhere in this dataset does not come from searching a parameter
-space, it comes from detecting that a specific, real capability — working accelerated matmul
-kernels — was silently never enabled, despite the build exiting `0` and the banner saying it was.
-Fixing it requires zero code changes to the model and zero runtime tuning; it requires knowing the
-capability was missing in the first place, which is a detection problem, not a search problem. A
-tuner searches a space that already contains everything the hardware can do. A verifier tells you
-when the space you're searching is smaller than you think it is — and that gap, once you can see
-it, is the bigger number.
+The original shorthand was "the verifier is the accelerator": the largest measured difference in
+this dataset did not come from searching a runtime parameter space, but from detecting that a
+specific capability — working accelerated matmul kernels — was absent despite a successful build
+and enabled banner. The stricter interpretation is that the verifier **exposed** the build defect;
+the corrected build produced the measured performance difference. Detection and speed are related
+in this case but remain separate claims.
 
 ## What that means concretely for positioning
 
-The product answers one question: **"why is my local LLM slow, and am I actually getting the
-hardware I paid for?"** The differentiator is not that it produces a faster number — a timing-only
-benchmark can already tell a user a number went up or down. It is that the answer is provable at
-the symbol level: a debugger attached to the real kernel entry point, counting actual calls, can
-say *why* — a specific kernel family never got dispatched — rather than leaving the user to guess
-whether a delta came from a disabled accelerator, thermal throttling, scheduler placement, or
-noise. That distinction is also what determines whether the fix is durable. A verified capability
-gap is a one-time build fix; a tuned thread count is a setting you have to remember to reapply
-every time the model, the box, or the phase mix changes.
+The product answers one question for cloud inference builders and operators: **"did this server
+artifact actually use the accelerated path its software reported, and does the candidate still
+pass the deployment gate?"** The differentiator is not merely that it produces a faster number —
+a timing-only benchmark can already tell a user a number went up or down. It is that dispatch is
+provable at the symbol level and performance is then tested separately: a debugger attached to the
+real kernel entry point can establish what ran, while paired server evidence decides whether the
+candidate should be kept or rolled back.
 
 Thread tuning still belongs in the product — just not as the headline. Once a build is verified
 correct, reporting the phase-dependent optimum on top of that ("your build is verified correct,
@@ -136,9 +152,9 @@ small a model the reader picked.
 ## What would have to be true for this to be a product, not a finding
 
 The generalizable claim this project can currently stand behind is a **method** — verify execution
-at the symbol level instead of inferring capability from timing — not a magnitude. Before "the
-verifier is the accelerator" is a product claim rather than a two-model, one-machine finding, the
-following would need to be measured, not assumed:
+at the symbol level instead of inferring capability from timing — not a magnitude. Before the
+build-defect result can be treated as a general product-performance claim rather than a
+two-model, one-machine finding, the following would need to be measured, not assumed:
 
 1. **Other frameworks.** Does the same class of defect — a build that reports success and prints
    an "enabled" banner while the accelerated kernel path is never actually reachable — occur in

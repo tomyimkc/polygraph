@@ -58,7 +58,29 @@ production claim would be worse than an incomplete submission.
   absent. State instead that the submission does not infer production readiness from the control.
 - [ ] Do not compute or quote an Arm-versus-PRO-6000 speed ratio.
 
-## 3. Baseline → technical change → measured impact structure
+## 3. Criticism-resistant positioning
+
+- [ ] Say the misleading signal comes from the **software build/runtime/reporting layer**, not
+  that the Arm chip lies.
+- [ ] State that L1/L2/L3 dispatch evidence proves execution provenance, **not** speed,
+  optimality, application correctness, or production readiness.
+- [ ] State that performance is measured separately with controlled/interleaved or paired
+  benchmarks.
+- [ ] Describe 4.57x as one **broken-versus-corrected build comparison**, not a new Polygraph
+  kernel, a universal Arm/KleidiAI speedup, or a stock-release defect.
+- [ ] Present patch `0002` as experimental and rolled back by the stronger server gate, not as a
+  promoted optimization.
+- [ ] Explain the Cloud AI consequence: silent fallback can invalidate fleet capacity, latency,
+  memory, and rollout assumptions even if requests remain functionally successful.
+- [ ] Clarify that the relevant DGX Spark path is Arm CPU/KleidiAI, not a GPU speedup, and that the
+  hosted readiness lane launches `llama-server` with `-ngl 0`.
+- [ ] State that `make demo` is a portable verifier/exit-code fixture, not Arm benchmark evidence.
+- [ ] Keep the affected population narrow: native source builders, framework/release engineers,
+  and cloud inference operators; stock `llama.cpp` releases are not claimed to have the
+  zero-kernel defect.
+- [ ] Link `docs/JUDGE-FAQ.md`.
+
+## 4. Baseline → technical change → measured impact structure
 
 For every judge-facing proof chain, verify all three parts are present.
 
@@ -125,7 +147,7 @@ For every judge-facing proof chain, verify all three parts are present.
 - [ ] **Measured impact:** run `31289517517`, 7,573 measured requests, 0 failures.
 - [ ] The control is explicitly not Arm contest evidence and not a production-ready claim.
 
-## 4. Judging criteria
+## 5. Judging criteria
 
 - [ ] **Technological Implementation — 40 points** appears first and receives the most space.
 - [ ] **"WOW" factor — 25 points** centers the banner-versus-reality finding and self-audit.
@@ -135,7 +157,7 @@ For every judge-facing proof chain, verify all three parts are present.
   presets, ad-hoc mode, graceful degradation, and free Arm64 CI.
 - [ ] No optimization-focus-area list is mistaken for the scored rubric.
 
-## 5. Evidence checks
+## 6. Evidence checks
 
 ### Claims gate
 
