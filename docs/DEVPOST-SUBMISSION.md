@@ -18,7 +18,7 @@ claim is not registered in `docs/CLAIMS.md` or backed by committed JSON.
 | Field | Paste-ready value |
 |---|---|
 | Project name | **Polygraph** |
-| Tagline | **A lie detector for software: verify with a debugger, not a banner, whether the accelerated code path actually ran.** |
+| Tagline | **A fail-closed verification gate for Arm64 cloud inference: prove the advertised accelerated path ran before trusting the benchmark.** |
 | Public repository | `https://github.com/tomyimkc/polygraph` |
 | License | Apache-2.0 for this repository's original code, docs, tests, and evidence tooling; see `LICENSE`. Patch files against `llama.cpp` preserve that upstream project's MIT terms. |
 | Interactive demo page | `https://tomyimkc-polygraph-arm-demo.static.hf.space/` |
@@ -26,15 +26,49 @@ claim is not registered in `docs/CLAIMS.md` or backed by committed JSON.
 | Immutable evidence release | `https://github.com/tomyimkc/polygraph/releases/tag/arm-create-evidence-31312723300` |
 | Primary upstream report | `https://github.com/ggml-org/llama.cpp/issues/26630` |
 | Related upstream report | `https://github.com/ggml-org/llama.cpp/issues/26547` |
-| Demo video | Optional under the current contest rules; intentionally omitted from this package |
+| Demo video | `https://youtu.be/er9PA5YYdzg` |
 | Website media | `media/website-capture-20260813/01-demo-hero.png`, `02-demo-arm-evidence.png`, `03-demo-honest-rollback.png`, `04-demo-mobile.png` |
 | Website media receipt | `media/website-capture-20260813/receipt.json` plus `media/website-capture-20260813/SHA256SUMS` |
 
-The interactive HF demo page is the primary judge-facing walkthrough. The website media was
+The interactive HF demo page is the primary judge-facing walkthrough, and the YouTube link is the
+submission video. The website media was
 captured from that public static page, not from the repository's terminal video capture. The
 receipt records HTTP 200, the page title, empty console/page error lists, the rendered headline
 metrics, and SHA-256 hashes for all four PNG views. The historical repository MP4 remains
 available for provenance, but is intentionally not used as the current submission media.
+
+## Cloud AI fit and separation of claims
+
+Polygraph is a **Cloud AI** project because it turns Arm64 inference-path verification into a
+machine-readable CI and pre-deployment decision for `llama-server`. The measured workflow covers
+the server binary, real kernel dispatch, concurrent throughput, time to first token, end-to-end
+latency, peak RSS, sustained synthetic load, controlled restarts, and a keep-or-rollback gate.
+
+The Arm CPU is not "lying." The potentially misleading claim comes from software: build feature
+detection, a startup banner, runtime selection, or benchmark interpretation. Polygraph attributes
+the mismatch to that layer instead of anthropomorphizing the chip.
+
+The submission keeps three claims distinct:
+
+| Evidence | Supported conclusion | Explicit non-claim |
+|---|---|---|
+| L1/L2/L3 | The measured workload entered the accelerated path | Not proof of speed, optimality, or readiness |
+| Controlled benchmark | A tested build or candidate was faster or slower under that workload | Not a universal Arm or KleidiAI multiple |
+| Readiness/promotion gate | The synthetic candidate met or missed configured checks | Not live traffic or deployment authorization |
+
+The 4.57x headline is a **broken-versus-corrected build comparison** on one tested configuration.
+Polygraph diagnosed and verified the correction; it did not invent a new matmul kernel. Stock
+`llama.cpp` release binaries are not claimed to be affected. Patch `0002` is also not presented as
+a promoted optimization: its isolated result did not survive the stricter Arm64 server gate, which
+returned `ROLLBACK_TO_BASELINE`.
+
+The relevant contest path is Arm CPU/KleidiAI inference. Although the DGX Spark host also has GPU
+capability, the finding is on its Cortex-X925/A725 CPU, and the hosted Arm64 readiness workflow
+explicitly starts `llama-server` with `-ngl 0`.
+
+`make demo` is a portable fixture for the verifier and exit-code contract, not the Arm benchmark.
+The Arm evidence is the committed build provenance, dispatch counts, server measurements, and
+readiness/rollback receipts. See `docs/JUDGE-FAQ.md` for direct answers to likely judge objections.
 
 ## The claim ceiling judges should keep in view
 
@@ -124,7 +158,7 @@ available to stock `llama.cpp` users.
 **Evidence:** `results/server/spark-provenance.txt`,
 `results/scale/scale-experiment.json`, `docs/UPSTREAM-ISSUE-FINDING3.md`.
 
-### Proof chain 2 — the useful optimization was made automatic without sacrificing prefill
+### Proof chain 2 — an isolated optimization result failed the stronger cloud promotion gate
 
 #### Baseline
 
@@ -333,8 +367,9 @@ The project:
 
 #### Measured impact
 
-The positive claim is now narrower and reproducible: patch `0002` automates the measured
-generation-thread improvement while preserving prefill within noise. Patch `0001` remains a
+The project no longer promotes patch `0002` from its isolated local result. Its stronger
+distinct-binary Arm64 `llama-server` campaign returned `ROLLBACK_TO_BASELINE`, so it remains an
+experimental candidate and evidence for why the promotion gate exists. Patch `0001` remains a
 negative result. The original 0.5B tuning result was also re-tested at 7B and shrank from 4.56x to
 1.33x rather than being presented as universal.
 
@@ -684,29 +719,41 @@ project licensing.
 
 ## Project Overview
 
-Polygraph is a lie detector for accelerated software. Instead of trusting a startup banner or a
-timing result, it checks three separate layers: whether the accelerated kernels exist in the
-binary, what the runtime says it selected, and whether those kernels actually executed under a
-non-halting debugger breakpoint.
+**Track: Cloud AI.** Polygraph is a fail-closed verification and deployment gate for Arm64 cloud
+inference. Instead of trusting a startup banner or timing result, it checks three separate layers:
+whether accelerated kernels exist in the server binary, what the runtime says it selected, and
+whether those kernels actually executed under a non-halting debugger breakpoint. It then measures
+throughput, time to first token, end-to-end latency, memory, and recovery separately before a
+candidate is kept or rolled back.
+
+The Arm CPU is not "lying." The potentially misleading signal comes from the software build,
+feature probe, startup report, dispatcher, or benchmark interpretation. L1/L2/L3 proves execution
+provenance for the measured workload; it does not by itself prove speed, optimality, application
+correctness, or production readiness.
 
 The headline baseline was a `llama.cpp` build on a DGX Spark that completed successfully and
 printed `KLEIDIAI = 1`, yet contained 0 usable `kai_run_matmul` entry points. The technical change
 was an explicit Arm feature-target build plus a reusable L1/L2/L3 verification tool. The measured
 impact on the tested 7B model was 48.64 to 222.14 tok/s prefill, a 4.57x comparison, and 11.17 to
 18.45 tok/s decode, a 1.65x comparison. The 0.5B decode result was 0.99x, so we report it as no
-measurable effect rather than generalizing the 7B result.
+measurable effect rather than generalizing the 7B result. This is a broken-versus-corrected
+source-build comparison on one Arm CPU configuration. Polygraph did not invent a new matmul
+kernel, and stock `llama.cpp` releases are not claimed to contain this defect.
 
-We also built a real optimization: patch `0002` changes only the default generation thread count
-to KleidiAI's runtime-detected SME2 cap while preserving the batch/prefill default. In the measured
-Apple M4 Max run, no-flags decode moved from 67.8 to 145.9 tok/s, or 2.15x, while prefill changed
-by -3.0% within noise. The tempting alternative, manually passing `-t 2`, cut prefill by 47%.
-We then tested the same change as a distinct `llama-server` binary under a stricter three-round
-paired gate; median throughput was 0.9330x and the result was `ROLLBACK_TO_BASELINE`. We keep the
-patch as an experimental result, not a promoted default.
+We also built an experimental optimization candidate: patch `0002` changes only the default
+generation thread count to KleidiAI's runtime-detected SME2 cap while preserving the
+batch/prefill default. An isolated Apple M4 Max run was favorable, but the stronger test was the
+distinct-binary Arm64 `llama-server` campaign. Its median candidate/baseline throughput was
+0.9330x and its verdict was `FAIL / ROLLBACK_TO_BASELINE`. We therefore do not present the patch
+as a promoted optimization.
 
 The repository is public and Apache-2.0 licensed. Its measurement artifacts, raw request rows,
 telemetry, workflow receipts, validation receipts, negative results, and claim checker are all
 committed for judges to inspect.
+
+**Challenge-period confirmation:** all work submitted here was created or meaningfully updated
+during the challenge period. The public commit history, timestamped workflow receipts, and
+immutable evidence release provide the provenance record.
 
 The final evidence package also adds a same-artifact Arm64 temporal-control campaign: 79,684
 measured requests, 0 measured failures, 36,000 aggregate measured seconds across two shards, and a
@@ -728,10 +775,11 @@ tools/polygraph check --binary PATH --symbols REGEX --run "COMMAND"
 Polygraph returns human-readable and JSON output plus contractual exit codes: `0` for a match, `1`
 for a measured mismatch, and `2` for undetermined. The two-minute `make demo` compiles two tiny
 programs that print the same `using fast path: yes` banner. L3 then proves that the liar never
-calls the fast function and the honest build does.
+calls the fast function and the honest build does. This portable fixture demonstrates the
+verifier and exit-code contract; it is not the Arm benchmark.
 
 The current Arm64 evidence is GitHub Actions run `31294460364`. It adds a production-shaped
-`llama-server` campaign: mixed traffic, concurrency 1/2/4 capacity points, a 10-minute
+CPU-only `llama-server` campaign (`-ngl 0`): mixed traffic, concurrency 1/2/4 capacity points, a 10-minute
 concurrency-4 soak, request-level JSONL, one-second telemetry, and two controlled restarts. It
 completed 1,543 measured requests with 0 failures; all 10 configured checks passed. Its exact
 claim boundary is still:
@@ -780,17 +828,21 @@ Exact local commands, checksum checks, workflow commands, and artifact inspectio
 **Technological Implementation — 40 points:** Polygraph does not stop at a benchmark. It combines
 static symbols, runtime selection, and real execution counts; works across `lldb` and `gdb`; has a
 fail-closed CLI and CI contract; validates its own debugger probe; exposes an MCP interface; and
-pins every numeric prose claim to evidence.
+pins every numeric prose claim to evidence. For Cloud AI it connects that provenance to CPU-only
+`llama-server` concurrency, latency, memory, restart, and rollback checks.
 
 **"WOW" factor — 25 points:** a successful build said `KLEIDIAI = 1` while shipping 0 usable
-matmul entry points. Correcting the build produced a 4.57x measured 7B prefill comparison. In a
-second finding, the banner, selection log, and symbol count were identical while L3 changed from 0
-to 7,968 actual kernel calls.
+matmul entry points. Correcting that tested source build produced a 4.57x measured 7B prefill
+comparison. This is explicitly not a new kernel or universal Arm speedup. In a second finding, the
+banner, selection log, and symbol count were identical while L3 changed from 0 to 7,968 actual
+kernel calls.
 
 **Potential Impact — 20 points:** the tool is generic to any binary and symbol regex, the repo is
 public under Apache-2.0, two upstream reports cover the project's original findings, and an
 independently reported mechanism was reproduced with 15 debugger-backed runs. The impact statement
-stays honest: the zero-kernel defect does not affect stock releases.
+stays honest: the zero-kernel defect does not affect stock releases. The target users are source
+builders, framework/release engineers, CI owners, and cloud inference operators who need to stop a
+silent fallback or invalid performance assumption before fleet rollout.
 
 **User Experience / Developer Experience — 15 points:** one clone and `make demo` proves both the
 positive and negative detector paths in about two minutes. JSON output, presets, ad-hoc mode,
@@ -808,26 +860,27 @@ or a non-Arm control into a production or Arm claim.
 3. **Reproducible static-page source bundle:** `space/` (the exact website-only bundle used by the
    public HF Space, with no terminal video asset).
 4. **Claim-by-claim evidence:** `docs/CONTEST-EVIDENCE-MAP.md`.
-5. **Run the product:** `make demo`, then inspect `tools/polygraph` and `docs/QUICKSTART.md`.
-6. **Headline build finding:** `results/server/spark-provenance.txt` and
+5. **Scope and objections:** `docs/JUDGE-FAQ.md`.
+6. **Run the product:** `make demo`, then inspect `tools/polygraph` and `docs/QUICKSTART.md`.
+7. **Headline build finding:** `results/server/spark-provenance.txt` and
    `results/scale/scale-experiment.json`.
-7. **Automatic optimization:** `patches/0002-kleidiai-sme-aware-thread-default.patch` and
-   `results/AUTODEFAULTS.md`.
-8. **L1/L2 agree but L3 fails:** `results/upstream/FINDING-4-CUDA-HOST-BUFFER.md` and its
+8. **Experimental candidate and rollback:** `patches/0002-kleidiai-sme-aware-thread-default.patch`,
+   `results/AUTODEFAULTS.md`, and the Arm64 differential `receipt.json`.
+9. **L1/L2 agree but L3 fails:** `results/upstream/FINDING-4-CUDA-HOST-BUFFER.md` and its
    15-run JSON.
-9. **Arm64 run `31294460364`:**
+10. **Arm64 run `31294460364`:**
    `results/production-readiness/arm64-31294460364/summary.json`,
    `validation-receipt.json`, and `workflow-receipt.json`.
-10. **Long same-artifact Arm64 campaign `31312723300`:**
+11. **Long same-artifact Arm64 campaign `31312723300`:**
    `results/production-readiness/arm64-campaign-31312308726-31312723300/long-validation-receipt.json`,
    aggregate/shard receipts, and `package-sha256sums.txt`.
-11. **Immutable evidence release:** `arm-create-evidence-31312723300`, preserving original GitHub
+12. **Immutable evidence release:** `arm-create-evidence-31312723300`, preserving original GitHub
    artifact ZIPs, build provenance, campaign source, external validations, and historical video
    provenance.
-12. **Non-Arm control `31289517517`:**
+13. **Non-Arm control `31289517517`:**
    `results/production-readiness/pro6000-31289517517/aggregate.json` and `README.md`.
-13. **Negative results and corrections:** `results/REMEASURE-2026-08-04-QUIET.md`,
+14. **Negative results and corrections:** `results/REMEASURE-2026-08-04-QUIET.md`,
    `patches/README.md`, `results/GENERALIZATION.md`.
-14. **Claim integrity:** `docs/CLAIMS.md`, `tools/check_claims.py`, and
+15. **Claim integrity:** `docs/CLAIMS.md`, `tools/check_claims.py`, and
    `.github/workflows/claims.yml`.
-15. **Final submission check:** `docs/CONTEST-SUBMISSION-CHECKLIST.md`.
+16. **Final submission check:** `docs/CONTEST-SUBMISSION-CHECKLIST.md`.

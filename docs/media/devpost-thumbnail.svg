@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
-  <title id="title">Polygraph checks what really ran</title>
-  <desc id="desc">Fast mode is on, but fast kernels executed zero times. Polygraph catches the mismatch.</desc>
+  <title id="title">Polygraph verifies Arm64 cloud inference</title>
+  <desc id="desc">Software reports an accelerated path, but kernel dispatch evidence disagrees. Polygraph catches the mismatch before rollout.</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#081426"/>
@@ -17,20 +17,20 @@
   <rect x="58" y="48" width="1084" height="534" rx="30" fill="#0c1d34" stroke="#294a70" stroke-width="2"/>
 
   <text x="100" y="115" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="800">POLYGRAPH</text>
-  <text x="100" y="151" fill="#9bb3cf" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="600">A lie detector for AI acceleration</text>
+  <text x="100" y="151" fill="#9bb3cf" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="600">Arm64 cloud inference verification gate</text>
 
   <rect x="100" y="195" width="454" height="82" rx="14" fill="#102944" stroke="#3d638a"/>
-  <text x="126" y="228" fill="#9bb3cf" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700">FAST MODE</text>
+  <text x="126" y="228" fill="#9bb3cf" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700">ACCELERATION REPORTED</text>
   <text x="126" y="262" fill="#6fdb9a" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800">ON ✓</text>
 
   <rect x="100" y="295" width="454" height="130" rx="14" fill="#351a20" stroke="#d1554b" stroke-width="2"/>
-  <text x="126" y="330" fill="#ffb8b2" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700">FAST KERNELS EXECUTED</text>
+  <text x="126" y="330" fill="#ffb8b2" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700">ACCELERATED KERNEL HITS</text>
   <text x="126" y="397" fill="#ff9c93" font-family="Arial, Helvetica, sans-serif" font-size="68" font-weight="900">0 ✕</text>
 
   <path d="M620 205h400" stroke="url(#accent)" stroke-width="8" stroke-linecap="round"/>
-  <text x="620" y="282" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="900">DON'T TRUST</text>
-  <text x="620" y="344" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="900">THE BANNER.</text>
-  <text x="620" y="401" fill="#5ce1e6" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800">CHECK WHAT REALLY RAN.</text>
+  <text x="620" y="282" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="50" font-weight="900">PROVE THE PATH.</text>
+  <text x="620" y="344" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="50" font-weight="900">MEASURE SPEED.</text>
+  <text x="620" y="401" fill="#5ce1e6" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800">KEEP THE CLAIMS SEPARATE.</text>
 
   <text x="100" y="518" fill="#c7d5e5" font-family="Arial, Helvetica, sans-serif" font-size="21">Built for the Arm Create AI Optimization Challenge · Cloud AI</text>
   <text x="100" y="552" fill="#7f9ab7" font-family="Arial, Helvetica, sans-serif" font-size="18">Open source · Reproducible demo · Evidence-first CI</text>

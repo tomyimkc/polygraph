@@ -71,7 +71,7 @@
     if (!broken || !fixed) return;
 
     var value = fixed.prefill_median / broken.prefill_median;
-    byId("prefill-ratio").textContent = ratio(value) + " faster";
+    byId("prefill-ratio").textContent = ratio(value);
     byId("prefill-detail").textContent =
       fmt(broken.prefill_median, 2) + " → " + fmt(fixed.prefill_median, 2) +
       " tok/s · n=" + fixed.prefill_n + " per build";

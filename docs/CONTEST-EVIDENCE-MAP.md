@@ -6,6 +6,30 @@ This file is the judge's shortest route from each submission statement to a comm
 Every technical claim is written as **Baseline → Technical change → Measured impact**. Negative
 results and claim boundaries are first-class evidence, not footnotes.
 
+## Cloud AI fit and claim separation
+
+Polygraph is a fail-closed verification and deployment gate for Arm64 cloud inference. Its cloud
+workflow checks the built `llama-server` artifact, proves real Arm/KleidiAI dispatch, measures
+concurrent throughput/latency/memory, exercises synthetic sustained load and restart recovery, and
+emits a keep-or-rollback decision.
+
+The Arm CPU is not the source of the misleading statement. The possible mismatch is in software:
+feature detection, build configuration, startup reporting, dispatch, or benchmark interpretation.
+
+Keep these claims separate:
+
+- **dispatch evidence** proves that the measured workload entered the intended code path;
+- **benchmark evidence** measures performance only for the tested configuration and workload; and
+- **readiness/promotion evidence** applies configured synthetic gates but does not authorize
+  production deployment.
+
+The 4.57x result is a broken-versus-corrected build comparison, not a Polygraph-authored kernel or
+universal Arm speedup. Patch `0002` is an experimental candidate that the stricter server gate
+rolled back. `make demo` demonstrates the verifier's behavior but is not Arm benchmark evidence.
+The relevant Arm submission path is CPU/KleidiAI; the hosted readiness lane uses `-ngl 0`.
+
+Direct objection-by-objection answers are in [`docs/JUDGE-FAQ.md`](JUDGE-FAQ.md).
+
 ## Claim boundary
 
 The Arm64 readiness candidate carries the exact fields:
@@ -56,8 +80,9 @@ not Arm contest evidence and not a cross-hardware benchmark baseline.
 7. Open the adjacent `validation-receipt.json` and `workflow-receipt.json`.
 8. Open
    `results/production-readiness/arm64-campaign-31312308726-31312723300/long-validation-receipt.json`.
-9. Run `python3 tools/check_claims.py`.
-10. Read the negative-result index near the end of this file.
+9. Read `docs/JUDGE-FAQ.md`.
+10. Run `python3 tools/check_claims.py`.
+11. Read the negative-result index near the end of this file.
 
 ## Proof-chain map
 
@@ -510,7 +535,12 @@ test "$nohost_rc" -eq 0
 test "$devnone_rc" -eq 0
 ```
 
-## Website capture receipt
+## Historical website capture receipt
+
+This receipt preserves the public page and screenshots captured on 2026-08-13 before the later
+Cloud AI positioning copy update. Its title and rendered metric wording are historical evidence,
+not the canonical current tagline. The numeric values and boundary remain sourced from the same
+committed receipts.
 
 | Artifact | Current validated value |
 |---|---|
@@ -523,7 +553,7 @@ test "$devnone_rc" -eq 0
 | Checksum | `media/website-capture-20260813/SHA256SUMS` |
 | Reproducible source bundle | `space/` (website-only static files; no terminal video asset) |
 
-The receipt records empty console/page error lists and the rendered values `4.57× faster`,
+The receipt records empty console/page error lists and the then-rendered values `4.57× faster`,
 `0.93×`, `FAIL`, and `actualProductionTraffic: false`. The captures are website media from the
 public HF Space, not terminal-video frames. The historical repository MP4 remains available for
 provenance but is intentionally not used as the current submission media.
