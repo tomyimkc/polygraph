@@ -2,7 +2,7 @@
 title: Polygraph — Arm acceleration proof
 description: Judge-facing static demo for Polygraph, a fail-closed verifier for advertised versus executed AI acceleration on Arm.
 colorFrom: indigo
-colorTo: slate
+colorTo: gray
 sdk: static
 ---
 
