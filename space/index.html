@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="description" content="Polygraph: a judge-facing proof that advertised AI acceleration actually executed on Arm." />
+  <meta property="og:title" content="Polygraph — stop guessing about AI performance" />
+  <meta property="og:description" content="L1/L2/L3 evidence for Arm AI acceleration, plus an honest rollback when a candidate failed the paired gate." />
+  <meta property="og:image" content="assets/polygraph-mark.png" />
+  <title>Polygraph — stop guessing about AI performance</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="hero hero-space">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <p class="brand-mark">Polygraph <span class="brand-tagline">— prove what actually ran</span></p>
+        <p class="eyebrow">Arm Create · Cloud AI · judge demo</p>
+        <h1>AI acceleration can be “on” and never execute once.</h1>
+        <p class="hero-sub">Polygraph separates what was <strong>built</strong>, what was <strong>selected</strong>, and what actually <strong>ran</strong>—then turns the result into a reusable CI gate.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#walkthrough">Run the walkthrough</a>
+          <a class="button" href="#evidence">Inspect receipts</a>
+          <a class="button" href="https://github.com/tomyimkc/polygraph" target="_blank" rel="noopener">Open source ↗</a>
+        </div>
+        <p class="hero-proof-note"><span aria-hidden="true">●</span> Static judge demo · inspectable JSON · no hidden backend or live benchmark</p>
+      </div>
+      <button id="theme-toggle" type="button" class="theme-toggle" aria-pressed="false"><span aria-hidden="true" class="theme-toggle-icon">☀</span><span class="theme-toggle-label">Toggle theme</span></button>
+    </div>
+  </header>
+  <main id="main">
+    <section class="judge-strip" aria-label="Judge path">
+      <div><strong>1. Watch</strong><span>Catch the liar without Arm hardware.</span></div>
+      <div><strong>2. Inspect</strong><span>L1 static · L2 selection · L3 dispatch.</span></div>
+      <div><strong>3. Verify</strong><span>Read the receipt and reproduce it.</span></div>
+    </section>
+    <section class="panel walkthrough" id="walkthrough" aria-labelledby="walkthrough-heading">
+      <div class="section-kicker">THE 90-SECOND IDEA</div>
+      <h2 id="walkthrough-heading">A banner is not proof. A debugger count is.</h2>
+      <p class="panel-intro">The smallest reproducible demo builds two binaries from the same C source. Both print <code>using fast path: yes</code> and return the correct answer. One never calls the fast function. Polygraph catches the mismatch instead of trusting the banner or timing alone.</p>
+      <div class="walkthrough-grid">
+        <article class="story-card story-liar"><div class="story-top"><span class="story-number">01</span><span class="status-pill status-bad">MISMATCH</span></div><h3>The liar</h3><p>Fast symbol exists. Banner says yes. Debugger hits: <strong>0</strong>.</p><code>exit 1 · NO_DISPATCH_OBSERVED</code></article>
+        <article class="story-card story-honest"><div class="story-top"><span class="story-number">02</span><span class="status-pill status-good">MATCH</span></div><h3>The honest build</h3><p>Same banner. Same answer. Debugger proves the fast function ran.</p><code>exit 0 · OTHER_DISPATCHED_ADHOC</code></article>
+        <article class="story-card story-ci"><div class="story-top"><span class="story-number">03</span><span class="status-pill status-blue">AUTOMATE</span></div><h3>Ship the gate</h3><p>Use the exit-code contract in CI. Mismatch fails. Missing evidence is undetermined—not a false pass.</p><code>tools/polygraph check --json</code></article>
+      </div>
+      <div class="terminal-card" role="img" aria-label="Terminal command and expected Polygraph output"><div class="terminal-bar"><span></span><span></span><span></span><b>polygraph-demo</b></div><pre><span class="prompt">$</span> make demo
+<span class="dim">same source · same banner · same output</span>
+<span class="bad">✗ liar      MISMATCH</span>  <span class="dim">fast_path_sum: 0 hits · exit 1</span>
+<span class="good">✓ honest    MATCH</span>     <span class="dim">fast_path_sum: dispatched · exit 0</span>
+<span class="blue">→</span> The claim is now machine-checkable.</pre></div>
+      <p class="small-note">This is a real local fixture, not a mockup. Reproduce it with <code>git clone</code> → <code>make demo</code>; no model download is required.</p>
+    </section>
+    <section class="panel video-band" aria-labelledby="video-heading">
+      <div class="section-kicker">WATCH THE SUBMISSION</div>
+      <div class="video-grid">
+        <div>
+          <h2 id="video-heading">From “fast mode: on” to proof in under three minutes.</h2>
+          <p class="panel-intro">This is the validated contest walkthrough: catch the liar, inspect the three evidence layers, measure the Arm build gap, and show the system rejecting a weaker candidate.</p>
+          <p class="small-note"><strong>Controls only:</strong> the video never auto-plays, and the page still works as a fast static read if you skip it.</p>
+        </div>
+        <figure class="video-card">
+          <video controls preload="metadata" poster="assets/polygraph-mark.png">
+            <source src="assets/polygraph-contest-final.mp4" type="video/mp4" />
+            Your browser does not support the embedded video. <a href="assets/polygraph-contest-final.mp4">Open the MP4 instead.</a>
+          </video>
+          <figcaption>Validated submission walkthrough · 2:49 · 169 seconds</figcaption>
+        </figure>
+      </div>
+    </section>
+    <p class="data-error" id="data-error" hidden></p>
+    <section class="panel evidence-band" aria-labelledby="evidence-heading">
+      <div class="section-kicker">THE ARM CASE</div>
+      <h2 id="evidence-heading">The same method found a silent Arm acceleration gap.</h2>
+      <div class="evidence-grid">
+        <div class="evidence-copy"><p>On one documented <code>llama.cpp</code> KleidiAI build, the startup banner said acceleration was enabled while the needed matmul kernels were missing. An explicit Arm feature-target build restored the kernels on the tested system.</p><p class="boundary-note"><strong>Scope:</strong> this is a measured configuration, not a universal speedup claim. The repository keeps the raw JSON and build provenance so a judge can inspect the exact boundary.</p><div class="link-row"><a href="data/results/scale-experiment.json">Raw scale JSON</a><a href="https://github.com/tomyimkc/polygraph/blob/main/results/scale/scale-experiment.json" target="_blank" rel="noopener">Source on GitHub ↗</a><a href="https://github.com/tomyimkc/polygraph/blob/main/docs/CONTEST-EVIDENCE-MAP.md" target="_blank" rel="noopener">Evidence map ↗</a></div></div>
+        <div class="metric-card"><div class="metric-label">7B prefill · tested configuration</div><div class="metric-value" id="prefill-ratio">—</div><div class="metric-detail" id="prefill-detail">Loading committed receipt…</div><div class="metric-bar"><span id="prefill-bar"></span></div></div>
+      </div>
+    </section>
+    <section class="panel method-band" aria-labelledby="method-heading">
+      <div class="section-kicker">WHY THREE LAYERS</div><h2 id="method-heading">Find the gap, explain it, prevent it.</h2>
+      <div class="method-grid"><article><span class="layer-badge">L1</span><h3>Built</h3><p>Static symbols prove the accelerated kernel was compiled into the binary. They do not prove runtime use.</p></article><article><span class="layer-badge">L2</span><h3>Selected</h3><p>Verbose runtime logs show what the dispatcher says it selected. Still not proof of execution.</p></article><article class="method-critical"><span class="layer-badge">L3</span><h3>Executed</h3><p>A non-halting debugger breakpoint counts real kernel entry points during inference. This is the decisive layer.</p></article></div>
+      <div class="product-grid"><div><strong>One command</strong><span>Run the same check locally or in CI.</span></div><div><strong>Machine-readable</strong><span>JSON output and contractual exit codes.</span></div><div><strong>Agent-ready</strong><span>MCP tools expose features, dispatch, explanation, and recommendations.</span></div><div><strong>Fail-closed</strong><span>Mismatch is failure. Missing evidence is undetermined.</span></div></div>
+    </section>
+    <section class="panel rollback-band" aria-labelledby="rollback-heading"><div class="section-kicker">THE HONEST NEGATIVE RESULT</div><h2 id="rollback-heading">Polygraph also rejected its own candidate.</h2><p class="panel-intro">A stricter paired Arm64 synthetic gate compared distinct baseline and candidate binaries. The candidate passed readiness and replay checks, but failed the throughput promotion threshold. The system rolled back instead of publishing a flattering result.</p><div class="rollback-grid"><div class="rollback-card"><span class="rollback-label">Candidate / baseline throughput</span><strong id="rollback-ratio">—</strong><span>median of within-round paired ratios</span></div><div class="rollback-card rollback-fail"><span class="rollback-label">Verdict</span><strong>FAIL</strong><span>ROLLBACK_TO_BASELINE</span></div><div class="rollback-card"><span class="rollback-label">Traffic boundary</span><strong>synthetic</strong><span>actualProductionTraffic: false</span></div></div><div class="link-row"><a class="receipt-link" href="data/results/receipt.json">Read bundled receipt</a><a class="receipt-link" href="https://github.com/tomyimkc/polygraph/blob/main/results/production-readiness/arm64-0.5b-autodefault-differential-confirmation-20260811/receipt.json" target="_blank" rel="noopener">Source receipt on GitHub ↗</a></div></section>
+    <section class="panel next-step" aria-labelledby="next-heading"><h2 id="next-heading">Try it, then inspect the proof.</h2><div class="next-grid"><div><h3>Local walkthrough</h3><pre class="code-block">git clone https://github.com/tomyimkc/polygraph
+cd polygraph
+make demo</pre></div><div><h3>Read the submission</h3><p>Start with the evidence map, then follow the raw receipts. Every headline number is scoped and source-backed.</p><a class="button button-primary" href="https://devpost.com/software/polygraph-4v29tr" target="_blank" rel="noopener">Open Devpost submission ↗</a></div></div></section>
+    <p class="data-freshness" id="data-freshness">Loading committed receipt timestamps…</p>
+  </main>
+  <footer class="site-footer"><p><strong>Polygraph</strong> · Apache-2.0 · <a href="https://github.com/tomyimkc/polygraph" target="_blank" rel="noopener">GitHub</a> · <a href="https://tomyimkc.github.io/polygraph/" target="_blank" rel="noopener">Live dashboard</a></p><p class="footer-meta">Static judge demo. No backend. No live benchmark. No production-readiness claim.</p></footer>
+  <script src="app.js"></script>
+</body>
+</html>
