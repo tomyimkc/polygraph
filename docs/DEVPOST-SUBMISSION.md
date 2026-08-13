@@ -21,21 +21,20 @@ claim is not registered in `docs/CLAIMS.md` or backed by committed JSON.
 | Tagline | **A lie detector for software: verify with a debugger, not a banner, whether the accelerated code path actually ran.** |
 | Public repository | `https://github.com/tomyimkc/polygraph` |
 | License | Apache-2.0 for this repository's original code, docs, tests, and evidence tooling; see `LICENSE`. Patch files against `llama.cpp` preserve that upstream project's MIT terms. |
+| Interactive demo page | `https://tomyimkc-polygraph-arm-demo.static.hf.space/` |
 | Dashboard | `https://tomyimkc.github.io/polygraph/` |
 | Immutable evidence release | `https://github.com/tomyimkc/polygraph/releases/tag/arm-create-evidence-31312723300` |
 | Primary upstream report | `https://github.com/ggml-org/llama.cpp/issues/26630` |
 | Related upstream report | `https://github.com/ggml-org/llama.cpp/issues/26547` |
-| Demo video | `[PASTE YOUTUBE URL AFTER UPLOAD]` |
-| Submission cut | `demo/out/polygraph-contest-final.mp4`, validated at **169.021333 seconds (2:49.021)**, **9,239,731 bytes**, SHA-256 `0deb7f67697b45ac8b9b38b518d87240ac556db8bb82107f23158862372f8f30` |
-| Captions | `demo/out/polygraph-contest-final.srt`, six authored cues |
-| Media receipt | `demo/out/polygraph-contest-final.validation.json` plus `demo/out/polygraph-contest-final.sha256` |
+| Demo video | Optional under the current contest rules; intentionally omitted from this package |
+| Website media | `media/website-capture-20260813/01-demo-hero.png`, `02-demo-arm-evidence.png`, `03-demo-honest-rollback.png`, `04-demo-mobile.png` |
+| Website media receipt | `media/website-capture-20260813/receipt.json` plus `media/website-capture-20260813/SHA256SUMS` |
 
-The repository-native final cut is under the strict three-minute limit and its validation receipt
-records the encoded media properties plus SHA-256 hashes for the evidence inputs. It contains a
-20-second playback of an isolated, receipt-verified `make demo` capture: the liar execution ends
-`MISMATCH` with zero L3 hits and exit 1, while the honest execution ends `MATCH` with one L3 hit
-and exit 0. The playback preserves the captured text and ordering while normalizing pauses for
-legibility.
+The interactive HF demo page is the primary judge-facing walkthrough. The website media was
+captured from that public static page, not from the repository's terminal video capture. The
+receipt records HTTP 200, the page title, empty console/page error lists, the rendered headline
+metrics, and SHA-256 hashes for all four PNG views. The historical repository MP4 remains
+available for provenance, but is intentionally not used as the current submission media.
 
 ## The claim ceiling judges should keep in view
 
@@ -636,22 +635,21 @@ run: the hardware, model, runtime, output lengths, and concurrency plans differ.
 
 ---
 
-## Under-three-minute demo plan
+## Historical video provenance (not current submission media)
 
-The repository-native final cut is:
+The repository-native final cut remains available for reproducibility and historical provenance:
 
 ```text
 demo/out/polygraph-contest-final.mp4
 ```
 
-Its current validation receipt records **169.021333 seconds (2:49.021)**, leaving
-**10.978667 seconds** under the three-minute cap. The file is **9,239,731 bytes** with SHA-256
-`0deb7f67697b45ac8b9b38b518d87240ac556db8bb82107f23158862372f8f30`. The authored six-cue captions are
-`demo/out/polygraph-contest-final.srt`; the media/evidence receipt is
-`demo/out/polygraph-contest-final.validation.json`; and the MP4 checksum is in
-`demo/out/polygraph-contest-final.sha256`.
+Its validation receipt records **169.021333 seconds (2:49.021)**, **9,239,731 bytes**, and
+SHA-256 `0deb7f67697b45ac8b9b38b518d87240ac556db8bb82107f23158862372f8f30`. The authored
+captions, validation receipt, and checksum are retained beside it. These artifacts document the
+earlier terminal-capture workflow only; they are not the current contest media and do not replace
+the website capture set under `media/website-capture-20260813/`.
 
-The rendered story uses this six-beat sequence:
+For provenance, the rendered story used this six-beat sequence:
 
 | Time | Judge question | Baseline → technical change → measured impact |
 |---|---|---|
@@ -662,15 +660,15 @@ The rendered story uses this six-beat sequence:
 | 1:51–2:22 | Is there Arm server evidence? | Prior microbenchmarks only → automated hosted Arm64 readiness harness → run `31294460364`, 1,543 requests, 0 failures |
 | 2:22–2:49 | Does the result overclaim? | Synthetic PASS could be misread → show exact boundary → `actualProductionTraffic:false`, `productionReady:false`, `candidateOnly:true`; PRO 6000 remains non-Arm |
 
-The rendered video was finalized before long run `31312723300` and correctly shows the earlier
+The historical video was finalized before long run `31312723300` and correctly shows the earlier
 Arm64 readiness run `31294460364`. The long campaign is a post-video evidence addendum in the
-repository and immutable release; do not claim that the video depicts it.
+repository and immutable release; do not claim that the historical video depicts it.
 
-The final cut includes 20 seconds of the real, isolated `make demo` capture. Its capture receipt
+The historical cut includes 20 seconds of the real, isolated `make demo` capture. Its capture receipt
 records a strict allowlisted environment, bounded process group and outputs, the exact capture
 driver and source archive hashes, transcript reconstruction, and the expected liar/honest exit
 contract. The encoded playback preserves captured text and ordering while normalizing pauses for
-legibility.
+legibility. Current judge-facing media is captured from the public HF demo page instead.
 
 ---
 
@@ -805,32 +803,31 @@ or a non-Arm control into a production or Arm claim.
 
 ## Judge evidence index
 
-1. **Start here:** `docs/CONTEST-EVIDENCE-MAP.md` — claim-by-claim evidence and commands.
-2. **Run the product:** `make demo`, then inspect `tools/polygraph` and `docs/QUICKSTART.md`.
-3. **Headline build finding:** `results/server/spark-provenance.txt` and
+1. **Start here — interactive demo page:** `https://tomyimkc-polygraph-arm-demo.static.hf.space/`.
+2. **Website media captures:** `media/website-capture-20260813/` and its receipt/checksum manifest.
+3. **Reproducible static-page source bundle:** `space/` (the exact website-only bundle used by the
+   public HF Space, with no terminal video asset).
+4. **Claim-by-claim evidence:** `docs/CONTEST-EVIDENCE-MAP.md`.
+5. **Run the product:** `make demo`, then inspect `tools/polygraph` and `docs/QUICKSTART.md`.
+6. **Headline build finding:** `results/server/spark-provenance.txt` and
    `results/scale/scale-experiment.json`.
-4. **Automatic optimization:** `patches/0002-kleidiai-sme-aware-thread-default.patch` and
+7. **Automatic optimization:** `patches/0002-kleidiai-sme-aware-thread-default.patch` and
    `results/AUTODEFAULTS.md`.
-5. **L1/L2 agree but L3 fails:** `results/upstream/FINDING-4-CUDA-HOST-BUFFER.md` and its
+8. **L1/L2 agree but L3 fails:** `results/upstream/FINDING-4-CUDA-HOST-BUFFER.md` and its
    15-run JSON.
-6. **Arm64 run `31294460364`:**
+9. **Arm64 run `31294460364`:**
    `results/production-readiness/arm64-31294460364/summary.json`,
    `validation-receipt.json`, and `workflow-receipt.json`.
-7. **Long same-artifact Arm64 campaign `31312723300`:**
+10. **Long same-artifact Arm64 campaign `31312723300`:**
    `results/production-readiness/arm64-campaign-31312308726-31312723300/long-validation-receipt.json`,
    aggregate/shard receipts, and `package-sha256sums.txt`.
-8. **Immutable evidence release:** `arm-create-evidence-31312723300`, preserving original GitHub
-   artifact ZIPs, build provenance, campaign source, external validations, and the contest video.
-9. **Non-Arm control `31289517517`:**
+11. **Immutable evidence release:** `arm-create-evidence-31312723300`, preserving original GitHub
+   artifact ZIPs, build provenance, campaign source, external validations, and historical video
+   provenance.
+12. **Non-Arm control `31289517517`:**
    `results/production-readiness/pro6000-31289517517/aggregate.json` and `README.md`.
-10. **Negative results and corrections:** `results/REMEASURE-2026-08-04-QUIET.md`,
+13. **Negative results and corrections:** `results/REMEASURE-2026-08-04-QUIET.md`,
    `patches/README.md`, `results/GENERALIZATION.md`.
-11. **Claim integrity:** `docs/CLAIMS.md`, `tools/check_claims.py`, and
+14. **Claim integrity:** `docs/CLAIMS.md`, `tools/check_claims.py`, and
    `.github/workflows/claims.yml`.
-12. **Repository-native final video:** `demo/out/polygraph-contest-final.mp4`, captions in
-    `demo/out/polygraph-contest-final.srt`, validation receipt in
-    `demo/out/polygraph-contest-final.validation.json`, and checksum in
-    `demo/out/polygraph-contest-final.sha256`. The final cut includes receipt-verified real
-    `make demo` capture playback with normalized pauses, sanitized ephemeral capture-root paths,
-    normalized line endings, and unchanged semantic output ordering.
-13. **Final submission check:** `docs/CONTEST-SUBMISSION-CHECKLIST.md`.
+15. **Final submission check:** `docs/CONTEST-SUBMISSION-CHECKLIST.md`.
