@@ -45,15 +45,19 @@ not Arm contest evidence and not a cross-hardware benchmark baseline.
 
 ## Five-minute judge route
 
-1. Run `make demo`.
-2. Open `results/server/spark-provenance.txt`.
-3. Open `results/scale/scale-experiment.json`.
-4. Open `results/production-readiness/arm64-31294460364/summary.json`.
-5. Open the adjacent `validation-receipt.json` and `workflow-receipt.json`.
-6. Open
+1. Open the interactive demo page:
+   `https://tomyimkc-polygraph-arm-demo.static.hf.space/`.
+2. Inspect the website captures and receipt:
+   `media/website-capture-20260813/`.
+3. Run `make demo`.
+4. Open `results/server/spark-provenance.txt`.
+5. Open `results/scale/scale-experiment.json`.
+6. Open `results/production-readiness/arm64-31294460364/summary.json`.
+7. Open the adjacent `validation-receipt.json` and `workflow-receipt.json`.
+8. Open
    `results/production-readiness/arm64-campaign-31312308726-31312723300/long-validation-receipt.json`.
-7. Run `python3 tools/check_claims.py`.
-8. Read the negative-result index near the end of this file.
+9. Run `python3 tools/check_claims.py`.
+10. Read the negative-result index near the end of this file.
 
 ## Proof-chain map
 
@@ -506,25 +510,23 @@ test "$nohost_rc" -eq 0
 test "$devnone_rc" -eq 0
 ```
 
-## Repository-native final video receipt
+## Website capture receipt
 
 | Artifact | Current validated value |
 |---|---|
-| Final MP4 | `demo/out/polygraph-contest-final.mp4` |
-| Duration | 169.021333 seconds (2:49.021), 10.978667 seconds under the cap |
-| Size | 9,239,731 bytes |
-| SHA-256 | `0deb7f67697b45ac8b9b38b518d87240ac556db8bb82107f23158862372f8f30` |
-| Captions | `demo/out/polygraph-contest-final.srt`, six authored cues |
-| Validation receipt | `demo/out/polygraph-contest-final.validation.json` |
-| Checksum | `demo/out/polygraph-contest-final.sha256` |
-| Media | H.264 High, 1920×1080, 30 fps, `yuv420p`; AAC-LC, 48 kHz stereo; fast-start |
+| Source page | `https://tomyimkc-polygraph-arm-demo.static.hf.space/` |
+| Capture method | Playwright-controlled Google Chrome headless capture |
+| Page status | HTTP 200 |
+| Page title | `Polygraph — stop guessing about AI performance` |
+| Views | `01-demo-hero.png`, `02-demo-arm-evidence.png`, `03-demo-honest-rollback.png`, `04-demo-mobile.png` |
+| Receipt | `media/website-capture-20260813/receipt.json` |
+| Checksum | `media/website-capture-20260813/SHA256SUMS` |
+| Reproducible source bundle | `space/` (website-only static files; no terminal video asset) |
 
-The validation receipt records the final MP4 SHA-256, story hash, encoded media properties, and
-SHA-256 hashes for the evidence sources used by the renderer. The final cut contains a 20-second
-playback of a real, isolated `make demo` capture. The capture receipt verifies the strict
-allowlisted environment, source archive and capture-driver hashes, bounded process/output policy,
-transcript reconstruction, and the liar/honest L3 and exit-code contract. Captured text and
-ordering are unchanged; pauses are normalized for legibility.
+The receipt records empty console/page error lists and the rendered values `4.57× faster`,
+`0.93×`, `FAIL`, and `actualProductionTraffic: false`. The captures are website media from the
+public HF Space, not terminal-video frames. The historical repository MP4 remains available for
+provenance but is intentionally not used as the current submission media.
 
 ## Negative-result index
 
@@ -556,7 +558,9 @@ ordering are unchanged; pauses are normalized for legibility.
 
 | Judge need | Open this first |
 |---|---|
-| Understand the product in two minutes | `docs/QUICKSTART.md`; run `make demo` |
+| Understand the product in two minutes | `https://tomyimkc-polygraph-arm-demo.static.hf.space/` |
+| Reproduce the demo page source | `space/` |
+| Run the local product | `docs/QUICKSTART.md`; run `make demo` |
 | Verify the headline defect | `results/server/spark-provenance.txt` |
 | Verify the 7B impact | `results/scale/scale-experiment.json` |
 | Inspect the positive patch | `results/AUTODEFAULTS.md` and `patches/0002-kleidiai-sme-aware-thread-default.patch` |
@@ -564,7 +568,7 @@ ordering are unchanged; pauses are normalized for legibility.
 | Audit Arm64 run `31294460364` | `results/production-readiness/arm64-31294460364/` |
 | Audit long campaign `31312723300` | `results/production-readiness/arm64-campaign-31312308726-31312723300/` |
 | Audit control `31289517517` | `results/production-readiness/pro6000-31289517517/` |
-| Audit the final contest video | `demo/out/polygraph-contest-final.validation.json`, `.sha256`, and `.srt` |
+| Audit website media | `media/website-capture-20260813/receipt.json` and `SHA256SUMS` |
 | Inspect corrections and negative results | `results/REMEASURE-2026-08-04-QUIET.md`, `results/GENERALIZATION.md`, `patches/README.md` |
 | Verify prose claims mechanically | `python3 tools/check_claims.py` |
 | Paste the final submission | `docs/DEVPOST-SUBMISSION.md` |

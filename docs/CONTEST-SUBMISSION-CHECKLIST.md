@@ -220,7 +220,8 @@ For every judge-facing proof chain, verify all three parts are present.
 
 - [ ] Confirm smoke preflight `31312308726` passed and is preserved beside the long receipts.
 - [ ] Confirm the immutable release contains the original 3 smoke ZIPs, 5 long ZIPs, exact
-  workflow metadata, external validation receipts, campaign-source archive, and final video.
+  workflow metadata, external validation receipts, campaign-source archive, and historical video
+  provenance. The current submission media is the website capture set, not the terminal video.
 
 ### PRO 6000 control
 
@@ -260,61 +261,33 @@ For every judge-facing proof chain, verify all three parts are present.
 - [ ] Same-artifact temporal differences are not described as performance uplift.
 - [ ] No upstream issue is described as accepted, fixed, or endorsed without new evidence.
 
-## 7. Demo video
+## 7. Interactive demo page and website media
 
-- [ ] Use the repository-native final cut:
-  `demo/out/polygraph-contest-final.mp4`.
-- [ ] Confirm the independent `ffprobe` duration is 169.021333 seconds (2:49.021), strictly under
-  three minutes.
-- [ ] Confirm the final file is 9,239,731 bytes with SHA-256
-  `0deb7f67697b45ac8b9b38b518d87240ac556db8bb82107f23158862372f8f30`.
-- [ ] Confirm the authored six-cue sidecar is:
-  `demo/out/polygraph-contest-final.srt`.
-- [ ] Confirm the validation receipt is:
-  `demo/out/polygraph-contest-final.validation.json`.
-- [ ] Confirm the checksum file is:
-  `demo/out/polygraph-contest-final.sha256`.
-- [ ] Run:
+- [ ] Open the interactive demo page:
+  `https://tomyimkc-polygraph-arm-demo.static.hf.space/`.
+- [ ] Confirm it is publicly reachable and loads without a backend.
+- [ ] Confirm the page shows the judge route, L1/L2/L3 method, Arm evidence, and honest rollback.
+- [ ] Confirm website captures are:
+  `media/website-capture-20260813/01-demo-hero.png`,
+  `02-demo-arm-evidence.png`, `03-demo-honest-rollback.png`, and `04-demo-mobile.png`.
+- [ ] Confirm the receipt is `media/website-capture-20260813/receipt.json` and validate:
 
   ```bash
-  (
-    cd demo/out
-    sha256sum -c polygraph-contest-final.sha256
-  )
-
-  ffprobe -v error \
-    -show_entries \
-    format=duration,size:stream=index,codec_name,profile,width,height,pix_fmt,r_frame_rate,sample_rate,channels \
-    -of json \
-    demo/out/polygraph-contest-final.mp4
-
+  (cd media/website-capture-20260813 && sha256sum -c SHA256SUMS)
   jq -e '
-    .schema == "polygraph.contest-video.validation.v1" and
-    .sha256 == "0deb7f67697b45ac8b9b38b518d87240ac556db8bb82107f23158862372f8f30" and
-    .media.durationSeconds == 169.021333 and
-    .media.sizeBytes == 9239731 and
-    .media.under180Seconds == true and
-    .media.video.codec_name == "h264" and
-    .media.video.width == 1920 and
-    .media.video.height == 1080 and
-    .media.audio.codec_name == "aac" and
-    .media.fastStart == true
-  ' demo/out/polygraph-contest-final.validation.json
+    .schema == "polygraph.website-capture.v1" and
+    .pageHttpStatus == 200 and
+    (.consoleErrors | length) == 0 and
+    (.pageErrors | length) == 0 and
+    .verifiedPageSignals.rollbackVerdict == "FAIL"
+  ' media/website-capture-20260813/receipt.json
   ```
 
-- [ ] Confirm every on-screen number remains registered in `docs/CLAIMS.md`.
-- [ ] Paste the YouTube URL into the Devpost demo field.
-- [ ] Confirm the final cut includes the Arm64 run `31294460364` and labels the PRO 6000 control
-  non-Arm, as recorded by the story and validation receipt.
-- [ ] State that the final cut predates long run `31312723300`; the repository/release is the
-  addendum. Do not claim the video shows the long campaign.
-- [ ] Confirm the receipt-verified 20-second `make demo` playback is present and visibly shows the
-  liar `MISMATCH`/zero-hit result and honest `MATCH`/one-hit result.
-- [ ] Describe the capture precisely: real isolated CLI output with ephemeral capture-root paths
-  and line endings normalized, semantic output ordering preserved, and replay pauses normalized
-  for legibility.
-- [ ] Do not edit or overwrite `docs/VIDEO.md`, `docs/VIDEO-PRODUCTION.md`, `demo/README.md`,
-  `demo/SHOTLIST.md`, renderer sources, or `demo/out/` from this contest-writing task.
+- [ ] Confirm `space/` contains the website-only static source bundle used for the public page,
+  including its HTML, CSS, JavaScript, image, and bundled JSON receipts.
+- [ ] Confirm `space/` contains no MP4, WebM, MOV, or other terminal/video-capture asset.
+- [ ] Do not use `demo/out/polygraph-contest-final.mp4` as the current submission media.
+- [ ] Keep the historical video artifacts untouched for provenance only.
 
 ## 8. Paste-ready Devpost fields
 
@@ -350,18 +323,20 @@ For every judge-facing proof chain, verify all three parts are present.
 
 ## 10. Owner-only final actions
 
-- [ ] Upload `demo/out/polygraph-contest-final.mp4` to YouTube.
-- [ ] Upload or paste the authored captions.
-- [ ] Paste the final video URL.
+- [ ] If using the optional video field, upload a separate public video under three minutes; this
+  package intentionally does not use the repository terminal-capture video.
 - [ ] Verify the public GitHub repository opens in a logged-out/private browser session.
+- [ ] Verify the interactive HF demo page opens in a logged-out/private browser session.
+- [ ] Verify all four website captures and `media/website-capture-20260813/SHA256SUMS`.
 - [ ] Verify the dashboard URL opens; remove it from Devpost if it is no longer publicly reachable.
 - [ ] Verify the immutable release URL opens and every asset listed in `SHA256SUMS` is present.
 - [ ] Verify both upstream issue links open.
 - [ ] Preview the entire Devpost submission on desktop and mobile widths.
 - [ ] Save a local copy or screenshot of every final field before submission.
 - [ ] Submit before the deadline shown in Devpost.
-- [ ] Re-open the submitted project page and verify the rendered markdown, video, repo link,
-  license, and evidence index.
+- [ ] Re-open the submitted project page and verify the rendered markdown, website gallery/media,
+  repo link, license, and evidence index. Verify the optional video field only if a separate,
+  non-terminal-capture video was intentionally supplied.
 
 ## 11. Final automated sign-off
 
@@ -384,6 +359,8 @@ Expected changed paths for this contest-writing task:
 docs/DEVPOST-SUBMISSION.md
 docs/CONTEST-EVIDENCE-MAP.md
 docs/CONTEST-SUBMISSION-CHECKLIST.md
+media/website-capture-20260813/
+space/
 ```
 
 Do not commit from this checklist unless the owner explicitly requests it.

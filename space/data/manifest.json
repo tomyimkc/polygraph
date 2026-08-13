@@ -1,0 +1,12 @@
+{
+  "generated_by": "hf-space-static-bundle",
+  "dispatch_ledgers": [],
+  "bench": [],
+  "crossover": [],
+  "figures": [],
+  "other_json": [
+    "results/headline.json",
+    "results/scale-experiment.json",
+    "results/receipt.json"
+  ]
+}

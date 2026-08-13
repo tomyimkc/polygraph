@@ -1,0 +1,48 @@
+{
+  "schema": "polygraph.website-capture.v1",
+  "capturedAtUtc": "2026-08-13T04:07:00Z",
+  "sourceUrl": "https://tomyimkc-polygraph-arm-demo.static.hf.space/",
+  "sourceType": "public static Hugging Face Space",
+  "captureMethod": "Playwright-controlled Google Chrome headless capture",
+  "pageHttpStatus": 200,
+  "pageTitle": "Polygraph — stop guessing about AI performance",
+  "consoleErrors": [],
+  "pageErrors": [],
+  "verifiedPageSignals": {
+    "videoElementCount": 0,
+    "prefillMetric": "4.57× faster",
+    "rollbackMetric": "0.93×",
+    "rollbackVerdict": "FAIL",
+    "trafficBoundary": "actualProductionTraffic: false"
+  },
+  "views": [
+    {
+      "path": "media/website-capture-20260813/01-demo-hero.png",
+      "sha256": "b156554643056823defb0c78affd871580bcbaee5858e5c1fdccb076dac57604",
+      "bytes": 431035,
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "path": "media/website-capture-20260813/02-demo-arm-evidence.png",
+      "sha256": "b14eebbd2fcbdf5abb940429e657347821c8cd2f9e163b9e6b0d4054caa2ace1",
+      "bytes": 69548,
+      "width": 1048,
+      "height": 366
+    },
+    {
+      "path": "media/website-capture-20260813/03-demo-honest-rollback.png",
+      "sha256": "5edc328d8742c4b614a490603cf5ae6ea95ca7b868653886062b8f423b2dab97",
+      "bytes": 64013,
+      "width": 1048,
+      "height": 411
+    },
+    {
+      "path": "media/website-capture-20260813/04-demo-mobile.png",
+      "sha256": "0470f19854b9ea4074673c1ffd1012d26a4eae4f065167a05a473848fdccddbc",
+      "bytes": 162038,
+      "width": 390,
+      "height": 844
+    }
+  ]
+}
